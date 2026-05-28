@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>収束 — Quiet Convergence</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #fcfbf8; }
+  canvas { display: block; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+/* ════════════════════════════════════════════════════════════════
+   収束 — 診断の「読めない長い待ち(20〜30s)」のための待機演出。
+
+   ◆ 二部構成
+     待機(waiting): 星が時間とともに少しずつ増え、近い星から線で結ばれていく。
+       何秒でも続く。時間で勝手にオチをつけない。＝待つほど星座が育つ＝進行サイン。
+     解決(reveal):  結果が用意できた“その瞬間”に呼ばれて、
+       収束(中心へ吸い込まれ消える) → 細い横線 → 消滅 を再生。
+
+   ◆ 連携（ホスト側）
+     結果取得時に  window.silasReveal()  を呼ぶ。
+     あるいは iframe に  postMessage({type:'silas-reveal'})  を送る。
+     本番で自動デモを止めるには  window.SILAS_NO_DEMO = true  を読み込み前に。
+   ════════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  /* ── PALETTE（繊細・低彩度。地が明/暗どちらでもここだけ差し替え可） ── */
+  const PALETTE = {
+    ground:   '#fcfbf8',
+    hue: 216, sat: 24, light: 44,    // 星: 淡いスレートブルー（収束しても色は変えない）
+    line:     '74,86,104',           // つながりの線 RGB
+    hline:    '150,134,96',          // 横線（くすんだ金）RGB
+    hglow:    '184,168,120',         // 横線の発光 RGB
+    signal:   '150,120,210',         // シナプス発火の微光（薄いパープル）。緑にするなら '120,170,135'
+  };
+
+  const CFG = {
+    max: 80, start: 6, birthMs: 700, bornFade: 1600,
+    demoRevealMs: 20000   // 展示用: 待機が続いたら自動 reveal（本番はホストが呼ぶ）
+  };
+  const REVEAL = { converge: 4600, line: 2400, dissolve: 2400, done: 1600 };
+  const REVEAL_ORDER = ['converge', 'line', 'dissolve', 'done'];
+
+  const cv = document.getElementById('c');
+  const ctx = cv.getContext('2d');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const easeInOutSine = t => -(Math.cos(Math.PI * t) - 1) / 2;
+  const easeOutExpo   = t => t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+  const easeInQuart   = t => t * t * t * t;
+  const clamp01 = t => t < 0 ? 0 : t > 1 ? 1 : t;
+
+  let W, H, DPR, CX, CY, MAXDIST;
+  let particles = [];
+  let gt = 0;
+
+  let mode = 'waiting';        // 'waiting' | 'reveal' | 'done'
+  let waitStart = performance.now();
+  let revealStart = 0;
+  let revealCount = 0;
+  const demo = !window.SILAS_NO_DEMO;
+  let signals = [];
+  let lastSignal = 0;
+
+  class Star {
+    constructor() { this.seed(); }
+    seed() {
+      this.ocx = CX + (Math.random() - 0.5) * W * 0.82;
+      this.ocy = CY + (Math.random() - 0.5) * H * 0.82;
+      this.orx = Math.random() * 70 + 25;
+      this.ory = Math.random() * 50 + 20;
+      this.oa  = Math.random() * Math.PI * 2;
+      this.os  = (Math.random() * 0.0016 + 0.0005) * (Math.random() > 0.5 ? 1 : -1);
+      this.size = Math.random() * 1.6 + 1.0;
+      this.life = Math.random() * 0.3 + 0.6;
+      this.tw   = Math.random() * Math.PI * 2;
+      this.tw2  = Math.random() * Math.PI * 2;
+      this.tws  = Math.random() * 0.016 + 0.008;
+      this.drift();
+      this.sx = this.x; this.sy = this.y;
+    }
+    drift() {
+      this.oa += this.os;
+      this.x = this.ocx + Math.cos(this.oa) * this.orx;
+      this.y = this.ocy + Math.sin(this.oa) * this.ory;
+    }
+    toCenter(pr) {
+      const e = easeInOutSine(pr);
+      this.x = this.sx + (CX - this.sx) * e;
+      this.y = this.sy + (CY - this.sy) * e;
+    }
+    draw(alphaMul, birthFade, sizeMul) {
+      const tw = 0.6 + 0.4 * (0.55 * Math.sin(this.tw) + 0.45 * Math.sin(this.tw * 2.3 + this.tw2));
+      const a = this.life * tw * alphaMul * birthFade;
+      if (a <= 0.004) return;
+      const { hue: h, sat: s, light: l } = PALETTE;
+      const r = this.size * 3.0 * sizeMul;
+      if (r > 0.2) {
+        const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r);
+        g.addColorStop(0, `hsla(${h},${s}%,${l}%,${a})`);
+        g.addColorStop(0.5, `hsla(${h},${s}%,${l}%,${a * 0.4})`);
+        g.addColorStop(1, `hsla(${h},${s}%,${l}%,0)`);
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(this.x, this.y, r, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = `hsla(${h},${s}%,${l - 6}%,${Math.min(1, a * 1.2)})`;
+      ctx.beginPath(); ctx.arc(this.x, this.y, this.size * 0.75 * sizeMul, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  function build() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = W * DPR; cv.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    CX = W / 2; CY = H / 2;
+    MAXDIST = Math.min(W, H) * 0.24;
+    particles = Array.from({ length: CFG.max }, () => new Star());
+  }
+  build();
+  window.addEventListener('resize', build);
+
+  function bornTime(i) {
+    return waitStart + (i < CFG.start ? 0 : (i - CFG.start + 1) * CFG.birthMs);
+  }
+  function birthFadeOf(i, now) {
+    const bt = bornTime(i);
+    return now < bt ? 0 : clamp01((now - bt) / CFG.bornFade);
+  }
+  function liveCount(now) {
+    let n = 0;
+    for (let i = 0; i < CFG.max; i++) if (now >= bornTime(i)) n++;
+    return n;
+  }
+
+  function drawConnections(count, opacityMul) {
+    if (opacityMul <= 0) return;
+    ctx.lineWidth = 0.6;
+    for (let i = 0; i < count; i++) {
+      for (let j = i + 1; j < count; j++) {
+        const a = particles[i], b = particles[j];
+        const dist = Math.hypot(a.x - b.x, a.y - b.y);
+        if (dist > MAXDIST) continue;
+        const al = (1 - dist / MAXDIST) * 0.34 * opacityMul;
+        ctx.strokeStyle = `rgba(${PALETTE.line},${al})`;
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      }
+    }
+  }
+
+  // シナプス発火: 隣接する星の対に、微かな光が信号のように走る
+  function spawnSignal(count) {
+    if (signals.length > 8) return;
+    const i = Math.floor(Math.random() * count);
+    const a = particles[i], neigh = [];
+    for (let j = 0; j < count; j++) {
+      if (j === i) continue;
+      if (Math.hypot(a.x - particles[j].x, a.y - particles[j].y) <= MAXDIST) neigh.push(j);
+    }
+    if (!neigh.length) return;
+    signals.push({ i, j: neigh[Math.floor(Math.random() * neigh.length)], t0: performance.now(), dur: 600 + Math.random() * 500 });
+  }
+  function drawSignals(now) {
+    for (let k = signals.length - 1; k >= 0; k--) {
+      const sg = signals[k];
+      const p = (now - sg.t0) / sg.dur;
+      if (p >= 1) { signals.splice(k, 1); continue; }
+      const a = particles[sg.i], b = particles[sg.j];
+      const env = Math.sin(p * Math.PI);          // 灯って・消える（移動はしない）
+      ctx.save();
+      // 線そのものが微かに発光する（シナプスが灯る）
+      ctx.strokeStyle = `rgba(${PALETTE.signal},${0.42 * env})`;
+      ctx.lineWidth = 0.8 + env * 0.5;
+      ctx.shadowColor = `rgba(${PALETTE.signal},${0.5 * env})`;
+      ctx.shadowBlur = 5 + env * 6;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      // 両端の星もわずかに灯す
+      for (const n of [a, b]) {
+        const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, 3.0);
+        g.addColorStop(0, `rgba(${PALETTE.signal},${0.32 * env})`);
+        g.addColorStop(1, `rgba(${PALETTE.signal},0)`);
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(n.x, n.y, 3.0, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
+  // 吸い込まれた一点から走る、ごく細い横線
+  function drawHLine(pr) {
+    const half = (W * 0.5 + 40) * easeOutExpo(Math.min(pr * 2.2, 1));
+    let op;
+    if (pr < 0.18) op = pr / 0.18;
+    else if (pr < 0.68) op = 1;
+    else op = 1 - (pr - 0.68) / 0.32;
+    op = Math.max(0, op);
+    ctx.save();
+    ctx.strokeStyle = `rgba(${PALETTE.hline},${op})`;
+    ctx.lineWidth = 0.5;                                  // ヘアライン
+    ctx.shadowColor = `rgba(${PALETTE.hglow},${op * 0.4})`;
+    ctx.shadowBlur = 4;
+    ctx.beginPath(); ctx.moveTo(CX - half, CY); ctx.lineTo(CX + half, CY); ctx.stroke();
+    ctx.restore();
+  }
+
+  function reveal() {
+    if (mode !== 'waiting') return;
+    const now = performance.now();
+    revealCount = liveCount(now);
+    for (let i = 0; i < revealCount; i++) { particles[i].sx = particles[i].x; particles[i].sy = particles[i].y; }
+    signals.length = 0;
+    mode = 'reveal';
+    revealStart = now;
+  }
+  window.silasReveal = reveal;
+  window.addEventListener('message', e => { if (e && e.data && e.data.type === 'silas-reveal') reveal(); });
+
+  function resetToWaiting() {
+    particles.forEach(p => p.seed());
+    signals.length = 0;
+    lastSignal = 0;
+    mode = 'waiting';
+    waitStart = performance.now();
+  }
+
+  function veil(v) {
+    ctx.globalAlpha = v; ctx.fillStyle = PALETTE.ground; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
+  }
+
+  function frame() {
+    gt += reduce ? 0 : 0.016;
+    const now = performance.now();
+
+    ctx.fillStyle = PALETTE.ground;
+    ctx.fillRect(0, 0, W, H);
+
+    if (mode === 'waiting') {
+      const count = liveCount(now);
+      for (let i = 0; i < count; i++) { particles[i].drift(); particles[i].tw += particles[i].tws; }
+      drawConnections(count, 1);
+      for (let i = 0; i < count; i++) particles[i].draw(1, birthFadeOf(i, now), 1);
+      // 後半にかけて発火頻度が上がるシナプス信号（微発光）
+      const maturity = clamp01((now - waitStart) / 26000);
+      const interval = 1700 - maturity * 1350;   // 早い時間は稀、後半は頻繁
+      if (count >= 3 && now - lastSignal > interval) { spawnSignal(count); lastSignal = now; }
+      drawSignals(now);
+      if (demo && now - waitStart > CFG.demoRevealMs) reveal();
+
+    } else if (mode === 'reveal') {
+      const elapsed = now - revealStart;
+      let acc = 0, sub = 'done', subPr = 1;
+      for (const name of REVEAL_ORDER) {
+        if (elapsed < acc + REVEAL[name]) { sub = name; subPr = (elapsed - acc) / REVEAL[name]; break; }
+        acc += REVEAL[name];
+      }
+
+      if (sub === 'converge') {
+        // 終盤で縮みながら中心へ吸い込まれて消える（点は残さない）
+        const absorb = clamp01((subPr - 0.62) / 0.38);
+        const sizeMul = 1 - absorb * 0.92;
+        const aMul = 1 - absorb;
+        for (let i = 0; i < revealCount; i++) { particles[i].toCenter(subPr); particles[i].tw += particles[i].tws; }
+        drawConnections(revealCount, Math.max(0, 1 - subPr * 1.25));
+        for (let i = 0; i < revealCount; i++) particles[i].draw(aMul, 1, sizeMul);
+      } else if (sub === 'line') {
+        drawHLine(subPr);                 // 横線のみ。点は吸い込み済みで描かない
+      } else if (sub === 'dissolve') {
+        veil(easeInQuart(subPr));
+      } else {
+        veil(1);
+      }
+
+      if (elapsed >= REVEAL.converge + REVEAL.line + REVEAL.dissolve + REVEAL.done) {
+        mode = 'done';
+        if (demo) resetToWaiting();
+      }
+    }
+    // mode === 'done' は紙の地のまま（結果画面が出る間）
+
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+</script>
+</body>
+</html>

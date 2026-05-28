@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STRUCTURE DESIGNER - あなたの構造を理解し、未来に伴走するAI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kurenaido&family=Satoshi:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* 姉妹サイト統一色彩 */
+      --bg-primary: #fdfcfa;
+      --text-primary: #1c1c1c;
+      --text-muted: #6a6a6a;
+      
+      /* 星座色彩システム */
+      --constellation-blue-deep: hsl(210, 15%, 20%);
+      --constellation-blue-mid: hsl(215, 25%, 45%);
+      --constellation-gold-warm: hsl(45, 50%, 60%);
+      --constellation-gold-bright: hsl(50, 70%, 70%);
+      
+      /* 禅的イージング */
+      --easing-breath: cubic-bezier(0.37, 0, 0.63, 1);
+      --easing-flow: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      --easing-convergence: cubic-bezier(0.19, 1, 0.22, 1);
+      
+      /* アダプティブ設定 */
+      --particle-count: 150;
+      --animation-fps: 60;
+      --glow-intensity: 1.0;
+      --performance-mode: 'high';
+    }
+
+    /* モバイル最適化 */
+    @media (max-width: 768px) {
+      :root {
+        --particle-count: 75;
+        --animation-fps: 30;
+        --glow-intensity: 0.6;
+        --performance-mode: 'mobile';
+      }
+    }
+
+    @media (max-width: 480px) {
+      :root {
+        --particle-count: 50;
+        --animation-fps: 24;
+        --glow-intensity: 0.4;
+        --performance-mode: 'minimal';
+      }
+    }
+
+    /* 動きに敏感なユーザー配慮 */
+    @media (prefers-reduced-motion: reduce) {
+      :root {
+        --particle-count: 20;
+        --animation-fps: 15;
+        --glow-intensity: 0.2;
+        --performance-mode: 'static';
+      }
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-primary);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, sans-serif;
+      position: relative;
+      cursor: pointer;
+    }
+
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-primary);
+      display: block;
+      z-index: 1;
+      cursor: pointer;
+    }
+
+    /* タイピングテキストコンテナ */
+    .text-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: transform 0.8s var(--easing-convergence), opacity 0.8s var(--easing-flow);
+    }
+
+    .text-container.visible {
+      opacity: 1;
+    }
+
+    .main-title {
+      font-size: clamp(24px, 6vw, 48px);
+      font-weight: 300;
+      letter-spacing: 0.05em;
+      color: var(--text-primary);
+      line-height: 1.2;
+      margin-bottom: 0.5em;
+      white-space: pre-line;
+      text-align: center;
+    }
+
+    .subtitle {
+      font-family: 'Zen Kurenaido', 'Yu Mincho', serif;
+      font-size: clamp(14px, 3vw, 18px);
+      font-weight: 400;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* タイピング文字効果 */
+    .typing-char {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(8px);
+      animation: charReveal 0.4s var(--easing-flow) forwards;
+    }
+
+    @keyframes charReveal {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* プログレス表示（スキップヒント統合） */
+    .progress-container {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+    }
+
+    .progress-container.visible {
+      opacity: 1;
+    }
+
+    .progress-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 0.3px;
+      opacity: 0.8;
+    }
+
+    .progress-dots {
+      display: flex;
+      gap: 5px;
+    }
+
+    .progress-dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      opacity: 0.4;
+      animation: progressPulse 1.8s ease-in-out infinite;
+    }
+
+    .progress-dot:nth-child(2) { animation-delay: 0.3s; }
+    .progress-dot:nth-child(3) { animation-delay: 0.6s; }
+
+    @keyframes progressPulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+
+    /* スキップヒント（フェードイン） */
+    .skip-hint {
+      opacity: 0;
+      transition: opacity 0.6s ease;
+      margin-left: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      opacity: 0.6;
+    }
+
+    .skip-hint.visible {
+      opacity: 0.6;
+    }
+
+    /* スクリーンリーダー用 */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* GPT/Claude風チャットインターフェース */
+    .chat-interface {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #ffffff;
+      display: none;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+
+    .chat-interface.visible {
+      opacity: 1;
+    }
+
+    .chat-sidebar {
+      width: 280px;
+      height: 100vh;
+      background: #f8f8f8;
+      border-right: 1px solid #e5e5e5;
+      padding: 20px;
+      box-sizing: border-box;
+      float: left;
+    }
+
+    .chat-sidebar h3 {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      line-height: 1.1;
+    }
+
+    .chat-sidebar p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .chat-main {
+      margin-left: 280px;
+      height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .chat-welcome {
+      text-align: center;
+      max-width: 500px;
+      transform: translateY(20px);
+      opacity: 0;
+      transition: transform 0.8s var(--easing-convergence), opacity 0.8s ease;
+    }
+
+    .chat-welcome.visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .chat-welcome h1 {
+      font-size: 28px;
+      font-weight: 300;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+
+    .chat-welcome p {
+      font-size: 16px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .suggestion-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .suggestion-card {
+      padding: 16px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      color: var(--text-primary);
+      transform: translateY(10px);
+      opacity: 0;
+    }
+
+    .suggestion-card.visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .suggestion-card:hover {
+      background: #f0f0f0;
+      transform: translateY(-2px);
+    }
+
+    /* モバイル対応 */
+    @media (max-width: 768px) {
+      .chat-sidebar {
+        display: none;
+      }
+      
+      .chat-main {
+        margin-left: 0;
+        padding: 16px;
+      }
+      
+      .suggestion-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .progress-container {
+        bottom: 24px;
+      }
+      
+      .progress-text {
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- メインキャンバス -->
+  <canvas id="canvas"></canvas>
+
+  <!-- タイピングテキスト -->
+  <div class="text-container" id="textContainer">
+    <div class="main-title" id="mainTitle"></div>
+    <div class="subtitle" id="subtitle"></div>
+  </div>
+
+  <!-- プログレス表示（スキップヒント統合） -->
+  <div class="progress-container" id="progressContainer">
+    <span class="progress-text">構造システム起動中</span>
+    <div class="progress-dots">
+      <div class="progress-dot"></div>
+      <div class="progress-dot"></div>
+      <div class="progress-dot"></div>
+    </div>
+    <div class="skip-hint" id="skipHint">クリックでスキップ</div>
+  </div>
+
+  <!-- スクリーンリーダー用状況説明 -->
+  <div id="srStatus" aria-live="polite" class="sr-only">
+    STRUCTURE DESIGNER が起動中です。クリックまたはスペースキーでスキップできます。
+  </div>
+
+  <!-- プログレスバー（アクセシビリティ用） -->
+  <div 
+    id="progressBar" 
+    role="progressbar" 
+    aria-valuenow="0" 
+    aria-valuemin="0" 
+    aria-valuemax="100"
+    aria-label="システム起動進行状況"
+    class="sr-only"
+  >
+    システム起動中: 0%
+  </div>
+
+  <!-- GPT/Claude風チャットインターフェース -->
+  <div class="chat-interface" id="chatInterface">
+    <div class="chat-sidebar">
+      <h3>STRUCTURE<br>DESIGNER</h3>
+      <p>構造理解システム</p>
+    </div>
+    <div class="chat-main">
+      <div class="chat-welcome" id="chatWelcome">
+        <h1>こんにちは</h1>
+        <p>あなたの構造を理解し、未来に伴走するAIです。<br>まずは、どのような探索から始めましょうか？</p>
+        <div class="suggestion-cards" id="suggestionCards">
+          <div class="suggestion-card">自分の構造を知る</div>
+          <div class="suggestion-card">今の悩みを整理する</div>
+          <div class="suggestion-card">質問してもらう</div>
+          <div class="suggestion-card">目標を決める</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // パフォーマンス検出・適応システム
+    class PerformanceManager {
+      constructor() {
+        this.deviceTier = this.detectDeviceTier();
+        this.config = this.getConfigForDevice();
+        this.applyPerformanceSettings();
+      }
+
+      detectDeviceTier() {
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const cores = navigator.hardwareConcurrency || 2;
+        const memory = navigator.deviceMemory || 2;
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        if (prefersReducedMotion) return 'minimal';
+        if (!isMobile && cores >= 6 && memory >= 4) return 'high';
+        if (cores >= 4 || (isMobile && cores >= 4)) return 'medium';
+        if (cores >= 2) return 'low';
+        return 'minimal';
+      }
+
+      getConfigForDevice() {
+        const configs = {
+          high: { particles: 140, fps: 60, glow: true, webgl: true },
+          medium: { particles: 90, fps: 45, glow: true, webgl: false },
+          low: { particles: 45, fps: 30, glow: false, webgl: false },
+          minimal: { particles: 18, fps: 15, glow: false, webgl: false }
+        };
+        return configs[this.deviceTier];
+      }
+
+      applyPerformanceSettings() {
+        document.documentElement.style.setProperty('--particle-count', this.config.particles);
+        document.documentElement.style.setProperty('--animation-fps', this.config.fps);
+        document.documentElement.style.setProperty('--glow-intensity', this.config.glow ? '1.0' : '0');
+      }
+    }
+
+    // メインアニメーションシステム
+    class StructureDesignerOpening {
+      constructor() {
+        this.canvas = document.getElementById('canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.performanceManager = new PerformanceManager();
+        
+        // アニメーション状態
+        this.animationPhase = 'constellation';
+        this.phaseStartTime = Date.now();
+        this.globalStartTime = Date.now();
+        this.time = 0;
+        this.isSkipped = false;
+        this.isPaused = false;
+        
+        // タイピング状態
+        this.typingStarted = false;
+        this.typingComplete = false;
+        this.mainTitleComplete = false;
+        
+        // パーティクル・アニメーション要素
+        this.particles = [];
+        this.activeConnections = new Map();
+        this.subtleGlowSystem = {
+          activeGlows: new Set(),
+          lastGlowTime: 0,
+          glowCooldown: 10000,
+          maxSimultaneousGlows: 2,
+          glowDuration: 2500
+        };
+        
+        // アニメーション制御
+        this.lineAnimation = {
+          active: false,
+          startTime: null,
+          complete: false
+        };
+        
+        this.whiteOverlay = {
+          opacity: 0,
+          active: false
+        };
+        
+        this.textImplosion = {
+          active: false,
+          startTime: null,
+          complete: false
+        };
+
+        // 改善されたフェーズ時間設定
+        this.PHASE_DURATIONS = {
+          constellation: 5500,  // 6000→5500 軽やかに
+          convergence: 2200,    // 1500→2200 タイピング完了待ち考慮
+          line: 300,           // 350→300 より瞬間的に
+          fade: 1800           // 1500→1800 ゆとりを持って
+        };
+
+        this.init();
+      }
+
+      init() {
+        this.resizeCanvas();
+        this.initParticles();
+        this.setupEventListeners();
+        this.startAnimation();
+        
+        // タイピング開始タイミングを調整
+        setTimeout(() => this.startTyping(), 2200);
+        
+        // スキップヒント表示タイミング
+        setTimeout(() => this.showSkipHint(), 3800);
+        
+        // プログレス表示開始
+        this.showProgress();
+      }
+
+      resizeCanvas() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+      }
+
+      initParticles() {
+        this.particles = [];
+        this.activeConnections.clear();
+        this.subtleGlowSystem.activeGlows.clear();
+        
+        const particleCount = this.performanceManager.config.particles;
+        
+        for (let i = 0; i < particleCount; i++) {
+          this.particles.push(new ModernConstellationParticle(this.canvas));
+        }
+      }
+
+      setupEventListeners() {
+        window.addEventListener('resize', () => {
+          this.resizeCanvas();
+          this.initParticles();
+        });
+
+        // 全体クリック・タップでスキップ
+        this.canvas.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.skipAnimation();
+        });
+
+        // キーボードアクセシビリティ（改善）
+        document.addEventListener('keydown', (e) => {
+          switch(e.key) {
+            case 'Escape':
+            case ' ':
+            case 'Enter':
+              e.preventDefault();
+              this.skipAnimation();
+              break;
+            case 'p':
+            case 'P':
+              e.preventDefault();
+              this.togglePause();
+              break;
+          }
+        });
+
+        // タッチデバイス対応
+        this.canvas.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          this.skipAnimation();
+        }, { passive: false });
+      }
+
+      showSkipHint() {
+        if (!this.isSkipped && this.animationPhase !== 'complete') {
+          document.getElementById('skipHint').classList.add('visible');
+        }
+      }
+
+      showProgress() {
+        document.getElementById('progressContainer').classList.add('visible');
+      }
+
+      updateProgress(phase, progress) {
+        const progressPercent = Math.floor(progress * 100);
+        const progressBar = document.getElementById('progressBar');
+        const srStatus = document.getElementById('srStatus');
+        
+        progressBar.setAttribute('aria-valuenow', progressPercent);
+        
+        const phaseTexts = {
+          constellation: '星座システム初期化中',
+          convergence: '構造データ統合中',
+          line: 'システム同期中',
+          fade: 'インターフェース準備中'
+        };
+        
+        if (phaseTexts[phase]) {
+          srStatus.textContent = `${phaseTexts[phase]}: ${progressPercent}%`;
+        }
+      }
+
+      startTyping() {
+        if (this.typingStarted || this.isSkipped) return;
+        
+        this.typingStarted = true;
+        document.getElementById('textContainer').classList.add('visible');
+        
+        const mainTitle = 'STRUCTURE\nDESIGNER';
+        const subtitle = 'あなたの構造を理解し、未来に伴走するAI。';
+        
+        this.typeText(mainTitle, 'mainTitle', 100).then(() => {
+          this.mainTitleComplete = true;
+          setTimeout(() => {
+            this.typeText(subtitle, 'subtitle', 70).then(() => {
+              this.typingComplete = true;
+            });
+          }, 600);
+        });
+      }
+
+      async typeText(text, elementId, delay) {
+        const element = document.getElementById(elementId);
+        element.innerHTML = '';
+        
+        for (let i = 0; i < text.length; i++) {
+          if (this.isSkipped || this.isPaused) break;
+          
+          const char = text[i];
+          
+          if (char === '\n') {
+            const br = document.createElement('br');
+            element.appendChild(br);
+          } else {
+            const span = document.createElement('span');
+            span.className = 'typing-char';
+            span.textContent = char === ' ' ? '\u00A0' : char;
+            span.style.animationDelay = '0ms';
+            
+            element.appendChild(span);
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+
+      skipAnimation() {
+        if (this.isSkipped) return;
+        
+        this.isSkipped = true;
+        
+        // 即座にプログレス非表示
+        document.getElementById('progressContainer').style.opacity = '0';
+        
+        this.showChatInterface();
+      }
+
+      togglePause() {
+        this.isPaused = !this.isPaused;
+        
+        // アクセシビリティ通知
+        const srStatus = document.getElementById('srStatus');
+        srStatus.textContent = this.isPaused ? 'アニメーションを一時停止しました' : 'アニメーションを再開しました';
+      }
+
+      updatePhase() {
+        if (this.isPaused || this.isSkipped) return;
+        
+        const elapsed = Date.now() - this.phaseStartTime;
+        let currentDuration = this.PHASE_DURATIONS[this.animationPhase];
+        
+        // 収束フェーズはタイピング完了待ち
+        if (this.animationPhase === 'convergence' && !this.typingComplete) {
+          return;
+        }
+        
+        const progress = Math.min(elapsed / currentDuration, 1);
+        this.updateProgress(this.animationPhase, progress);
+        
+        if (elapsed >= currentDuration) {
+          switch (this.animationPhase) {
+            case 'constellation':
+              this.animationPhase = 'convergence';
+              this.phaseStartTime = Date.now();
+              break;
+            case 'convergence':
+              if (this.typingComplete) {
+                this.animationPhase = 'line';
+                this.lineAnimation.active = true;
+                this.lineAnimation.startTime = Date.now();
+                this.phaseStartTime = Date.now();
+              }
+              break;
+            case 'line':
+              this.animationPhase = 'fade';
+              this.whiteOverlay.active = true;
+              this.startTextImplosion();
+              this.phaseStartTime = Date.now();
+              break;
+            case 'fade':
+              this.animationPhase = 'complete';
+              this.showChatInterface();
+              break;
+          }
+        }
+      }
+
+      startTextImplosion() {
+        this.textImplosion.active = true;
+        this.textImplosion.startTime = Date.now();
+        
+        const textContainer = document.getElementById('textContainer');
+        const duration = 700; // 600→700 より滑らかに
+        
+        const animateImplosion = () => {
+          const elapsed = Date.now() - this.textImplosion.startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const eased = this.easeInCubic(progress);
+          
+          const scale = 1 - eased * 0.95; // より自然な縮小
+          const opacity = 1 - eased;
+          
+          textContainer.style.transform = `translate(-50%, -50%) scale(${scale})`;
+          textContainer.style.opacity = opacity;
+          
+          if (progress < 1) {
+            requestAnimationFrame(animateImplosion);
+          } else {
+            this.textImplosion.complete = true;
+          }
+        };
+        
+        animateImplosion();
+      }
+
+      showChatInterface() {
+        setTimeout(() => {
+          // アニメーション要素を非表示
+          document.getElementById('canvas').style.display = 'none';
+          document.getElementById('textContainer').style.display = 'none';
+          document.getElementById('progressContainer').style.display = 'none';
+          
+          // 背景変更
+          document.body.style.backgroundColor = '#ffffff';
+          document.body.style.cursor = 'default';
+          
+          // チャットインターフェース表示
+          const chatInterface = document.getElementById('chatInterface');
+          chatInterface.style.display = 'block';
+          
+          // フェードイン効果
+          setTimeout(() => {
+            chatInterface.classList.add('visible');
+            
+            // ウェルカムメッセージの段階的表示
+            setTimeout(() => {
+              document.getElementById('chatWelcome').classList.add('visible');
+              
+              // サジェストカードの順次表示
+              setTimeout(() => {
+                const cards = document.querySelectorAll('.suggestion-card');
+                cards.forEach((card, index) => {
+                  setTimeout(() => {
+                    card.classList.add('visible');
+                  }, index * 120);
+                });
+              }, 400);
+              
+            }, 200);
+          }, 50);
+          
+          // アクセシビリティ通知
+          document.getElementById('srStatus').textContent = 'STRUCTURE DESIGNER の準備が完了しました。診断を開始できます。';
+        }, 300);
+      }
+
+      // 改善されたイージング関数
+      easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      }
+
+      easeOutExpo(t) {
+        return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+      }
+
+      easeInQuart(t) {
+        return t * t * t * t;
+      }
+
+      easeInCubic(t) {
+        return t * t * t;
+      }
+
+      easeOutQuart(t) {
+        return 1 - Math.pow(1 - t, 4);
+      }
+
+      // より滑らかなイージング追加
+      easeOutBack(t) {
+        const c1 = 1.70158;
+        const c3 = c1 + 1;
+        return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+      }
+
+      // メインアニメーションループ
+      animate() {
+        if (this.isSkipped) return;
+        
+        if (!this.isPaused) {
+          // 背景クリア
+          this.ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg-primary');
+          this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+          
+          // フェーズ更新
+          this.updatePhase();
+          
+          // パーティクル更新・描画
+          this.particles.forEach(particle => particle.update(this.animationPhase, this.phaseStartTime, this.PHASE_DURATIONS));
+          this.updateAndDrawConnections();
+          this.particles.forEach(particle => particle.draw(this.ctx));
+          
+          // 極細ライン描画
+          this.drawLine();
+          
+          // ホワイトオーバーレイ
+          this.drawWhiteOverlay();
+          
+          this.time++;
+        }
+        
+        requestAnimationFrame(() => this.animate());
+      }
+
+      updateAndDrawConnections() {
+        if (this.animationPhase === 'line' || this.animationPhase === 'fade') return;
+        
+        // より控えめな発光システム更新
+        this.updateSubtleGlowSystem();
+        
+        // 既存の接続線を更新
+        this.activeConnections.forEach(connection => connection.update());
+        
+        // 接続線の検出と描画
+        for (let i = 0; i < this.particles.length; i++) {
+          for (let j = i + 1; j < this.particles.length; j++) {
+            const p1 = this.particles[i];
+            const p2 = this.particles[j];
+            const connectionId = `${Math.min(p1.id, p2.id)}-${Math.max(p1.id, p2.id)}`;
+            
+            const dx = p1.x - p2.x;
+            const dy = p1.y - p2.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 135) { // 140→135 少し短く
+              if (!this.activeConnections.has(connectionId)) {
+                this.activeConnections.set(connectionId, new ConstellationLine(p1, p2));
+              }
+              
+              const connection = this.activeConnections.get(connectionId);
+              connection.draw(this.ctx, this.animationPhase, this.phaseStartTime, this.PHASE_DURATIONS);
+            } else {
+              if (this.activeConnections.has(connectionId)) {
+                const conn = this.activeConnections.get(connectionId);
+                if (conn.isGlowing) {
+                  this.subtleGlowSystem.activeGlows.delete(conn.id);
+                }
+                this.activeConnections.delete(connectionId);
+              }
+            }
+          }
+        }
+      }
+
+      updateSubtleGlowSystem() {
+        if (this.animationPhase !== 'constellation') return;
+        
+        const now = Date.now();
+        
+        if (now - this.subtleGlowSystem.lastGlowTime > this.subtleGlowSystem.glowCooldown) {
+          const availableConnections = Array.from(this.activeConnections.values())
+            .filter(conn => !conn.isGlowing && conn.getAlpha() > 0.1);
+          
+          if (availableConnections.length > 0) {
+            const numToGlow = Math.random() > 0.8 ? 2 : 1;
+            const shuffled = availableConnections.sort(() => Math.random() - 0.5);
+            
+            for (let i = 0; i < Math.min(numToGlow, shuffled.length); i++) {
+              shuffled[i].startGlow();
+            }
+            
+            this.subtleGlowSystem.lastGlowTime = now;
+            this.subtleGlowSystem.glowCooldown = 12000 + Math.random() * 6000; // より間隔を空ける
+          }
+        }
+      }
+
+      drawLine() {
+        if (!this.lineAnimation.active || this.lineAnimation.complete) return;
+        
+        const elapsed = Date.now() - this.lineAnimation.startTime;
+        const progress = Math.min(elapsed / this.PHASE_DURATIONS.line, 1);
+        const eased = this.easeOutExpo(progress);
+        
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        const maxWidth = this.canvas.width + 60; // より長く
+        const currentHalfWidth = (maxWidth / 2) * eased;
+        
+        let lineOpacity;
+        if (progress < 0.15) {
+          lineOpacity = progress * 6.67;
+        } else if (progress < 0.75) {
+          lineOpacity = 1;
+        } else {
+          lineOpacity = 1 - (progress - 0.75) * 4;
+        }
+        
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.moveTo(centerX - currentHalfWidth, centerY);
+        this.ctx.lineTo(centerX + currentHalfWidth, centerY);
+        this.ctx.strokeStyle = `rgba(70, 70, 70, ${0.25 * lineOpacity})`; // より控えめに
+        this.ctx.lineWidth = 0.4; // より細く
+        this.ctx.stroke();
+        this.ctx.restore();
+        
+        if (progress >= 1) {
+          this.lineAnimation.complete = true;
+        }
+      }
+
+      drawWhiteOverlay() {
+        if (!this.whiteOverlay.active) return;
+        
+        const elapsed = Date.now() - this.phaseStartTime;
+        const progress = Math.min(elapsed / this.PHASE_DURATIONS.fade, 1);
+        
+        this.whiteOverlay.opacity = this.easeOutQuart(progress);
+        
+        if (this.whiteOverlay.opacity > 0) {
+          this.ctx.fillStyle = `rgba(253, 252, 250, ${this.whiteOverlay.opacity})`;
+          this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+      }
+
+      startAnimation() {
+        this.animate();
+      }
+    }
+
+    // 現代星座パーティクルクラス（軽微な改善）
+    class ModernConstellationParticle {
+      constructor(canvas) {
+        this.canvas = canvas;
+        this.reset();
+        this.id = Math.random().toString(36).substr(2, 9);
+      }
+      
+      reset() {
+        this.initConstellationOrbit();
+        
+        this.life = Math.random() * 0.4 + 0.6; // より安定した生命力
+        this.lifeCycle = Math.random() * 0.006 + 0.002; // より穏やかな変化
+        this.size = Math.random() * 2.5 + 1.2; // サイズ調整
+        this.hue = Math.random() * 50 + 205; // 色相範囲調整
+        
+        this.twinklePhase = Math.random() * Math.PI * 2;
+        this.twinkleSpeed = Math.random() * 0.015 + 0.008; // より穏やかな瞬き
+        
+        this.startX = 0;
+        this.startY = 0;
+      }
+      
+      initConstellationOrbit() {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        
+        this.orbitCenterX = centerX + (Math.random() - 0.5) * this.canvas.width * 0.25;
+        this.orbitCenterY = centerY + (Math.random() - 0.5) * this.canvas.height * 0.25;
+        
+        this.orbitRadiusX = Math.random() * 70 + 25;
+        this.orbitRadiusY = Math.random() * 50 + 20;
+        this.orbitAngle = Math.random() * Math.PI * 2;
+        this.orbitSpeed = (Math.random() * 0.006 + 0.002) * (Math.random() > 0.5 ? 1 : -1);
+        
+        this.globalAngle = Math.atan2(
+          this.orbitCenterY - centerY,
+          this.orbitCenterX - centerX
+        );
+        this.globalRadius = Math.sqrt(
+          Math.pow(this.orbitCenterX - centerX, 2) +
+          Math.pow(this.orbitCenterY - centerY, 2)
+        );
+        
+        this.updatePosition();
+      }
+      
+      updatePosition() {
+        const globalRotation = Date.now() * 0.0002; // より遅く
+        const currentGlobalAngle = this.globalAngle + globalRotation;
+        
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        const rotatedCenterX = centerX + Math.cos(currentGlobalAngle) * this.globalRadius;
+        const rotatedCenterY = centerY + Math.sin(currentGlobalAngle) * this.globalRadius;
+        
+        this.orbitAngle += this.orbitSpeed;
+        
+        this.x = rotatedCenterX + Math.cos(this.orbitAngle) * this.orbitRadiusX;
+        this.y = rotatedCenterY + Math.sin(this.orbitAngle) * this.orbitRadiusY;
+      }
+      
+      update(animationPhase, phaseStartTime, PHASE_DURATIONS) {
+        const elapsed = Date.now() - phaseStartTime;
+        const duration = PHASE_DURATIONS[animationPhase];
+        const progress = Math.min(elapsed / duration, 1);
+        
+        switch (animationPhase) {
+          case 'constellation':
+            this.updatePosition();
+            
+            this.life += this.lifeCycle;
+            if (this.life > 1) {
+              this.life = 1;
+              this.lifeCycle = -Math.abs(this.lifeCycle);
+            } else if (this.life < 0.6) {
+              this.life = 0.6;
+              this.lifeCycle = Math.abs(this.lifeCycle);
+            }
+            
+            this.twinklePhase += this.twinkleSpeed;
+            this.hue += 0.15; // より穏やかな色変化
+            if (this.hue > 255) this.hue = 205;
+            break;
+            
+          case 'convergence':
+            const eased = this.easeInQuart(progress);
+            const centerX = this.canvas.width / 2;
+            const centerY = this.canvas.height / 2;
+            
+            if (progress === 0) {
+              this.startX = this.x;
+              this.startY = this.y;
+            }
+            
+            this.x = this.startX + (centerX - this.startX) * eased;
+            this.y = this.startY + (centerY - this.startY) * eased;
+            
+            if (progress > 0.6) {
+              const goldProgress = (progress - 0.6) / 0.4;
+              this.hue = 205 + goldProgress * 35;
+            }
+            break;
+            
+          case 'line':
+          case 'fade':
+            this.x = this.canvas.width / 2;
+            this.y = this.canvas.height / 2;
+            break;
+        }
+      }
+      
+      easeInQuart(t) {
+        return t * t * t * t;
+      }
+      
+      draw(ctx) {
+        let currentSize = this.size;
+        let currentLife = this.life;
+        let currentHue = this.hue;
+        
+        if (arguments[1] === 'convergence') {
+          const elapsed = Date.now() - arguments[2];
+          const progress = Math.min(elapsed / arguments[3].convergence, 1);
+          currentSize = this.size * (1 - progress * 0.2);
+        }
+        
+        if (arguments[1] === 'constellation') {
+          const primaryTwinkle = Math.sin(this.twinklePhase) * 0.25 + 1; // より控えめ
+          const sizeTwinkle = Math.sin(this.twinklePhase * 1.5) * 0.15 + 1;
+          
+          currentLife = this.life * primaryTwinkle;
+          currentSize = this.size * sizeTwinkle;
+          currentLife = Math.min(currentLife, 1.1);
+        }
+        
+        const alpha = currentLife;
+        const size = currentSize * currentLife;
+        
+        const gradient = ctx.createRadialGradient(
+          this.x, this.y, 0,
+          this.x, this.y, size * 2.2
+        );
+        gradient.addColorStop(0, `hsla(${currentHue}, 55%, 65%, ${alpha * 0.75})`);
+        gradient.addColorStop(1, `hsla(${currentHue + 15}, 55%, 45%, 0)`);
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        if (currentLife > 0.85) {
+          ctx.save();
+          ctx.shadowColor = `hsla(${currentHue}, 70%, 75%, ${alpha * 0.3})`;
+          ctx.shadowBlur = 4;
+          ctx.fillStyle = `hsla(${currentHue}, 70%, 80%, ${alpha * 0.5})`;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, size * 0.35, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+    }
+
+    // 星座接続線クラス（軽微な改善）
+    class ConstellationLine {
+      constructor(particle1, particle2) {
+        this.p1 = particle1;
+        this.p2 = particle2;
+        this.strength = Math.random() * 0.3 + 0.7; // より安定
+        this.phase = Math.random() * Math.PI * 2;
+        this.pulseSpeed = Math.random() * 0.008 + 0.004; // より穏やか
+        this.maxDistance = 135;
+        this.id = `${Math.min(particle1.id, particle2.id)}-${Math.max(particle1.id, particle2.id)}`;
+        
+        this.isGlowing = false;
+        this.glowStartTime = 0;
+        this.glowIntensity = 0;
+      }
+      
+      update() {
+        this.phase += this.pulseSpeed;
+        
+        if (this.isGlowing) {
+          const elapsed = Date.now() - this.glowStartTime;
+          const progress = elapsed / 2500; // より長い発光時間
+          
+          if (progress >= 1) {
+            this.isGlowing = false;
+            this.glowIntensity = 0;
+          } else {
+            this.glowIntensity = Math.sin(progress * Math.PI) * 0.35; // より控えめ
+          }
+        }
+      }
+      
+      startGlow() {
+        if (!this.isGlowing) {
+          this.isGlowing = true;
+          this.glowStartTime = Date.now();
+        }
+      }
+      
+      getDistance() {
+        const dx = this.p1.x - this.p2.x;
+        const dy = this.p1.y - this.p2.y;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+      
+      getAlpha() {
+        const distance = this.getDistance();
+        if (distance > this.maxDistance) return 0;
+        
+        const distanceAlpha = (this.maxDistance - distance) / this.maxDistance;
+        const pulseAlpha = Math.sin(this.phase) * 0.15 + 0.85; // より安定
+        const lifeAlpha = (this.p1.life + this.p2.life) / 2;
+        
+        let convergenceAlpha = 1;
+        if (arguments[1] === 'convergence') {
+          const elapsed = Date.now() - arguments[2];
+          const progress = Math.min(elapsed / arguments[3].convergence, 1);
+          convergenceAlpha = Math.pow(1 - progress, 1.3);
+        }
+        
+        const baseAlpha = distanceAlpha * pulseAlpha * lifeAlpha * convergenceAlpha * 0.18;
+        return baseAlpha + this.glowIntensity;
+      }
+      
+      draw(ctx) {
+        const alpha = this.getAlpha();
+        if (alpha <= 0) return;
+        
+        const avgHue = (this.p1.hue + this.p2.hue) / 2;
+        let lineHue = avgHue;
+        let lineWidth = 0.7;
+        
+        if (this.isGlowing) {
+          lineHue = avgHue - 15;
+          lineWidth = 0.7 + this.glowIntensity * 0.4;
+        }
+        
+        ctx.strokeStyle = `hsla(${lineHue}, 45%, 72%, ${alpha})`;
+        ctx.lineWidth = lineWidth;
+        ctx.lineCap = 'round';
+        
+        if (this.isGlowing && this.glowIntensity > 0.15) {
+          ctx.save();
+          ctx.shadowColor = `hsla(${lineHue}, 55%, 80%, ${this.glowIntensity * 0.25})`;
+          ctx.shadowBlur = 1.5;
+        }
+        
+        ctx.beginPath();
+        ctx.moveTo(this.p1.x, this.p1.y);
+        ctx.lineTo(this.p2.x, this.p2.y);
+        ctx.stroke();
+        
+        if (this.isGlowing && this.glowIntensity > 0.15) {
+          ctx.restore();
+        }
+      }
+    }
+
+    // バッテリー監視システム（改善）
+    class BatteryManager {
+      constructor(openingSystem) {
+        this.openingSystem = openingSystem;
+        this.init();
+      }
+
+      async init() {
+        try {
+          if ('getBattery' in navigator) {
+            const battery = await navigator.getBattery();
+            
+            this.monitorBattery(battery);
+            
+            battery.addEventListener('levelchange', () => {
+              this.adjustForBatteryLevel(battery.level, battery.charging);
+            });
+            
+            battery.addEventListener('chargingchange', () => {
+              this.adjustForBatteryLevel(battery.level, battery.charging);
+            });
+          }
+        } catch (error) {
+          console.log('Battery API not supported');
+        }
+      }
+
+      monitorBattery(battery) {
+        this.adjustForBatteryLevel(battery.level, battery.charging);
+      }
+
+      adjustForBatteryLevel(level, isCharging) {
+        if (!isCharging && level < 0.15) {
+          // 15%以下で大幅削減
+          this.openingSystem.performanceManager.config.particles = Math.min(15, this.openingSystem.performanceManager.config.particles);
+          this.openingSystem.performanceManager.config.fps = 12;
+          this.openingSystem.performanceManager.config.glow = false;
+          this.openingSystem.initParticles();
+        } else if (!isCharging && level < 0.4) {
+          // 40%以下で中程度削減
+          this.openingSystem.performanceManager.config.particles = Math.min(40, this.openingSystem.performanceManager.config.particles);
+          this.openingSystem.performanceManager.config.fps = 24;
+        }
+      }
+    }
+
+    // 初期化
+    document.addEventListener('DOMContentLoaded', () => {
+      const openingSystem = new StructureDesignerOpening();
+      const batteryManager = new BatteryManager(openingSystem);
+      
+      // エラーハンドリング
+      window.addEventListener('error', (e) => {
+        console.error('Animation error:', e.error);
+        // フォールバック: 静的表示
+        openingSystem.showChatInterface();
+      });
+      
+      // パフォーマンス監視（改善）
+      let frameCount = 0;
+      let lastTime = performance.now();
+      let performanceWarningCount = 0;
+      
+      function monitorPerformance() {
+        frameCount++;
+        const currentTime = performance.now();
+        
+        if (currentTime - lastTime > 1000) {
+          const fps = frameCount;
+          frameCount = 0;
+          lastTime = currentTime;
+          
+          // FPSが低下した場合の段階的調整
+          if (fps < openingSystem.performanceManager.config.fps * 0.6) {
+            performanceWarningCount++;
+            
+            if (performanceWarningCount >= 3) {
+              openingSystem.performanceManager.config.particles = Math.floor(
+                openingSystem.performanceManager.config.particles * 0.7
+              );
+              openingSystem.initParticles();
+              performanceWarningCount = 0;
+            }
+          } else {
+            performanceWarningCount = 0;
+          }
+        }
+        
+        if (!openingSystem.isSkipped) {
+          requestAnimationFrame(monitorPerformance);
+        }
+      }
+      
+      monitorPerformance();
+    });
+  </script>
+</body>
+</html>

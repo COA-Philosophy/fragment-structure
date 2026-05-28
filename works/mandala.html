@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SILAS Mandala — 六段階の変容</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600&family=Cormorant:ital,wght@0,300;0,400;1,300&display=swap');
+
+  :root {
+    --sumi: #14110f;        /* 墨 */
+    --sumi-soft: #1c1916;
+    --gin: #d8d4cc;         /* 銀 */
+    --gin-dim: #8a857c;
+    --kin: #c9a24b;         /* 金 */
+    --kin-bright: #f0d896;
+    --washi: #ede8dd;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    background: var(--sumi);
+    overflow: hidden;
+  }
+
+  #stage {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* 段階名（縦書き・極小・控えめ） */
+  #stage-name {
+    position: fixed;
+    top: 50%;
+    right: 3.2rem;
+    transform: translateY(-50%);
+    writing-mode: vertical-rl;
+    font-family: 'Shippori Mincho', serif;
+    color: var(--gin-dim);
+    letter-spacing: 0.5em;
+    font-size: 0.95rem;
+    font-weight: 500;
+    user-select: none;
+    transition: color 1.2s ease;
+    text-shadow: 0 0 20px rgba(0,0,0,0.6);
+  }
+  #stage-name .romaji {
+    writing-mode: horizontal-tb;
+    font-family: 'Cormorant', serif;
+    font-style: italic;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    color: var(--gin-dim);
+    opacity: 0.55;
+    margin-top: 1.2em;
+    text-align: center;
+  }
+
+  /* コントロール（控えめな一本のスライダー） */
+  #control {
+    position: fixed;
+    left: 50%;
+    bottom: 2.8rem;
+    transform: translateX(-50%);
+    width: min(440px, 72vw);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.9rem;
+    user-select: none;
+  }
+
+  #control .caption {
+    font-family: 'Cormorant', serif;
+    font-style: italic;
+    font-size: 0.82rem;
+    letter-spacing: 0.22em;
+    color: var(--gin-dim);
+    opacity: 0.6;
+  }
+
+  /* トラック */
+  .track-wrap {
+    position: relative;
+    width: 100%;
+    height: 26px;
+    display: flex;
+    align-items: center;
+  }
+  .track-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(to right,
+      rgba(216,212,204,0.08),
+      rgba(216,212,204,0.32),
+      rgba(201,162,75,0.5));
+  }
+  /* 六つの節 */
+  .nodes {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .node {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: rgba(216,212,204,0.25);
+    transition: all 0.6s ease;
+  }
+  .node.passed { background: var(--gin); box-shadow: 0 0 8px rgba(216,212,204,0.4); }
+  .node.current {
+    background: var(--kin-bright);
+    box-shadow: 0 0 14px rgba(240,216,150,0.8);
+    transform: scale(1.8);
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    position: relative;
+    width: 100%;
+    height: 26px;
+    background: transparent;
+    cursor: pointer;
+    z-index: 2;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, var(--kin-bright), var(--kin));
+    box-shadow: 0 0 12px rgba(240,216,150,0.6), 0 0 4px rgba(0,0,0,0.5);
+    border: none;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, var(--kin-bright), var(--kin));
+    box-shadow: 0 0 12px rgba(240,216,150,0.6);
+    border: none;
+  }
+
+  /* 自動巡回トグル */
+  #auto {
+    font-family: 'Cormorant', serif;
+    font-style: italic;
+    font-size: 0.78rem;
+    letter-spacing: 0.2em;
+    color: var(--gin-dim);
+    background: none;
+    border: 1px solid rgba(216,212,204,0.18);
+    border-radius: 100px;
+    padding: 0.32rem 1.1rem;
+    cursor: pointer;
+    transition: all 0.4s ease;
+  }
+  #auto:hover { border-color: rgba(201,162,75,0.5); color: var(--kin); }
+  #auto.on { border-color: rgba(201,162,75,0.6); color: var(--kin-bright); }
+
+  @media (max-width: 600px) {
+    #stage-name { right: 1.4rem; font-size: 0.8rem; }
+    #control { bottom: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+
+  <div id="stage-name">
+    <span class="kanji">無</span>
+    <span class="romaji">MU</span>
+  </div>
+
+  <div id="control">
+    <div class="caption">対話の深まり</div>
+    <div class="track-wrap">
+      <div class="track-line"></div>
+      <div class="nodes">
+        <span class="node"></span><span class="node"></span><span class="node"></span>
+        <span class="node"></span><span class="node"></span><span class="node"></span>
+      </div>
+      <input type="range" id="slider" min="0" max="500" value="0">
+    </div>
+    <button id="auto">自ずから巡る</button>
+  </div>
+
+<script>
+(() => {
+  'use strict';
+
+  const canvas = document.getElementById('stage');
+  const ctx = canvas.getContext('2d');
+  const slider = document.getElementById('slider');
+  const autoBtn = document.getElementById('auto');
+  const nameKanji = document.querySelector('#stage-name .kanji');
+  const nameRomaji = document.querySelector('#stage-name .romaji');
+  const nodes = Array.from(document.querySelectorAll('.node'));
+
+  // ---- 段階定義 -------------------------------------------------
+  const STAGES = [
+    { kanji: '無',   romaji: 'MU' },
+    { kanji: '種',   romaji: 'TANE' },
+    { kanji: '芽',   romaji: 'ME' },
+    { kanji: '華',   romaji: 'HANA' },
+    { kanji: '満開', romaji: 'MANKAI' },
+    { kanji: '光',   romaji: 'HIKARI' },
+  ];
+
+  // ---- 色 -------------------------------------------------------
+  const COL = {
+    sumi: [20, 17, 15],
+    gin:  [216, 212, 204],
+    kin:  [201, 162, 75],
+    kinBright: [240, 216, 150],
+  };
+  const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+  const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+
+  const GOLDEN = Math.PI * (3 - Math.sqrt(5)); // 黄金角 137.5°
+
+  // ---- 状態 -----------------------------------------------------
+  let W, H, cx, cy, scale;
+  let stage = 0;          // 0..5 連続値（表示用に補間される実値）
+  let target = 0;         // スライダー/自動が指す目標値
+  let auto = false;
+  let t = 0;              // 時間（呼吸用）
+  let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cx = W / 2; cy = H / 2;
+    scale = Math.min(W, H) / 2;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---- 入力 -----------------------------------------------------
+  slider.addEventListener('input', () => {
+    target = (+slider.value) / 100;
+    if (auto) toggleAuto();
+  });
+  autoBtn.addEventListener('click', toggleAuto);
+  function toggleAuto() {
+    auto = !auto;
+    autoBtn.classList.toggle('on', auto);
+    autoBtn.textContent = auto ? '巡りを止める' : '自ずから巡る';
+  }
+
+  // ---- 公開フック：SILAS連動時はここに 0..5 を渡す ---------------
+  window.SILAS_setDepth = (v) => {
+    target = Math.max(0, Math.min(5, v));
+    if (auto) toggleAuto();
+    slider.value = target * 100;
+  };
+
+  // ---- 補助：段階ごとの寄与度（三角窓）--------------------------
+  // ある段階 i が stage 値に対してどれだけ「効いている」か 0..1
+  function weight(i, s) {
+    const d = Math.abs(s - i);
+    return Math.max(0, 1 - d); // 隣接段階と滑らかにクロスフェード
+  }
+
+  // イージング
+  const easeInOut = x => x < 0.5 ? 2*x*x : 1 - Math.pow(-2*x+2, 2)/2;
+
+  // ============================================================
+  //  各段階の描画
+  //  すべて中心基準。a = その段階の寄与(0..1)。breath = 呼吸係数。
+  // ============================================================
+
+  // 無：闇の中の一点が呼吸する
+  function drawMu(a, breath) {
+    const r = scale * 0.012 * (1 + breath * 0.6) * a;
+    const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, scale * 0.18 * a);
+    glow.addColorStop(0, rgba(COL.gin, 0.10 * a));
+    glow.addColorStop(1, rgba(COL.gin, 0));
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(cx, cy, scale * 0.18 * a, 0, Math.PI*2); ctx.fill();
+
+    ctx.fillStyle = rgba(mix(COL.gin, COL.kinBright, breath), 0.5 * a);
+    ctx.beginPath(); ctx.arc(cx, cy, Math.max(0.6, r), 0, Math.PI*2); ctx.fill();
+  }
+
+  // 種：締まった円が結晶化、内に小さな核
+  function drawTane(a, breath) {
+    const R = scale * 0.07 * a * (1 + breath * 0.08);
+    ctx.lineWidth = 1.1;
+    ctx.strokeStyle = rgba(COL.gin, 0.55 * a);
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.stroke();
+
+    ctx.strokeStyle = rgba(COL.gin, 0.25 * a);
+    ctx.beginPath(); ctx.arc(cx, cy, R * 1.5, 0, Math.PI*2); ctx.stroke();
+
+    ctx.fillStyle = rgba(COL.kin, 0.6 * a);
+    ctx.beginPath(); ctx.arc(cx, cy, R * 0.32, 0, Math.PI*2); ctx.fill();
+  }
+
+  // 芽：中心から数本の線が対称に伸びる
+  function drawMe(a, breath) {
+    const n = 6;
+    const len = scale * 0.26 * easeInOut(a) * (1 + breath * 0.05);
+    ctx.lineCap = 'round';
+    for (let i = 0; i < n; i++) {
+      const ang = (i / n) * Math.PI * 2 - Math.PI / 2 + t * 0.05;
+      const x2 = cx + Math.cos(ang) * len;
+      const y2 = cy + Math.sin(ang) * len;
+      const grad = ctx.createLinearGradient(cx, cy, x2, y2);
+      grad.addColorStop(0, rgba(COL.gin, 0.6 * a));
+      grad.addColorStop(1, rgba(COL.gin, 0));
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x2, y2); ctx.stroke();
+      // 先端の小さな芽
+      ctx.fillStyle = rgba(COL.kin, 0.5 * a);
+      ctx.beginPath(); ctx.arc(x2, y2, 2.2 * a, 0, Math.PI*2); ctx.fill();
+    }
+  }
+
+  // 華：花弁が黄金角で時間差に開く
+  function drawHana(a, breath) {
+    const total = 80;
+    const open = easeInOut(a);
+    const count = Math.floor(total * open);
+    for (let i = 0; i < count; i++) {
+      // 時間差：内側から順に開く
+      const localOpen = Math.min(1, (open - i / total) * 4);
+      if (localOpen <= 0) continue;
+      const ang = i * GOLDEN + t * 0.04;
+      const dist = scale * 0.34 * Math.sqrt(i / total) * (1 + breath * 0.04);
+      const px = cx + Math.cos(ang) * dist;
+      const py = cy + Math.sin(ang) * dist;
+      const petal = scale * 0.022 * localOpen;
+      const hue = mix(COL.gin, COL.kin, i / total);
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(ang);
+      ctx.fillStyle = rgba(hue, 0.5 * a * localOpen);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, petal * 1.8, petal, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // 満開：華の密度を引き継ぎ、多重対称で結晶化した曼荼羅
+  // 層が外へ向かうほど弁数が増え、隙間を埋めて荘厳になる
+  function drawMankai(a, breath) {
+    const ease = easeInOut(a);
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(t * 0.025);
+
+    // --- 0) 下地：黄金角の密な微細弁（華の充実をそのまま土台に残す）---
+    const grains = 130;
+    for (let i = 0; i < grains; i++) {
+      const ang = i * GOLDEN - t * 0.02;
+      const dist = scale * 0.42 * Math.sqrt(i / grains) * (1 + breath * 0.03);
+      const px = Math.cos(ang) * dist;
+      const py = Math.sin(ang) * dist;
+      const petal = scale * 0.016 * ease;
+      const hue = mix(COL.gin, COL.kin, i / grains);
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(ang);
+      ctx.fillStyle = rgba(hue, 0.28 * a);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, petal * 1.7, petal, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // --- 1) 多重対称リング層（外ほど多弁で結晶化）---
+    const rings = [
+      { R: 0.17, sym: 8,  rot: 0,            petal: 0.034, col: COL.kinBright },
+      { R: 0.27, sym: 16, rot: Math.PI/16,   petal: 0.030, col: COL.kin },
+      { R: 0.37, sym: 24, rot: 0,            petal: 0.026, col: COL.kin },
+      { R: 0.47, sym: 32, rot: Math.PI/32,   petal: 0.022, col: mix(COL.gin, COL.kin, 0.6) },
+    ];
+
+    for (let L = 0; L < rings.length; L++) {
+      const ring = rings[L];
+      const R = scale * ring.R * (1 + breath * 0.04);
+      const layerA = a * (1 - L * 0.06);
+
+      // 骨格リング：極薄に沈める（主役ではなく秩序の補助線）
+      ctx.strokeStyle = rgba(ring.col, 0.10 * layerA);
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI*2); ctx.stroke();
+
+      // この層の弁を対称配置
+      for (let i = 0; i < ring.sym; i++) {
+        const ang = (i / ring.sym) * Math.PI * 2 + ring.rot + t * 0.025 * (L % 2 ? -1 : 1);
+        const px = Math.cos(ang) * R;
+        const py = Math.sin(ang) * R;
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(ang + Math.PI / 2);
+        const petal = scale * ring.petal * layerA;
+        const g = ctx.createRadialGradient(0, 0, 0, 0, 0, petal*2.2);
+        g.addColorStop(0, rgba(ring.col, 0.6 * layerA));
+        g.addColorStop(0.6, rgba(ring.col, 0.25 * layerA));
+        g.addColorStop(1, rgba(COL.kin, 0));
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, petal, petal * 2.1, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // 層と層の「あいだ」を埋める中間弁（スカスカ防止）
+      if (L < rings.length - 1) {
+        const midR = scale * ((ring.R + rings[L+1].R) / 2) * (1 + breath * 0.04);
+        const midSym = ring.sym; // 内側リングの対称に合わせる
+        for (let i = 0; i < midSym; i++) {
+          const ang = (i / midSym) * Math.PI * 2 + Math.PI / midSym + t * 0.02;
+          const px = Math.cos(ang) * midR;
+          const py = Math.sin(ang) * midR;
+          const dotR = scale * 0.006 * layerA;
+          ctx.fillStyle = rgba(COL.kinBright, 0.4 * layerA);
+          ctx.beginPath(); ctx.arc(px, py, dotR, 0, Math.PI*2); ctx.fill();
+        }
+      }
+    }
+
+    // --- 2) 中心の充実：強い金の核＋花弁状の冠 ---
+    const coreR = scale * 0.11 * (1 + breath * 0.06);
+    const cg = ctx.createRadialGradient(0,0,0,0,0, coreR);
+    cg.addColorStop(0, rgba(COL.kinBright, 0.95 * a));
+    cg.addColorStop(0.4, rgba(COL.kinBright, 0.6 * a));
+    cg.addColorStop(1, rgba(COL.kin, 0));
+    ctx.fillStyle = cg;
+    ctx.beginPath(); ctx.arc(0,0, coreR, 0, Math.PI*2); ctx.fill();
+
+    // 核を囲む小花弁の冠
+    const crown = 12;
+    for (let i = 0; i < crown; i++) {
+      const ang = (i / crown) * Math.PI * 2 + t * 0.04;
+      const px = Math.cos(ang) * coreR * 0.85;
+      const py = Math.sin(ang) * coreR * 0.85;
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(ang + Math.PI/2);
+      const petal = scale * 0.028 * a;
+      const g = ctx.createRadialGradient(0,0,0,0,0,petal*1.5);
+      g.addColorStop(0, rgba(COL.kinBright, 0.7 * a));
+      g.addColorStop(1, rgba(COL.kin, 0));
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, petal*0.5, petal, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // 中心の白い一点（華と呼応）
+    ctx.fillStyle = rgba(COL.kinBright, 0.9 * a);
+    ctx.beginPath(); ctx.arc(0, 0, scale*0.012, 0, Math.PI*2); ctx.fill();
+
+    ctx.restore();
+  }
+
+  // 光：収束 → 溢れる の二段構え
+  // a の前半(0..0.5)で全体が中心へ吸い込まれ、後半(0.5..1)で光が溢れる
+  function drawHikari(a, breath, prevFieldAlpha) {
+    const phase = a; // 0..1
+    if (phase < 0.55) {
+      // 収束フェーズ：満開の残像を中心へ引き込む（縮small）
+      // （満開側で scale 補正をかけるのでここでは中心の凝集光のみ）
+      const k = phase / 0.55;
+      const r = scale * (0.1 * (1 - k) + 0.015);
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, scale * 0.3 * (1 - k*0.5));
+      g.addColorStop(0, rgba(COL.kinBright, 0.7 * k));
+      g.addColorStop(0.4, rgba(COL.kin, 0.3 * k));
+      g.addColorStop(1, rgba(COL.kin, 0));
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(cx, cy, scale * 0.3, 0, Math.PI*2); ctx.fill();
+
+      ctx.fillStyle = rgba(COL.kinBright, 0.9 * k);
+      ctx.beginPath(); ctx.arc(cx, cy, Math.max(1, r), 0, Math.PI*2); ctx.fill();
+    } else {
+      // 溢れフェーズ：中心から光が広がる（満開を満たしきらない手前で止める）
+      const k = (phase - 0.55) / 0.45; // 0..1
+      const ek = easeInOut(k);
+      const maxR = Math.hypot(W, H) * 0.42; // 画面を染めきらない控えめな広がり
+      const r = scale * 0.02 + maxR * ek;
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, rgba(COL.kinBright, 0.82));
+      g.addColorStop(0.12, rgba(COL.kinBright, 0.55));
+      g.addColorStop(0.4, rgba(COL.kin, 0.22 * (1 - ek*0.4)));
+      g.addColorStop(1, rgba(COL.kin, 0));
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill();
+
+      // 放射状の光条（ごく控えめ）
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.globalCompositeOperation = 'lighter';
+      const rays = 16;
+      for (let i = 0; i < rays; i++) {
+        const ang = (i / rays) * Math.PI * 2 + t * 0.02;
+        const rg = ctx.createLinearGradient(0,0, Math.cos(ang)*maxR, Math.sin(ang)*maxR);
+        rg.addColorStop(0, rgba(COL.kinBright, 0.10 * ek));
+        rg.addColorStop(1, rgba(COL.kin, 0));
+        ctx.strokeStyle = rg;
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0,0);
+        ctx.lineTo(Math.cos(ang)*maxR, Math.sin(ang)*maxR);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // 光の只中に浮かぶ幾何：回転する多重多角形（構造の顕現）
+      drawSacredGeometry(ek);
+    }
+  }
+
+  // 光の中に構造が浮かび上がる：回転する多重多角形が星形を織る
+  function drawSacredGeometry(amt) {
+    if (amt <= 0) return;
+    const base = scale * 0.34 * (0.7 + amt * 0.3);
+
+    // 描く多角形の定義：辺数・相対サイズ・回転方向・速度
+    const polys = [
+      { sides: 3,  r: 1.00, dir:  1, sp: 0.10 },
+      { sides: 3,  r: 1.00, dir: -1, sp: 0.10 }, // 逆向き三角＝六芒星
+      { sides: 6,  r: 0.78, dir: -1, sp: 0.07 },
+      { sides: 6,  r: 0.78, dir:  1, sp: 0.07 }, // 重ね六角＝十二星
+      { sides: 12, r: 0.55, dir:  1, sp: 0.05 },
+      { sides: 4,  r: 0.40, dir: -1, sp: 0.13 },
+    ];
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineJoin = 'round';
+
+    for (const p of polys) {
+      const rot = t * p.sp * p.dir;
+      const R = base * p.r;
+      // 線の色：内側ほど明るい金、外ほど淡く
+      const lum = mix(COL.kinBright, COL.kin, 1 - p.r);
+      ctx.strokeStyle = rgba(lum, 0.32 * amt);
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      for (let i = 0; i <= p.sides; i++) {
+        const ang = (i / p.sides) * Math.PI * 2 + rot - Math.PI / 2;
+        const x = Math.cos(ang) * R;
+        const y = Math.sin(ang) * R;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // 頂点に小さな光点
+      for (let i = 0; i < p.sides; i++) {
+        const ang = (i / p.sides) * Math.PI * 2 + rot - Math.PI / 2;
+        const x = Math.cos(ang) * R;
+        const y = Math.sin(ang) * R;
+        ctx.fillStyle = rgba(COL.kinBright, 0.5 * amt);
+        ctx.beginPath(); ctx.arc(x, y, 1.6, 0, Math.PI*2); ctx.fill();
+      }
+    }
+
+    // 幾何を結ぶ同心円（極薄の骨格）
+    [0.40, 0.78, 1.0].forEach(rr => {
+      ctx.strokeStyle = rgba(COL.kin, 0.10 * amt);
+      ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.arc(0, 0, base * rr, 0, Math.PI*2); ctx.stroke();
+    });
+
+    ctx.restore();
+  }
+
+  // ---- 背景（呼吸する微光と粒子）-------------------------------
+  const dust = Array.from({length: 60}, () => ({
+    x: Math.random(), y: Math.random(),
+    r: Math.random() * 1.2 + 0.3,
+    sp: Math.random() * 0.0003 + 0.0001,
+    ph: Math.random() * Math.PI * 2,
+  }));
+
+  function drawBackground(breath, lightAmt) {
+    // 中央のごく淡いビネット（深さ）
+    const vg = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W,H)*0.7);
+    vg.addColorStop(0, rgba(mix(COL.sumi, [40,34,28], 0.5 + lightAmt*0.5), 1));
+    vg.addColorStop(1, rgba(COL.sumi, 1));
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, W, H);
+
+    // 漂う塵（銀の粒）
+    for (const d of dust) {
+      const yy = (d.y + t * d.sp) % 1;
+      const x = d.x * W;
+      const y = yy * H;
+      const tw = 0.3 + 0.5 * (Math.sin(t * 0.5 + d.ph) * 0.5 + 0.5);
+      ctx.fillStyle = rgba(mix(COL.gin, COL.kinBright, lightAmt), 0.18 * tw);
+      ctx.beginPath(); ctx.arc(x, y, d.r, 0, Math.PI*2); ctx.fill();
+    }
+  }
+
+  // ---- UI更新 ---------------------------------------------------
+  let lastNameIdx = -1;
+  function updateName(s) {
+    const idx = Math.round(s);
+    nodes.forEach((nd, i) => {
+      nd.classList.toggle('passed', i < idx);
+      nd.classList.toggle('current', i === idx);
+    });
+    if (idx !== lastNameIdx) {
+      lastNameIdx = idx;
+      const st = STAGES[Math.max(0, Math.min(5, idx))];
+      nameKanji.textContent = st.kanji;
+      nameRomaji.textContent = st.romaji;
+      nameKanji.parentElement.style.color =
+        idx >= 5 ? 'var(--kin-bright)' : idx >= 3 ? 'var(--kin)' : 'var(--gin-dim)';
+    }
+  }
+
+  // ---- メインループ --------------------------------------------
+  function frame() {
+    t += 0.016;
+
+    // 自動巡回：無↔光をゆっくり往復
+    if (auto) {
+      const period = 26; // 秒
+      const tri = (Math.sin(t / period * Math.PI * 2 - Math.PI/2) * 0.5 + 0.5);
+      target = tri * 5;
+      slider.value = target * 100;
+    }
+
+    // stage を target へ滑らかに追従
+    stage += (target - stage) * 0.045;
+
+    // 呼吸係数（全体にかかるゆっくりした脈動）
+    const breath = Math.sin(t * 0.6) * 0.5 + 0.5;
+
+    // 光の進行度（段階5の寄与）= 背景を温める量
+    const lightAmt = Math.max(0, Math.min(1, stage - 4));
+
+    // クリア＆背景
+    ctx.globalCompositeOperation = 'source-over';
+    drawBackground(breath, lightAmt);
+
+    // 各段階を寄与度で重ねて描く（=連続モーフ）
+    ctx.globalCompositeOperation = 'lighter';
+
+    const wMu = weight(0, stage);
+    const wTane = weight(1, stage);
+    const wMe = weight(2, stage);
+    const wHana = weight(3, stage);
+    const wMankai = weight(4, stage);
+    const wHikari = weight(5, stage);
+
+    if (wMu > 0) drawMu(wMu, breath);
+    if (wTane > 0) drawTane(wTane, breath);
+    if (wMe > 0) drawMe(wMe, breath);
+    if (wHana > 0) drawHana(wHana, breath);
+
+    // 満開：光フェーズに入ったら中心へ収縮させる演出
+    if (wMankai > 0) {
+      const shrink = lightAmt > 0 ? (1 - easeInOut(Math.min(1, lightAmt/0.55))) : 1;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(shrink, shrink);
+      ctx.translate(-cx, -cy);
+      drawMankai(wMankai, breath);
+      ctx.restore();
+    }
+
+    if (wHikari > 0) drawHikari(wHikari, breath);
+
+    ctx.globalCompositeOperation = 'source-over';
+
+    updateName(stage);
+    requestAnimationFrame(frame);
+  }
+  frame();
+
+})();
+</script>
+</body>
+</html>

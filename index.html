@@ -157,7 +157,7 @@
     background-size: cover; background-position: center;
     transition: opacity 0.8s ease;
   }
-  .tile:hover .frame .still { opacity: 0; }
+  .tile.playing .frame .still { opacity: 0; }
 
   .frame .live {
     position: absolute; inset: 0;
@@ -374,6 +374,29 @@
 
   let order = 0; // フェードインの通し遅延
 
+  // 画面に入ったタイルだけ自動再生し、外れたら破棄（数が増えても軽い）
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const tile = entry.target;
+      if (entry.isIntersecting) {
+        if (tile._live.childElementCount === 0) {
+          const f = document.createElement('iframe');
+          f.setAttribute('scrolling', 'no');
+          f.setAttribute('tabindex', '-1');
+          f.setAttribute('loading', 'lazy');
+          f.src = tile._file;
+          tile._live.appendChild(f);
+        }
+        tile.classList.add('playing');
+      } else {
+        tile.classList.remove('playing');
+        setTimeout(() => {
+          if (!tile.classList.contains('playing')) tile._live.innerHTML = '';
+        }, 600);
+      }
+    });
+  }, { threshold: 0.2, rootMargin: '120px 0px' });
+
   function makeTile(w) {
     const tile = document.createElement('article');
     tile.className = 'tile';
@@ -399,28 +422,11 @@
     tile.appendChild(frame);
     tile.appendChild(caption);
 
-    // ホバーでライブプレビュー（iframe生成 → 離脱で破棄）
-    let hoverTimer = null;
-    tile.addEventListener('mouseenter', () => {
-      hoverTimer = setTimeout(() => {
-        if (live.childElementCount === 0) {
-          const f = document.createElement('iframe');
-          f.setAttribute('scrolling', 'no');
-          f.setAttribute('tabindex', '-1');
-          f.setAttribute('loading', 'lazy');
-          f.src = w.file;
-          live.appendChild(f);
-        }
-        tile.classList.add('playing');
-      }, 120);
-    });
-    tile.addEventListener('mouseleave', () => {
-      clearTimeout(hoverTimer);
-      tile.classList.remove('playing');
-      setTimeout(() => {
-        if (!tile.classList.contains('playing')) live.innerHTML = '';
-      }, 800);
-    });
+    // ビューポートに入ったら自動再生（IntersectionObserverが制御）
+    tile._live = live;
+    tile._file = w.file;
+    io.observe(tile);
+
     tile.addEventListener('click', () => openViewer(w.file));
     return tile;
   }

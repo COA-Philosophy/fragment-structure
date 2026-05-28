@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Structure Designer - 禅 | 瞑想的な線画アニメーション</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #fdfcfa; /* わずかに暖かみのある白 */
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* SVGコンテナ */
+        .logo-container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 各線のスタイル */
+        path {
+            fill: none !important;
+            stroke: #2a2a2a !important; /* 墨のような色 */
+            stroke-width: 5 !important; /* より繊細な線 */
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0;
+        }
+
+        /* 白い塗りつぶしの要素は除外 */
+        .cls-1 {
+            fill: #fff !important;
+            stroke: none !important;
+        }
+
+        /* 中心の円 */
+        circle {
+            stroke: #2a2a2a !important; /* 墨のような色 */
+            stroke-width: 5 !important; /* より繊細な線 */
+            opacity: 0;
+        }
+        
+        /* 白い円は除外 */
+        circle.cls-1 {
+            fill: #fff !important;
+            stroke: none !important;
+            opacity: 1 !important;
+        }
+
+        /* 描画アニメーション */
+        .draw-animation {
+            animation: drawPath var(--duration) var(--ease) forwards;
+            animation-delay: var(--delay);
+            /* わずかな揺らぎ */
+            transform-origin: center;
+            animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        @keyframes drawPath {
+            0% {
+                stroke-dashoffset: var(--length);
+                opacity: 0;
+            }
+            5% {
+                opacity: 0.2; /* よりゆっくりと現れる */
+            }
+            10% {
+                opacity: 0.6;
+            }
+            90% {
+                opacity: 0.8;
+            }
+            100% {
+                stroke-dashoffset: 0;
+                opacity: 0.7; /* 完成後も控えめな濃さ */
+            }
+        }
+
+        /* フェードアニメーション（円用） */
+        .fade-animation {
+            animation: fadeIn var(--duration) ease-out forwards;
+            animation-delay: var(--delay);
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            100% {
+                opacity: 0.7; /* 控えめに */
+                transform: scale(1);
+            }
+        }
+
+        /* 消えるアニメーション */
+        .fade-out {
+            animation: fadeOut 8s ease-out forwards;
+        }
+
+        @keyframes fadeOut {
+            0% {
+                opacity: 0.8;
+            }
+            80% {
+                opacity: 0.2;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* 会社名 */
+        .company-name {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 13px;
+            letter-spacing: 10px;
+            color: #6a6a6a; /* より柔らかい色 */
+            opacity: 0;
+            font-weight: 300;
+            text-transform: uppercase;
+        }
+
+        .company-name.show {
+            animation: fadeText 20s ease-out;
+        }
+
+        @keyframes fadeText {
+            0%, 100% {
+                opacity: 0;
+            }
+            20%, 90% {
+                opacity: 0.2; /* より長く表示 */
+            }
+        }
+
+        /* 呼吸ガイド */
+        .breath-guide {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #8a8a8a; /* より柔らかい色 */
+            letter-spacing: 3px;
+            opacity: 0;
+            font-weight: 300;
+        }
+
+        .breath-guide.active {
+            animation: breathGuide 20s ease-out;
+        }
+
+        @keyframes breathGuide {
+            0%, 100% {
+                opacity: 0;
+            }
+            10%, 80% {
+                opacity: 0.3; /* より長く表示 */
+            }
+        }
+
+        /* 背景の微細なパルス */
+        .pulse-bg {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, 
+                transparent 30%, 
+                rgba(42,42,42,0.01) 50%, 
+                transparent 70%);
+            opacity: 0;
+        }
+
+        .pulse-bg.active {
+            animation: subtlePulse 20s ease-out;
+        }
+
+        @keyframes subtlePulse {
+            0%, 100% {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.15; /* より控えめに */
+            }
+        }
+
+        /* コントロールヒント */
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: #b0b0b0;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .controls:hover {
+            opacity: 0.6;
+        }
+
+        /* エラーメッセージ */
+        .error-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #6a6a6a;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 背景パルス -->
+        <div class="pulse-bg" id="pulseBg"></div>
+
+        <!-- 呼吸ガイド -->
+        <div class="breath-guide" id="breathGuide">一筆一筆、心を込めて</div>
+
+        <!-- ロゴコンテナ -->
+        <div class="logo-container" id="logoContainer">
+            <!-- SVGがここに読み込まれます -->
+        </div>
+
+        <!-- 会社名 -->
+        <div class="company-name" id="companyName">structure designer</div>
+
+        <!-- コントロール -->
+        <div class="controls">クリックで一時停止 / スペースキーで再開 / 禅僧の筆のように</div>
+
+        <!-- エラーメッセージ -->
+        <div class="error-message" id="errorMessage">
+            <p>SVGファイルが読み込めません</p>
+            <small>ファイル名を確認してください</small>
+        </div>
+    </div>
+
+    <script>
+        // 禅アニメーション - 瞑想的な線画エフェクト
+        // 各線が禅僧の筆のようにゆっくりと描かれ、
+        // ランダムな間と緩急をつけながら螺旋が完成していきます
+        
+        // SVGファイルを読み込む
+        async function loadSVG() {
+            try {
+                // SVGを直接埋め込む
+                const svgContent = `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2834.65 2834.65"><defs><style>.cls-1{fill:#fff;}</style></defs><g id="circle_02"><circle class="cls-1" cx="1396.9" cy="1305.42" r="35.55"/><path d="M1396.9,1344.98c-21.81,0-39.55-17.74-39.55-39.55s17.74-39.55,39.55-39.55,39.55,17.74,39.55,39.55-17.74,39.55-39.55,39.55ZM1396.9,1273.87c-17.4,0-31.55,14.15-31.55,31.55s14.15,31.55,31.55,31.55,31.55-14.15,31.55-31.55-14.15-31.55-31.55-31.55Z"/></g><g id="line_25"><path d="M1575.87,1844.9c14.52-12.1,24.03-24.12,27.58-33.22,2.27-5.83,1.97-10.56-.92-14.45-6.47-7.7-21,2.16-48.2,21.71-33.84,24.33-84.98,61.1-156.51,78.11l-1.85-7.78c69.99-16.64,120.36-52.86,153.69-76.82,28.66-20.6,47.59-34.21,59.1-20.24l.11.14c3.21,4.27,6.17,11.59,2.03,22.23-.21.53-.64,2.3-.88,2.84"/></g><g id="line_24"><path d="M1398.2,1854.42l-2.62-7.56c4.93-1.71,9.73-3.09,14.37-4.43,9.04-2.61,18.4-5.32,29.1-10.52l.11-.05c36.99-16.67,86.91-45.35,107.94-68.33,24.08-25.58,43.39-37.17,60.79-36.51,20.69.81,35.42,19.15,51.01,38.57,1.32,1.64,2.65,3.3,4,4.97l-6.22,5.03c-1.36-1.68-2.7-3.35-4.02-5-15.04-18.74-28.03-34.92-45.08-35.59-14.73-.61-32.67,10.6-54.82,34.17l-.35.33c-19.62,21.19-72.22,52.61-109.91,69.61-11.3,5.49-20.97,8.29-30.32,10.99-4.75,1.37-9.24,2.67-13.98,4.31Z"/></g><g id="line_23"><path d="M1397.92,1809.6l-2.04-7.74c56.12-14.8,133.37-70.49,149.28-90.15,52.18-58.65,86.56-36.77,134.13-6.5,7.36,4.69,14.97,9.53,23.14,14.42l-4.11,6.87c-8.26-4.94-15.92-9.82-23.33-14.53-47.55-30.26-76.24-48.53-123.96,5.18l-.22.23c-19.43,22.36-95.23,77.01-152.89,92.22Z"/></g><g id="line_22"><path d="M1398.16,1761.89l-2.52-7.59c55.94-18.58,114.5-56.36,149.18-96.25,44.55-52.64,77.34-36.51,156.56,2.47,9.39,4.62,19.1,9.4,29.74,14.52l-3.47,7.21c-10.67-5.14-20.4-9.92-29.8-14.55-38.42-18.9-66.18-32.56-88.2-34.77-21.65-2.17-38.68,6.61-58.75,30.33-35.59,40.93-95.53,79.63-152.73,98.63Z"/></g><g id="line_21"><path d="M1396.64,1706.18l-1.69-7.82c32.42-6.99,70.94-24.97,103.06-48.1,30.38-21.88,50.16-44.73,51.62-59.63,3.53-36.02-5.75-52.93-19.8-78.52-6.73-12.26-14.36-26.16-21.98-44.78l7.4-3.03c7.45,18.19,14.97,31.88,21.59,43.96,14.23,25.93,24.52,44.67,20.75,83.15-1.7,17.39-22.23,41.81-54.9,65.34-33.46,24.09-72.11,42.11-106.05,49.43Z"/></g><g id="line_20"><path d="M1397.98,1651.15l-2.17-7.7c62.75-17.65,92.34-34.06,102.15-56.63,8.37-19.26,3.02-44.75-17.88-85.22l7.11-3.67c22.13,42.83,27.54,70.37,18.11,92.08-10.88,25.04-41.97,42.76-107.32,61.14Z"/></g><g id="line_19"><path d="M1396.8,1604.56l-1.45-7.87c33-6.09,52.72-16.15,58.6-29.89,4.21-9.83,1.4-22.35-8.33-37.21l6.69-4.38c11.29,17.24,14.32,32.29,9,44.74-7.1,16.59-28.19,27.91-64.5,34.61Z"/></g><g id="line_18"><path class="cls-1" d="M1399.83,1560.73c-.72-1.34-1.07-2.91-.91-4.54.43-4.35,4.31-7.53,8.66-7.09s7.53,4.31,7.09,8.66-4.31,7.53-8.66,7.09c-2.72-.27-4.98-1.89-6.19-4.12h0Z"/><path d="M1406.81,1568.9c-.39,0-.79-.02-1.19-.06-3.95-.39-7.43-2.71-9.31-6.21h0c-1.13-2.1-1.6-4.46-1.37-6.83.65-6.54,6.5-11.34,13.04-10.68,6.54.65,11.33,6.5,10.68,13.04-.61,6.14-5.81,10.74-11.85,10.74ZM1403.35,1558.83c.62,1.15,1.77,1.91,3.06,2.04,2.15.2,4.07-1.36,4.29-3.51s-1.36-4.07-3.51-4.29c-2.16-.23-4.07,1.36-4.29,3.51-.08.78.08,1.56.45,2.24h0Z"/></g><g id="line_17"><path d="M1748.1,1643.72c-41.03-21.76-70.28-31.45-93.79-39.24-24.32-8.06-41.89-13.88-56.18-28.97-8.36-8.82-21.6-43.35-35.62-79.91-11.7-30.5-23.59-53.62-31.14-71.42l5.73-5.58c8.98,19.65,16.98,32.69,32.87,74.14,12.51,32.63,26.7,69.61,33.96,77.27,12.91,13.62,28.81,18.9,52.89,26.88,22.53,7.47,53.39,17.69,95.02,39.77l-3.75,7.07Z"/></g><g id="line_16"><path d="M1768.55,1598.89c-64.46-15.23-105.89-26.52-137.68-54.77-19.96-17.74-61.02-90.41-68.22-155.9l-.06-.56c-1.65-17.36-7.82-34.2-17.84-48.74l6.59-4.54c10.79,15.66,17.44,33.81,19.22,52.49l.05.51c6.88,62.57,46.93,134.2,65.58,150.77,30.38,27,70.97,38.02,134.2,52.97l-1.84,7.79Z"/></g><g id="line_15"><path d="M1780.53,1563.69c-59.66-13.79-96.86-30.03-124.37-54.29-32.46-28.62-50.48-68.41-56.73-125.23-4.65-48.83-35.11-92.32-79.51-113.55l3.45-7.22c46.92,22.44,79.12,68.4,84.02,119.95,12.46,113.36,73.58,149.11,174.95,172.54l-1.8,7.79Z"/></g><g id="line_14"><path d="M1791.21,1523.74c-42.8-7.27-77.41-21.98-102.86-43.72-28.15-24.05-44.56-56.3-48.78-95.86v-.13c-6.97-93.69-86.07-167.08-180.1-167.08-6.08,0-12,1.09-17.59,3.24l-2.87-7.47c6.52-2.51,13.4-3.78,20.47-3.78,47.84,0,93.49,18.01,128.54,50.71,34.86,32.52,56,76.45,59.52,123.72,9.7,90.79,84.21,122.16,145.02,132.48l-1.34,7.89Z"/></g><g id="line_13"><path d="M1795.14,1483.28l-1.46-.38c-40.35-10.54-101.32-26.47-115.01-110.25l-.03-.19c-12.67-111.46-106.89-195.5-219.17-195.5-33.61,0-64.89,19.4-79.71,49.42l-7.17-3.54c16.15-32.73,50.26-53.88,86.89-53.88,56.42,0,110.65,20.81,152.68,58.6,41.68,37.48,68.11,88.58,74.43,143.9,12.88,78.56,68.5,93.09,109.12,103.71l.66.17"/></g><g id="line_12"><path d="M1799.86,1435.56c.06.01.12.03.18.04"/><path d="M1799.5,1443.64c-19-4.11-37-12.27-50.77-23.25-17.1-13.64-27.51-31.1-30.13-50.49v-.11c-14.13-132.74-125.52-232.84-259.13-232.84-70.9,0-128.57,57.69-128.57,128.59,0,9.31,2.33,17.69,6.94,24.91l-6.75,4.3c-5.44-8.52-8.19-18.35-8.19-29.21,0-75.32,61.27-136.59,136.57-136.59,66.64,0,130.59,24.68,180.09,69.48,49.12,44.47,80.01,105,86.98,170.46,4.84,35.74,38.78,58.55,72.4,66.47.31.08.86.21,1.17.25"/></g><g id="line_11"><path d="M1801.18,1401.28c-14.88-1.48-37.23-12.08-46.18-59.62-1.35-7.19-3-14.41-4.88-21.48l3.62-.96-3.62.96c-35.01-131.47-154.47-223.29-290.51-223.29-92.95,0-168.57,75.63-168.57,168.59,0,53.74,45.15,87,86.99,87,6.09.11,36.56-.84,44.34-27.69l7.68,2.23c-7.29,25.15-32.62,33.75-52.08,33.47-45.62,0-94.93-36.32-94.93-95,0-97.37,79.21-176.59,176.57-176.59,139.66,0,262.3,94.26,298.25,229.23,1.93,7.26,3.62,14.68,5.01,22.06,6.05,32.11,19.57,50.75,38.31,53.06"/></g><g id="line_10"><path d="M1391.29,1266.27c5.28-3.09,11.33-4.73,17.67-4.73,14.34,0,27.9,5.54,38.18,15.61,10.48,10.26,16.25,24.05,16.25,38.82,0,47.18-38.39,85.57-85.59,85.57-34.62,0-69.07-14.03-94.52-38.48-26.74-25.69-41.47-60.32-41.47-97.52,0-58.63,22.9-113.53,64.47-154.6,41.13-40.62,95.5-62.99,153.1-62.99,93.89,0,181.92,36.56,247.88,102.93,31.93,32.14,56.99,69.54,74.49,111.19,18.06,42.98,27.22,88.55,27.22,135.47,0,173.73-75.01,296.46-137.94,368.83-28.89,33.22-61.14,62.9-96.26,88.59-19.04,14.86-40.61,27.7-52.99,34.67-9,5.06-18.2,9.92-27.42,14.49-4.73,2.36-9.48,4.64-14.23,6.83-30.93,14.34-60.91,25.01-82.72,29.08l-.73-3.93-.93-3.89c53.73-12.84,118.26-42.23,179.87-88.19,144.26-105.83,228.44-273.03,225.32-450.72-2.28-186.41-154.62-337.34-341.56-337.34-115.56,0-209.57,94.02-209.57,209.59,0,70.58,57.41,128,127.99,128,42.78,0,77.59-34.8,77.59-77.57,0-12.6-4.91-24.36-13.84-33.1-7.56-7.4-17.19-11.93-27.53-13.05"/></g><g id="line_09"><path d="M1349.58,1077.69c12.63-18.27,27.41-34.79,43.95-49.1l5.24,6.05c-11.93,10.33-22.92,21.84-32.81,34.36"/></g><g id="line_08"><path d="M1271.88,1155.05c8.03-34.13,23.06-68.04,43.53-98.14,20.8-30.61,47.43-57.56,76.99-77.96l4.54,6.58c-51.85,35.77-91.32,88.93-110.82,148.4"/></g><g id="line_07"><path d="M1242.7,1274.06c-11.66-17.82-17.83-38.52-17.83-59.86,0-112.05,67.59-225.72,168.19-282.85l3.95,6.96c-98.18,55.76-164.14,166.64-164.14,275.9,0,14.69,3.15,29.06,9.21,42.25"/></g><g id="line_06"><path d="M1271.22,1349.76c-52.48-24.58-86.35-77.7-86.35-135.55,0-66.62,20.03-133.27,57.94-192.76,37.77-59.27,89.85-106.1,150.63-135.45l3.48,7.2c-122.05,58.92-204.05,187.92-204.05,321,0,49.63,26.33,95.58,68.26,121.08"/></g><g id="line_05"><path d="M1356.78,1399.81c-6.76,2.64-14.26,3.98-22.32,3.98-104.54,0-189.59-85.05-189.59-189.59,0-77.99,23.88-154.91,69.07-222.42,22.02-32.9,48.42-62.38,78.48-87.63,30.75-25.83,64.69-46.68,100.87-61.98l3.12,7.37c-145.67,61.59-243.54,208.14-243.54,364.66,0,100.13,81.46,181.59,181.59,181.59,1.51,0,2.99-.05,4.45-.16"/></g><g id="line_04"><path d="M1422.13,1389.19c-16.41,34.22-49.1,54.6-87.67,54.6-126.59,0-229.59-102.99-229.59-229.59,0-44.85,7.12-89.58,21.18-132.95,13.7-42.28,33.68-82.4,59.4-119.25,25.68-36.81,56.46-69.45,91.46-97.02,35.83-28.22,75.33-50.51,117.41-66.25l2.8,7.49c-167.36,62.59-284.24,230.36-284.24,407.98,0,122.18,99.4,221.59,221.59,221.59,31.57,0,58.83-14.86,75.04-40.31"/></g><g id="line_03"><path d="M1463.47,1316.3c5.61,9.07,8.56,19.39,8.56,29.9,0,67.63-51.46,137.59-137.57,137.59-148.65,0-269.59-120.94-269.59-269.59,0-50.44,8.09-100.52,24.06-148.85,15.56-47.12,38.26-91.6,67.47-132.21,29.18-40.57,64.12-76.27,103.87-106.1,40.69-30.55,85.53-54.27,133.28-70.51l2.58,7.57c-190.32,64.73-323.25,249.82-323.25,450.1,0,144.24,117.35,261.59,261.59,261.59,81.11,0,129.57-65.89,129.57-129.59,0-4.75-.75-9.56-2.17-14.18"/></g><g id="line_02"><path d="M1378.3,1270.54c1.48-2.24,3.12-4.34,4.92-6.27,5.99-6.42,16.55-14.07,32.81-14.07,26.56,0,51.03,10.26,68.93,28.89,17.2,17.9,27.07,42.36,27.07,67.11,0,87.29-66.42,177.59-177.57,177.59-170.71,0-309.59-138.88-309.59-309.59,0-56.12,9.09-111.62,27.02-164.96,17.48-52.01,42.97-100.89,75.77-145.26,32.77-44.33,72-83.06,116.61-115.11,45.68-32.81,96-57.88,149.56-74.5l2.37,7.64c-213.93,66.38-363.34,268.77-363.34,492.18,0,166.3,135.29,301.59,301.59,301.59,106.14,0,169.57-86.23,169.57-169.59,0-22.7-9.05-45.14-24.83-61.56-16.38-17.05-38.8-26.44-63.14-26.44-10.35,0-17.88,3.73-23.03,7.85"/></g><g id="line_01"><path d="M1404.36,1344.27c-5.73,3.91-12.46,6-19.49,5.93h-.17c-14.09,0-28.11-5.9-38.44-16.2-10.19-10.17-15.8-23.74-15.79-38.22,0-21.35,8.57-42.79,23.53-58.81,16.12-17.26,38.15-26.76,62.04-26.76h.04c37.52,0,72.23,14.62,97.75,41.18,24.29,25.28,38.22,59.84,38.22,94.82,0,54.6-21.49,109.11-58.96,149.56-40.63,43.87-96.97,68.03-158.62,68.03-94.75,0-183.33-37.38-249.42-105.25-31.5-32.35-56.24-69.85-73.52-111.46-17.68-42.55-26.64-87.26-26.64-132.87,0-63.8,10.51-126.25,31.23-185.62,19.91-57.06,48.9-110.35,86.16-158.38,36.6-47.19,80.28-88.16,129.82-121.79,49.93-33.89,104.51-59.43,162.22-75.9l2.2,7.69c-237.65,67.81-403.62,287.4-403.62,534,0,188.35,153.24,341.59,341.59,341.59,131.18,0,209.57-106.56,209.57-209.59,0-32.93-13.12-65.47-35.99-89.28-23.99-24.97-56.66-38.72-91.98-38.72h-.04c-21.65,0-41.6,8.6-56.19,24.22-13.59,14.55-21.38,34-21.38,53.35,0,12.34,4.77,23.91,13.44,32.56,8.21,8.19,19.11,13.13,30.25,13.79"/></g><g id="circle_01"><path d="M1396.9,1319.34c-7.67,0-13.92-6.24-13.92-13.92s6.24-13.92,13.92-13.92,13.92,6.24,13.92,13.92-6.24,13.92-13.92,13.92ZM1396.9,1303.51c-1.06,0-1.92.86-1.92,1.92s.86,1.92,1.92,1.92,1.92-.86,1.92-1.92-.86-1.92-1.92-1.92Z"/></g></svg>`;
+                
+                document.getElementById('logoContainer').innerHTML = svgContent;
+                
+                // SVGが読み込まれたらアニメーション開始
+                initAnimation();
+            } catch (error) {
+                console.error('SVG読み込みエラー:', error);
+                document.getElementById('errorMessage').style.display = 'block';
+            }
+        }
+
+        // アニメーションの初期化
+        function initAnimation() {
+            // SVG内のすべてのg要素内のpath要素を取得（線のみ）
+            const linePaths = document.querySelectorAll('g[id^="line_"] path');
+            // 円要素を取得（白い塗りつぶしの円は除外）
+            const circles = document.querySelectorAll('g[id^="circle_"] path');
+            const allElements = [...linePaths, ...circles];
+            
+            const breathGuide = document.getElementById('breathGuide');
+            const companyName = document.getElementById('companyName');
+            const pulseBg = document.getElementById('pulseBg');
+            
+            if (allElements.length === 0) {
+                console.error('アニメーション要素が見つかりません');
+                return;
+            }
+
+            console.log(`アニメーション要素数: ${allElements.length}`);
+
+            // アニメーションパターン
+            const patterns = [
+                'random',        // ランダムに
+                'sequential',    // 順番に
+                'meditation',    // 瞑想的（大きな間を持って）
+                'centerOut',     // 中心から外へ
+                'outToCenter',   // 外から中心へ
+                'spiral'         // 螺旋状に
+            ];
+            
+            let currentPattern = 0;
+            let animationTimeout;
+            let isPaused = false;
+
+            function animateElements() {
+                if (isPaused) return;
+
+                // 前のアニメーションをクリア
+                allElements.forEach(element => {
+                    element.classList.remove('draw-animation', 'fade-animation', 'fade-out');
+                    element.style.opacity = 0;
+                });
+
+                // UI要素をリセット
+                breathGuide.classList.remove('active');
+                companyName.classList.remove('show');
+                pulseBg.classList.remove('active');
+
+                // パターンに応じて要素を並べ替え
+                const pattern = patterns[currentPattern];
+                let orderedElements = Array.from(allElements);
+                
+                // パターンに応じて呼吸ガイドのテキストを変更
+                const breathTexts = {
+                    'random': ['無作為の美', '偶然の妙', '自然の理'],
+                    'sequential': ['順序の調和', '一歩一歩', '着実に'],
+                    'meditation': ['静寂の中で', '無心', '只管打坐'],
+                    'centerOut': ['内から外へ', '心を開いて', '広がる波紋'],
+                    'outToCenter': ['外から内へ', '内省', '中心へ還る'],
+                    'spiral': ['螺旋の流れ', '永遠の循環', '陰陽の調和']
+                };
+                const texts = breathTexts[pattern] || ['一筆一筆、心を込めて'];
+                const selectedText = texts[Math.floor(Math.random() * texts.length)];
+                breathGuide.textContent = selectedText;
+
+                switch (pattern) {
+                    case 'random':
+                        orderedElements.sort(() => Math.random() - 0.5);
+                        break;
+                    case 'meditation':
+                        // 瞑想的な順序（少ない要素をゆっくりと）
+                        const meditationCount = Math.min(8, orderedElements.length); // 最大8本の線
+                        const selectedElements = [];
+                        const usedIndices = new Set();
+                        
+                        // 重複しないようにランダムに選択
+                        while (selectedElements.length < meditationCount) {
+                            const randomIndex = Math.floor(Math.random() * orderedElements.length);
+                            if (!usedIndices.has(randomIndex)) {
+                                selectedElements.push(orderedElements[randomIndex]);
+                                usedIndices.add(randomIndex);
+                            }
+                        }
+                        orderedElements = selectedElements;
+                        break;
+                    case 'centerOut':
+                        // line番号で並べ替え（中心から外へ = 番号が小さい順）
+                        orderedElements.sort((a, b) => {
+                            const aNum = parseInt(a.parentElement.id.match(/line_(\d+)/)?.[1] || '99');
+                            const bNum = parseInt(b.parentElement.id.match(/line_(\d+)/)?.[1] || '99');
+                            return aNum - bNum;
+                        });
+                        break;
+                    case 'outToCenter':
+                        // 逆順（外から中心へ = 番号が大きい順）
+                        orderedElements.sort((a, b) => {
+                            const aNum = parseInt(a.parentElement.id.match(/line_(\d+)/)?.[1] || '0');
+                            const bNum = parseInt(b.parentElement.id.match(/line_(\d+)/)?.[1] || '0');
+                            return bNum - aNum;
+                        });
+                        break;
+                    case 'spiral':
+                        // 螺旋状に（一つおきに）
+                        const even = orderedElements.filter((_, i) => i % 2 === 0);
+                        const odd = orderedElements.filter((_, i) => i % 2 === 1);
+                        orderedElements = [...even, ...odd.reverse()];
+                        break;
+                }
+
+                // 各要素にアニメーションを適用
+                orderedElements.forEach((element, index) => {
+                    // ランダムな遅延を追加（禅僧が考えながら描くような間）
+                    const randomDelay = Math.random() * 5; // 0〜5秒のランダムな間
+                    let baseDelay = index * 3; // 基本の遅延（3秒間隔）
+                    
+                    // 瞑想パターンの場合はさらに間を長く
+                    if (pattern === 'meditation') {
+                        baseDelay = index * 8; // 8秒間隔
+                    }
+                    
+                    // pathとcircleで処理を分ける
+                    if (element.tagName === 'path') {
+                        const length = element.getTotalLength();
+                        
+                        // 線の太さをランダムに（筆圧の表現）
+                        const strokeVariation = 4 + Math.random() * 2; // 4-6の間
+                        element.style.strokeWidth = strokeVariation;
+                        
+                        // CSS変数を設定（より遅く、瞑想的に）
+                        element.style.setProperty('--length', length);
+                        element.style.setProperty('--delay', `${baseDelay + randomDelay}s`);
+                        element.style.setProperty('--duration', '8s'); // さらにゆっくりと描画
+                        element.style.setProperty('--ease', 'cubic-bezier(0.15, 0, 0.1, 1)'); // より自然な筆の動き
+                        
+                        // stroke-dasharrayを設定
+                        element.style.strokeDasharray = length;
+                        element.style.strokeDashoffset = length;
+                        
+                        // アニメーションクラスを追加
+                        element.classList.add('draw-animation');
+                    } else if (element.tagName === 'circle') {
+                        // 円の場合
+                        const r = parseFloat(element.getAttribute('r') || 0);
+                        const circumference = 2 * Math.PI * r;
+                        
+                        // 線の太さをランダムに
+                        const strokeVariation = 4 + Math.random() * 2;
+                        element.style.strokeWidth = strokeVariation;
+                        
+                        element.style.setProperty('--length', circumference);
+                        element.style.setProperty('--delay', `${baseDelay + randomDelay}s`);
+                        element.style.setProperty('--duration', '6s'); // 円もさらにゆっくり
+                        
+                        if (element.getAttribute('fill') !== 'none' && element.getAttribute('fill')) {
+                            // 塗りつぶしの円
+                            element.classList.add('fade-animation');
+                        } else {
+                            // 線の円
+                            element.style.strokeDasharray = circumference;
+                            element.style.strokeDashoffset = circumference;
+                            element.classList.add('draw-animation');
+                        }
+                    }
+                });
+
+                // UI要素のアニメーション
+                setTimeout(() => {
+                    breathGuide.classList.add('active');
+                    pulseBg.classList.add('active');
+                }, 3000); // ゆっくり開始
+
+                setTimeout(() => {
+                    companyName.classList.add('show');
+                }, orderedElements.length * 3000 + 8000); // より長い間隔
+
+                // フェードアウト
+                const totalDuration = orderedElements.length * 3000 + 25000; // 全体的にさらに長く
+                animationTimeout = setTimeout(() => {
+                    allElements.forEach(element => element.classList.add('fade-out'));
+                    
+                    // 次のパターンへ
+                    setTimeout(() => {
+                        currentPattern = (currentPattern + 1) % patterns.length;
+                        animateElements();
+                    }, 8000); // 間も長く
+                }, totalDuration);
+            }
+
+            // イベントリスナー
+            document.addEventListener('click', () => {
+                isPaused = !isPaused;
+                if (!isPaused) {
+                    animateElements();
+                } else {
+                    clearTimeout(animationTimeout);
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    isPaused = false;
+                    animateElements();
+                }
+            });
+
+            // アニメーション開始
+            setTimeout(animateElements, 3000); // 3秒の静寂の後に開始
+        }
+
+        // ページ読み込み時に実行
+        window.addEventListener('DOMContentLoaded', () => {
+            // SVGファイルを読み込む
+            loadSVG();
+        });
+    </script>
+</body>
+</html>

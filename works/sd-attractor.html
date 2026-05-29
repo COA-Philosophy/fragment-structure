@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>見えざる構造 — Strange Attractor (sumi)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #f4f1ea; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<script>
+/* ストレンジ・アトラクターを「和紙に墨の一筆」で描く展示版。
+   数種類を巡回。操作UIなし。p5.js(WEBGL)は数式と3D回転に使用。 */
+
+/* ── PALETTE（和紙アイボリー × 墨黒線。ここだけ差し替え可） ── */
+const PALETTE = {
+  ground: [244, 241, 234],   // 和紙アイボリー
+  ink:    [42, 40, 36],      // 墨
+  inkAlpha: 46,              // 線の濃さ（0-255）。重なって濃淡が出る
+};
+
+// 巡回する数種（線描が美しいものを選定）
+// 巡回するのはリッチに渦巻く5種。thomas/rossler/dadras は細く中途半端なので外した（#名前 で個別確認は可）。
+const CURATED = ['aizawa', 'lorenz', 'halvorsen', 'newtonLeipnik', 'chen'];
+
+const PARAMS = {
+  aizawa:        { a: 0.95, b: 0.7, c: 0.6, d: 3.5, e: 0.25, f: 0.1, scale: 150, dt: 0.01 },
+  lorenz:        { sigma: 10, rho: 28, beta: 8 / 3, scale: 7, dt: 0.006 },
+  halvorsen:     { a: 1.4, scale: 22, dt: 0.004 },
+  newtonLeipnik: { a: 0.4, b: 0.175, scale: 260, dt: 0.008 },
+  thomas:        { b: 0.208, scale: 45, dt: 0.1, seed: [3, 1, -2] },
+  rossler:       { a: 0.2, b: 0.2, c: 5.7, scale: 10, dt: 0.02 },
+  dadras:        { a: 3, b: 2.7, c: 1.7, d: 2, e: 9, scale: 6, dt: 0.01 },
+  chen:          { a: 35, b: 3, c: 28, scale: 4.5, dt: 0.004 },
+};
+
+const MAX_TRAIL = 16000;    // 保持する点数を増やし、尻尾を消さず墨を蓄積させる
+const STEPS = 16;           // 毎フレーム伸ばす点数（速く描き切る）
+const FADE_MS = 2600;       // 登場/退場のフェード
+const MIN_DRAW_MS = 6000;   // 最低でもこれだけは描く（形を埋める時間を確保）
+const STABLE_MS = 3000;     // 塗りつぶしの進みがこの間鈍れば「形ができた」とみなす
+const CELL = 14;            // 到達セルの大きさ（充填判定用）
+const HOLD_MS = 3500;       // 完成形を静かに眺める間
+const SAFETY_MS = 32000;    // 万一広がりが止まらない時の保険
+
+let sys, trail, scaleK, kind, phaseStart, angle = 0, order;
+let visited, coverageMark, lastMarkAt, lastGrowAt, readyAt;
+let reduce = false;
+
+function reseed(k) {
+  kind = k;
+  scaleK = PARAMS[k].scale;
+  const s = PARAMS[k].seed || [0.1, 0.1, 0.1];
+  sys = { x: s[0], y: s[1], z: s[2] };
+  trail = [];
+  phaseStart = millis();
+  visited = new Set();
+  coverageMark = 0; lastMarkAt = phaseStart; lastGrowAt = phaseStart; readyAt = 0;
+}
+
+function setup() {
+  createCanvas(window.innerWidth, window.innerHeight, WEBGL);
+  reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const h = location.hash.slice(1);            // 例: #thomas で単独表示（確認/ディープリンク用）
+  order = (h && PARAMS[h]) ? [h] : CURATED;
+  reseed(order[0]);
+}
+
+function windowResized() { resizeCanvas(window.innerWidth, window.innerHeight); }
+
+function stepSystem() {
+  const p = PARAMS[kind], dt = p.dt;
+  let { x, y, z } = sys, dx, dy, dz;
+  switch (kind) {
+    case 'aizawa':
+      dx = (z - p.b) * x - p.d * y;
+      dy = p.d * x + (z - p.b) * y;
+      dz = p.c + p.a * z - (z * z * z) / 3 - (x * x + y * y) * (1 + p.e * z) + p.f * z * x * x * x;
+      break;
+    case 'lorenz':
+      dx = p.sigma * (y - x);
+      dy = x * (p.rho - z) - y;
+      dz = x * y - p.beta * z;
+      break;
+    case 'halvorsen':
+      dx = -p.a * x - 4 * y - 4 * z - y * y;
+      dy = -p.a * y - 4 * z - 4 * x - z * z;
+      dz = -p.a * z - 4 * x - 4 * y - x * x;
+      break;
+    case 'newtonLeipnik':
+      dx = -p.a * x + y + 10 * y * z;
+      dy = -x - 0.4 * y + 5 * x * z;
+      dz = p.b * z - 5 * x * y;
+      break;
+    case 'thomas':
+      dx = Math.sin(y) - p.b * x;
+      dy = Math.sin(z) - p.b * y;
+      dz = Math.sin(x) - p.b * z;
+      break;
+    case 'rossler':
+      dx = -(y + z);
+      dy = x + p.a * y;
+      dz = p.b + z * (x - p.c);
+      break;
+    case 'dadras':
+      dx = y - p.a * x + p.b * y * z;
+      dy = p.c * y - x * z + z;
+      dz = p.d * x * y - p.e * z;
+      break;
+    case 'chen':
+      dx = p.a * (y - x);
+      dy = (p.c - p.a) * x - x * z + p.c * y;
+      dz = x * y - p.b * z;
+      break;
+  }
+  sys.x += dx * dt; sys.y += dy * dt; sys.z += dz * dt;
+}
+
+function draw() {
+  background(PALETTE.ground[0], PALETTE.ground[1], PALETTE.ground[2]);
+
+  const now = millis();
+
+  // 線を伸ばす（＋到達範囲bboxを記録）
+  for (let i = 0; i < STEPS; i++) {
+    stepSystem();
+    if (!isFinite(sys.x) || !isFinite(sys.y) || !isFinite(sys.z) || Math.abs(sys.x) > 1e5) {
+      reseed(order[(order.indexOf(kind) + 1) % order.length]); return;  // 発散したら次へ（停滞防止）
+    }
+    const px = sys.x * scaleK, py = sys.y * scaleK, pz = sys.z * scaleK;
+    trail.push({ x: px, y: py, z: pz });
+    visited.add((px / CELL | 0) + ',' + (py / CELL | 0) + ',' + (pz / CELL | 0));  // 到達セル＝充填の進み
+  }
+  if (trail.length > MAX_TRAIL) trail.splice(0, trail.length - MAX_TRAIL);
+
+  // 形が「できた」か ＝ 新しい領域の塗りつぶしが鈍ったか（本体が埋まったか）
+  if (now - lastMarkAt > 800) {
+    if (visited.size - coverageMark > 6) lastGrowAt = now;   // まだ新しい領域を描いている
+    coverageMark = visited.size; lastMarkAt = now;
+  }
+  if (readyAt === 0 && ((now - lastGrowAt > STABLE_MS && now - phaseStart > MIN_DRAW_MS) || now - phaseStart > SAFETY_MS)) {
+    readyAt = now;
+  }
+
+  // フェード／保持／切替（時間ではなく「形の完成」で進む）
+  let fade;
+  if (readyAt === 0) {
+    fade = Math.min(1, (now - phaseStart) / FADE_MS);          // まだ描いている間
+  } else {
+    const held = now - readyAt;
+    if (held > HOLD_MS + FADE_MS) {                            // 完成形を眺めたら次へ
+      reseed(order[(order.indexOf(kind) + 1) % order.length]);
+      return;
+    }
+    fade = held < HOLD_MS ? 1 : 1 - (held - HOLD_MS) / FADE_MS;
+  }
+
+  // 3Dゆっくり回転
+  if (!reduce) angle += 0.0024;
+  rotateY(angle);
+  rotateX(-0.22 + Math.sin(angle * 0.7) * 0.12);
+
+  // 墨の一筆
+  stroke(PALETTE.ink[0], PALETTE.ink[1], PALETTE.ink[2], PALETTE.inkAlpha * fade);
+  strokeWeight(0.7);
+  noFill();
+  beginShape();
+  for (const pt of trail) vertex(pt.x, pt.y, pt.z);
+  endShape();
+}
+</script>
+</body>
+</html>

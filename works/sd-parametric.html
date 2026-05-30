@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数式の花 — Parametric Bloom</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #f4f1ea; }
+  canvas { display: block; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+/* ════════════════════════════════════════════════
+   数式の花 — 数学が自分を描く。閉じるパラメトリック曲線を
+   墨で一筆ずつ。完成→眺める→静かに消える→次。
+   ════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  /* ── PALETTE（差し替え可） ── */
+  const PALETTE = {
+    ground:   '#f4f1ea',         // 紙
+    ink:      '43,41,37',        // 墨 RGB
+    inkAlpha: 0.50,
+  };
+
+  /* ── CFG ── */
+  const DRAW_MS = 8000;          // 1曲線を描き上げるまで
+  const HOLD_MS = 3000;          // 完成形を眺める間
+  const FADE_MS = 2200;          // 登場/退場のフェード
+
+  /* ── 曲線定義（全て中心(0,0)、半径±1に収まるよう正規化） ── */
+  const CURVES = [
+    // バラ曲線 13弁（密な花）
+    { name: 'rose-13', tMax: Math.PI, pts: 5500,
+      param: t => { const r = Math.cos(13*t); return [r*Math.cos(t), r*Math.sin(t)]; } },
+
+    // ハイポトロコイド (3:2 スピログラフ)
+    { name: 'hypotrochoid', tMax: 4*Math.PI, pts: 6500,
+      param: t => {
+        const R=5, r=2, d=3, k=(R-r)/r;
+        return [
+          ((R-r)*Math.cos(t) + d*Math.cos(k*t)) / 6,
+          ((R-r)*Math.sin(t) - d*Math.sin(k*t)) / 6
+        ];
+      } },
+
+    // 深いスピログラフ (7弁のフィリグリー)
+    { name: 'deep-spirograph', tMax: 4*Math.PI, pts: 6500,
+      param: t => {
+        const R=7, r=2, d=4, k=(R-r)/r;
+        return [
+          ((R-r)*Math.cos(t) + d*Math.cos(k*t)) / 9,
+          ((R-r)*Math.sin(t) - d*Math.sin(k*t)) / 9
+        ];
+      } },
+
+    // Maurer rose n=2, d=39° — 4方の網
+    { name: 'maurer-2-39', tMax: 361 * 39 * Math.PI / 180, pts: 361,
+      param: t => { const r = Math.sin(2*t); return [r*Math.cos(t), r*Math.sin(t)]; } },
+
+    // Maurer rose n=5, d=97° — 5方マンダラ
+    { name: 'maurer-5-97', tMax: 361 * 97 * Math.PI / 180, pts: 361,
+      param: t => { const r = Math.sin(5*t); return [r*Math.cos(t), r*Math.sin(t)]; } },
+
+    // Maurer rose n=6, d=71° — 12点星
+    { name: 'maurer-6-71', tMax: 361 * 71 * Math.PI / 180, pts: 361,
+      param: t => { const r = Math.sin(6*t); return [r*Math.cos(t), r*Math.sin(t)]; } },
+
+    // Maurer rose n=7, d=29° — 7方マンダラ
+    { name: 'maurer-7-29', tMax: 361 * 29 * Math.PI / 180, pts: 361,
+      param: t => { const r = Math.sin(7*t); return [r*Math.cos(t), r*Math.sin(t)]; } },
+
+    // Maurer rose n=8, d=43° — 8方マンダラ
+    { name: 'maurer-8-43', tMax: 361 * 43 * Math.PI / 180, pts: 361,
+      param: t => { const r = Math.sin(8*t); return [r*Math.cos(t), r*Math.sin(t)]; } },
+
+    // Maurer rose n=12, d=17° — 極密マンダラ
+    { name: 'maurer-12-17', tMax: 361 * 17 * Math.PI / 180, pts: 361,
+      param: t => { const r = Math.sin(12*t); return [r*Math.cos(t), r*Math.sin(t)]; } },
+  ];
+
+  /* ── State ── */
+  const cv = document.getElementById('c');
+  const ctx = cv.getContext('2d');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let W, H, DPR, CX, CY, SCALE;
+  let idx = 0, phaseStart = 0, readyAt = 0;
+  let trail = [];
+
+  // #名前 で個別表示（確認・ディープリンク用）
+  const HASH_IDX = CURVES.findIndex(c => c.name === location.hash.slice(1));
+  const order = HASH_IDX >= 0 ? [HASH_IDX] : CURVES.map((_, i) => i);
+  let pos = 0;
+
+  function build() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = W * DPR; cv.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    CX = W / 2; CY = H / 2;
+    SCALE = Math.min(W, H) * 0.36;
+  }
+  build();
+  window.addEventListener('resize', () => { build(); reseed(idx); });
+
+  function reseed(i) {
+    idx = ((i % CURVES.length) + CURVES.length) % CURVES.length;
+    trail = [];
+    phaseStart = performance.now();
+    readyAt = 0;
+  }
+  reseed(order[0]);
+
+  function frame() {
+    const now = performance.now();
+    const cur = CURVES[idx];
+    const elapsed = now - phaseStart;
+
+    // 地
+    ctx.fillStyle = PALETTE.ground;
+    ctx.fillRect(0, 0, W, H);
+
+    // 描き進める（描き上げるまで点を補充）
+    if (readyAt === 0) {
+      const progress = Math.min(1, elapsed / DRAW_MS);
+      const targetN = Math.floor(progress * cur.pts);
+      while (trail.length < targetN) {
+        const k = trail.length;
+        const t = (k / cur.pts) * cur.tMax;
+        const [ux, uy] = cur.param(t);
+        trail.push([CX + ux * SCALE, CY + uy * SCALE]);
+      }
+      if (progress >= 1) readyAt = now;
+    }
+
+    // フェード／保持／切替
+    let fade;
+    if (readyAt === 0) {
+      fade = Math.min(1, elapsed / FADE_MS);
+    } else {
+      const held = now - readyAt;
+      if (held > HOLD_MS + FADE_MS) {
+        pos = (pos + 1) % order.length;
+        reseed(order[pos]);
+        return requestAnimationFrame(frame);
+      }
+      fade = held < HOLD_MS ? 1 : 1 - (held - HOLD_MS) / FADE_MS;
+    }
+
+    // 描画（一筆の墨）
+    if (trail.length >= 2) {
+      ctx.strokeStyle = `rgba(${PALETTE.ink},${PALETTE.inkAlpha * fade})`;
+      ctx.lineWidth = 0.7;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(trail[0][0], trail[0][1]);
+      for (let k = 1; k < trail.length; k++) ctx.lineTo(trail[k][0], trail[k][1]);
+      ctx.stroke();
+    }
+
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+</script>
+</body>
+</html>

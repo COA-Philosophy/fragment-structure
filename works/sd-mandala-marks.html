@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12タイプ印 — Twelve Type Marks</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant:ital@0;1&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #f4f1ea; }
+  canvas { display: block; width: 100%; height: 100%; cursor: pointer; }
+
+  .bar {
+    position: fixed;
+    top: 14px; left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    flex-wrap: wrap;
+    max-width: calc(100vw - 32px);
+    background: rgba(255, 252, 244, 0.92);
+    padding: 7px 12px;
+    border: 1px solid rgba(43,41,37,0.18);
+    border-radius: 3px;
+    z-index: 10;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.06);
+  }
+  .bar .group-label {
+    color: rgba(43,41,37,0.48);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-family: 'Cormorant', serif;
+    font-style: normal;
+    font-size: 9px;
+    margin-right: 4px;
+  }
+  .bar button {
+    font-family: 'Cormorant', serif;
+    font-style: italic;
+    font-size: 12px;
+    padding: 3px 9px;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(43,41,37,0.2);
+    color: rgba(43,41,37,0.72);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.15s ease;
+  }
+  .bar button:hover { background: rgba(43,41,37,0.05); }
+  .bar button.active {
+    background: rgba(43,41,37,0.82);
+    color: #f4f1ea;
+    border-color: rgba(43,41,37,0.82);
+  }
+  .bar button.load {
+    margin-left: 6px;
+    background: rgba(255,255,255,0.6);
+  }
+  /* ピック関連 */
+  .bar button.picks {
+    background: rgba(212, 163, 69, 0.14);
+    border-color: rgba(212, 163, 69, 0.45);
+    color: rgba(43,41,37,0.85);
+    font-style: normal;
+    font-weight: 500;
+    min-width: 32px;
+  }
+  .bar button.picks.has { background: rgba(212, 163, 69, 0.32); }
+  .bar button.picks.active {
+    background: rgba(212, 163, 69, 0.78);
+    color: #f4f1ea;
+    border-color: rgba(212, 163, 69, 0.78);
+  }
+  .bar .name {
+    margin-left: 10px;
+    font-family: 'Cormorant', serif;
+    font-style: italic;
+    font-size: 11px;
+    color: rgba(43,41,37,0.55);
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .hint {
+    position: fixed;
+    top: 72px; right: 16px;
+    font-family: 'Cormorant', serif;
+    font-style: italic;
+    font-size: 11px;
+    color: rgba(43,41,37,0.38);
+    z-index: 5;
+    pointer-events: none;
+    text-align: right;
+    max-width: 200px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<div class="bar">
+  <span class="group-label">Set</span>
+  <button data-set="v1">v1</button>
+  <button data-set="v2">v2</button>
+  <button data-set="v3">v3</button>
+  <button data-set="v4">v4</button>
+  <button data-set="v5">v5</button>
+  <button data-set="v6">v6</button>
+  <button data-set="v7" class="active">v7</button>
+  <button class="load" id="loadBtn">📁 Load JSON</button>
+  <input type="file" id="fileInput" accept=".json,application/json" hidden>
+
+  <span class="group-label" style="margin-left:10px">Picked</span>
+  <button id="viewPicksBtn" class="picks">0</button>
+  <button id="exportPicksBtn">⬇ Export</button>
+  <button id="clearPicksBtn">Clear</button>
+
+  <span class="name" id="setName">v7 (latest, 12/12 filled)</span>
+</div>
+<div class="hint">マンダラをクリックで選択／解除。空白部分でアニメーション再生。</div>
+<canvas id="c"></canvas>
+<script>
+/* ════════════════════════════════════════════════
+   12タイプ印 — 横断キュレーション。
+   各セットを切替表示しながら、マンダラをクリックで気に入った
+   ものをピックアップ。Picks ビューで選んだだけを並べ、JSON出力。
+   localStorage で保存。
+   ════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  const PALETTE = {
+    ground:     '#f4f1ea',
+    ink:        '43,41,37',
+    inkAlpha:   0.45,
+    label:      '43,41,37',
+    labelAlpha: 0.45,
+    pick:       '212,163,69',     // 金（picked マーカー）
+  };
+
+  /* ─ 7つの保存済みJSONをハードコード ─ */
+  const EARLY = [
+    { type:'type-1',  params:{family:'maurer',symmetry:3,step:107,passes:2,centerHole:0,sharpness:0,phase:0}},
+    { type:'type-2',  params:null}, { type:'type-3',  params:null},
+    { type:'type-4',  params:null}, { type:'type-5',  params:null},
+    { type:'type-6',  params:null}, { type:'type-7',  params:null},
+    { type:'type-8',  params:null}, { type:'type-9',  params:null},
+    { type:'type-10', params:null}, { type:'type-11', params:null}, { type:'type-12', params:null},
+  ];
+  const V5 = [
+    { type:'type-1',  params:{family:'maurer',symmetry:3, step:107,passes:2,centerHole:0,   sharpness:0,   phase:0}},
+    { type:'type-2',  params:{family:'maurer',symmetry:16,step:157,passes:1,centerHole:0,   sharpness:0,   phase:0}},
+    { type:'type-3',  params:{family:'maurer',symmetry:9, step:157,passes:1,centerHole:0,   sharpness:0,   phase:2}},
+    { type:'type-4',  params:{family:'maurer',symmetry:15,step:113,passes:1,centerHole:0,   sharpness:0,   phase:2}},
+    { type:'type-5',  params:{family:'maurer',symmetry:2, step:34, passes:1,centerHole:0.01,sharpness:0,   phase:2}},
+    { type:'type-6',  params:{family:'maurer',symmetry:2, step:174,passes:4,centerHole:0.01,sharpness:0,   phase:2}},
+    { type:'type-7',  params:{family:'maurer',symmetry:2, step:178,passes:3,centerHole:0.01,sharpness:0,   phase:2}},
+    { type:'type-8',  params:{family:'maurer',symmetry:2, step:178,passes:2,centerHole:0.01,sharpness:0.13,phase:2}},
+    { type:'type-9',  params:{family:'maurer',symmetry:16,step:35, passes:1,centerHole:0,   sharpness:0.34,phase:2}},
+    { type:'type-10', params:{family:'maurer',symmetry:10,step:179,passes:1,centerHole:0.4, sharpness:0.75,phase:0}},
+    { type:'type-11', params:{family:'rose',  symmetry:4, step:1,  passes:4,centerHole:0.18,sharpness:0.75,phase:0}},
+    { type:'type-12', params:{family:'rose',  symmetry:3, step:1,  passes:4,centerHole:0.18,sharpness:0.75,phase:0}},
+  ];
+  const V6 = [
+    { type:'type-1',  params:{family:'maurer',symmetry:3, step:107,passes:2,centerHole:0,   sharpness:0,phase:0}},
+    { type:'type-2',  params:{family:'maurer',symmetry:16,step:157,passes:1,centerHole:0,   sharpness:0,phase:0}},
+    { type:'type-3',  params:{family:'maurer',symmetry:9, step:157,passes:1,centerHole:0,   sharpness:0,phase:2}},
+    { type:'type-4',  params:{family:'maurer',symmetry:15,step:113,passes:1,centerHole:0,   sharpness:0,phase:2}},
+    { type:'type-5',  params:{family:'maurer',symmetry:2, step:34, passes:1,centerHole:0.01,sharpness:0,phase:2}},
+    { type:'type-6',  params:{family:'maurer',symmetry:2, step:174,passes:4,centerHole:0.01,sharpness:0,phase:2}},
+    { type:'type-7',  params:{family:'maurer',symmetry:2, step:178,passes:3,centerHole:0.01,sharpness:0,phase:2}},
+    { type:'type-8',  params:null}, { type:'type-9',  params:null},
+    { type:'type-10', params:null}, { type:'type-11', params:null}, { type:'type-12', params:null},
+  ];
+  const V7 = [
+    { type:'type-1',  params:{family:'maurer',symmetry:6, step:159,passes:5,centerHole:0.08,sharpness:0,   phase:0}},
+    { type:'type-2',  params:{family:'maurer',symmetry:6, step:159,passes:1,centerHole:0.08,sharpness:0,   phase:0}},
+    { type:'type-3',  params:{family:'maurer',symmetry:6, step:166,passes:1,centerHole:0.08,sharpness:0,   phase:0}},
+    { type:'type-4',  params:{family:'maurer',symmetry:6, step:173,passes:1,centerHole:0.08,sharpness:0,   phase:0}},
+    { type:'type-5',  params:{family:'maurer',symmetry:6, step:173,passes:5,centerHole:0.08,sharpness:0,   phase:0}},
+    { type:'type-6',  params:{family:'maurer',symmetry:6, step:71, passes:5,centerHole:0.08,sharpness:0,   phase:0}},
+    { type:'type-7',  params:{family:'maurer',symmetry:16,step:179,passes:1,centerHole:0.4, sharpness:0.43,phase:7}},
+    { type:'type-8',  params:{family:'maurer',symmetry:4, step:47, passes:1,centerHole:0.21,sharpness:0.43,phase:7}},
+    { type:'type-9',  params:{family:'maurer',symmetry:8, step:43, passes:2,centerHole:0.04,sharpness:0.55,phase:0}},
+    { type:'type-10', params:{family:'maurer',symmetry:8, step:32, passes:5,centerHole:0.15,sharpness:0.55,phase:0}},
+    { type:'type-11', params:{family:'maurer',symmetry:8, step:65, passes:5,centerHole:0.15,sharpness:0.55,phase:0}},
+    { type:'type-12', params:{family:'maurer',symmetry:8, step:112,passes:5,centerHole:0,   sharpness:0.55,phase:0}},
+  ];
+
+  const DATASETS = { v1: EARLY, v2: EARLY, v3: EARLY, v4: EARLY, v5: V5, v6: V6, v7: V7 };
+  const NAMES = {
+    v1:'v1 (early, type-1 only)', v2:'v2 (= v1)', v3:'v3 (= v1)', v4:'v4 (= v1)',
+    v5:'v5 (first full set, 12/12)', v6:'v6 (mid iteration, 7/12)', v7:'v7 (latest, 12/12 filled)',
+  };
+
+  let TYPES = DATASETS.v7;
+
+  /* ─ Picks 状態（localStorage 永続化） ─ */
+  const PICKS_KEY = 'sd-mandala-picks';
+  let picks = [];
+  let viewingPicks = false;
+  function paramKey(p) { return JSON.stringify(p); }
+  function isPicked(p) { return picks.some(it => paramKey(it.params) === paramKey(p)); }
+  function loadPicks() {
+    try { picks = JSON.parse(localStorage.getItem(PICKS_KEY) || '[]'); }
+    catch { picks = []; }
+  }
+  function savePicks() {
+    try { localStorage.setItem(PICKS_KEY, JSON.stringify(picks)); } catch {}
+  }
+  function updatePicksUI() {
+    const btn = document.getElementById('viewPicksBtn');
+    btn.textContent = picks.length;
+    btn.classList.toggle('has', picks.length > 0);
+  }
+  function togglePick(item) {
+    const key = paramKey(item.params);
+    const i = picks.findIndex(p => paramKey(p.params) === key);
+    if (i >= 0) picks.splice(i, 1);
+    else picks.push({ source: item.type, params: item.params });
+    savePicks();
+    updatePicksUI();
+    // Picks ビュー中なら即更新
+    if (viewingPicks) {
+      TYPES = picksAsTypes();
+      animStart = performance.now();
+      if (rafId) cancelAnimationFrame(rafId);
+    }
+    render();
+  }
+  function picksAsTypes() {
+    return picks.map((p, i) => ({ type: 'pick-' + (i+1), params: p.params }));
+  }
+
+  /* ─ 描画 ─ */
+  const COLS = 4, ROWS = 3;
+  const ANIM_MS = 4500;
+  const STAGGER_MS = 350;
+  const TOP_PAD = 60;
+
+  const cv = document.getElementById('c');
+  const ctx = cv.getContext('2d');
+  let W, H, DPR, cellW, cellH, drawArea, SCALE;
+  let animStart = 0, rafId = 0;
+
+  function build() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = W * DPR; cv.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    cellW = W / COLS;
+    cellH = (H - TOP_PAD) / ROWS;
+    drawArea = cellH - 22;
+    SCALE = Math.min(cellW, drawArea) * 0.40;
+    animStart = performance.now();
+    if (rafId) cancelAnimationFrame(rafId);
+    render();
+  }
+
+  function denominator(x, tol = 0.0001) {
+    for (let q = 1; q <= 24; q++) if (Math.abs(x*q - Math.round(x*q)) < tol) return q;
+    return 12;
+  }
+
+  function getCurve(s) {
+    const phaseRad = s.phase * Math.PI / 180;
+    if (s.family === 'maurer') {
+      const dRad = s.step * Math.PI / 180;
+      const sharpExp = 1 - s.sharpness * 0.7;
+      return {
+        pts: 361,
+        point: i => {
+          const θ = i * dRad + phaseRad;
+          const ss = Math.sin(s.symmetry * (θ - phaseRad));
+          const r = Math.sign(ss) * Math.pow(Math.abs(ss), sharpExp);
+          return [r * Math.cos(θ), r * Math.sin(θ), Math.abs(r)];
+        },
+      };
+    } else if (s.family === 'spiro') {
+      const R = s.symmetry + 1, r = 1;
+      const d = (s.step / 180) * 5 + 0.5;
+      const k = (R - r) / r;
+      const q = denominator(k);
+      const pts = Math.min(6500, 1500 + q * 350);
+      const norm = (R - r) + d;
+      return {
+        pts,
+        point: i => {
+          const t = (i / pts) * 2 * Math.PI * q + phaseRad;
+          const x = ((R - r) * Math.cos(t) + d * Math.cos(k * t)) / norm;
+          const y = ((R - r) * Math.sin(t) - d * Math.sin(k * t)) / norm;
+          return [x, y, Math.hypot(x, y)];
+        },
+      };
+    } else {
+      const k = s.symmetry + (s.step % 19) / 60;
+      const q = denominator(k);
+      const sharpExp = 1 - s.sharpness * 0.7;
+      const pts = Math.min(6500, 2200 + q * 400);
+      const tMax = q > 1 ? 2 * Math.PI * q : Math.PI;
+      return {
+        pts,
+        point: i => {
+          const t = (i / pts) * tMax + phaseRad;
+          const ss = Math.cos(k * t);
+          const rr = Math.sign(ss) * Math.pow(Math.abs(ss), sharpExp);
+          return [rr * Math.cos(t), rr * Math.sin(t), Math.abs(rr)];
+        },
+      };
+    }
+  }
+
+  function drawCurve(cx, cy, scale, s, progress) {
+    const c = getCurve(s);
+    const upTo = Math.max(1, Math.floor(progress * c.pts));
+    ctx.beginPath();
+    let lastIn = false;
+    for (let i = 0; i <= upTo; i++) {
+      const [ux, uy, mag] = c.point(i);
+      const inside = mag >= s.centerHole;
+      if (inside) {
+        const x = cx + ux * scale, y = cy + uy * scale;
+        if (lastIn) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+        lastIn = true;
+      } else lastIn = false;
+    }
+    ctx.stroke();
+  }
+
+  function drawType(cx, cy, scale, p, progress) {
+    ctx.strokeStyle = `rgba(${PALETTE.ink},${PALETTE.inkAlpha})`;
+    ctx.lineWidth = 0.6;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    for (let pi = 0; pi < p.passes; pi++) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate((pi / p.passes) * Math.PI * 2);
+      ctx.translate(-cx, -cy);
+      drawCurve(cx, cy, scale, p, progress);
+      ctx.restore();
+    }
+  }
+
+  function drawPickMarker(col, row) {
+    // 右上の金の点
+    const x = col * cellW + cellW - 16;
+    const y = TOP_PAD + row * cellH + 16;
+    ctx.fillStyle = `rgba(${PALETTE.pick},0.92)`;
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,252,244,0.85)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
+
+  function render() {
+    const now = performance.now();
+    ctx.fillStyle = PALETTE.ground;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.font = `italic 11px 'Cormorant', serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    let allComplete = true;
+    for (let i = 0; i < TYPES.length; i++) {
+      const col = i % COLS;
+      const row = Math.floor(i / COLS);
+      const cx = col * cellW + cellW / 2;
+      const cy = TOP_PAD + row * cellH + drawArea / 2;
+      const localStart = animStart + i * STAGGER_MS;
+      const progress = Math.max(0, Math.min(1, (now - localStart) / ANIM_MS));
+      if (TYPES[i].params && progress > 0) {
+        drawType(cx, cy, SCALE, TYPES[i].params, progress);
+        // ピックマーカー（アニメ完了後）
+        if (progress >= 1 && isPicked(TYPES[i].params)) {
+          drawPickMarker(col, row);
+        }
+      }
+      if (progress < 1 && TYPES[i].params) allComplete = false;
+      // ラベル
+      ctx.fillStyle = `rgba(${PALETTE.label},${PALETTE.labelAlpha})`;
+      ctx.fillText(TYPES[i].type, cx, TOP_PAD + row * cellH + cellH - 12);
+    }
+    if (!allComplete) rafId = requestAnimationFrame(render);
+    else rafId = 0;
+  }
+
+  /* ─ セット切替 ─ */
+  function switchSet(key, sourceName) {
+    viewingPicks = false;
+    document.getElementById('viewPicksBtn').classList.remove('active');
+    if (DATASETS[key]) {
+      TYPES = DATASETS[key];
+      document.querySelectorAll('[data-set]').forEach(b => {
+        b.classList.toggle('active', b.dataset.set === key);
+      });
+      document.getElementById('setName').textContent = NAMES[key] || key;
+    } else if (Array.isArray(key)) {
+      TYPES = key;
+      document.querySelectorAll('[data-set]').forEach(b => b.classList.remove('active'));
+      document.getElementById('setName').textContent = sourceName || '(custom)';
+    }
+    animStart = performance.now();
+    if (rafId) cancelAnimationFrame(rafId);
+    render();
+  }
+
+  /* ─ Picks ビュー ─ */
+  function showPicks() {
+    if (picks.length === 0) {
+      alert('まだ何も選択されていません。マンダラをクリックして選んでください。');
+      return;
+    }
+    viewingPicks = true;
+    TYPES = picksAsTypes();
+    document.querySelectorAll('[data-set]').forEach(b => b.classList.remove('active'));
+    document.getElementById('viewPicksBtn').classList.add('active');
+    document.getElementById('setName').textContent = `Picks (${picks.length}) — クリックで解除`;
+    animStart = performance.now();
+    if (rafId) cancelAnimationFrame(rafId);
+    render();
+  }
+
+  function exportPicks() {
+    if (picks.length === 0) {
+      alert('まだ何も選択されていません。');
+      return;
+    }
+    const data = picks.map((p, i) => ({
+      type: 'type-' + (i+1),
+      params: p.params,
+      source: p.source,
+    }));
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'silas-mandala-picks.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function clearPicks() {
+    if (picks.length === 0) return;
+    if (confirm(picks.length + '個の選択を全て解除しますか?')) {
+      picks = [];
+      savePicks();
+      updatePicksUI();
+      if (viewingPicks) {
+        // Picks ビュー中はクリア後 v7 に戻る
+        switchSet('v7');
+      } else {
+        render();
+      }
+    }
+  }
+
+  /* ─ イベント ─ */
+  document.querySelectorAll('[data-set]').forEach(btn => {
+    btn.addEventListener('click', () => switchSet(btn.dataset.set));
+  });
+  document.getElementById('loadBtn').addEventListener('click', () => {
+    document.getElementById('fileInput').click();
+  });
+  document.getElementById('fileInput').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!Array.isArray(data)) throw new Error('JSON must be an array');
+        const normalized = [];
+        for (let i = 0; i < 12; i++) {
+          normalized.push(data[i] || { type: 'type-' + (i+1), params: null });
+        }
+        switchSet(normalized, file.name);
+      } catch (err) { alert('JSON読み込みエラー: ' + err.message); }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+  document.getElementById('viewPicksBtn').addEventListener('click', showPicks);
+  document.getElementById('exportPicksBtn').addEventListener('click', exportPicks);
+  document.getElementById('clearPicksBtn').addEventListener('click', clearPicks);
+
+  // キャンバスクリック: マス → ピック切替、空白 → 再描画
+  cv.addEventListener('click', (e) => {
+    const rect = cv.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    if (y >= TOP_PAD) {
+      const col = Math.floor(x / cellW);
+      const row = Math.floor((y - TOP_PAD) / cellH);
+      if (col >= 0 && col < COLS && row >= 0 && row < ROWS) {
+        const i = row * COLS + col;
+        if (i < TYPES.length && TYPES[i].params) {
+          togglePick(TYPES[i]);
+          return;
+        }
+      }
+    }
+    // 空白: 再描画
+    animStart = performance.now();
+    if (rafId) cancelAnimationFrame(rafId);
+    render();
+  });
+
+  /* ─ 初期化 ─ */
+  loadPicks();
+  updatePicksUI();
+  build();
+  window.addEventListener('resize', build);
+})();
+</script>
+</body>
+</html>

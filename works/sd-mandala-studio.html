@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mandala Studio — 12タイプ印の探索</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant:ital@0;1&family=Noto+Serif+JP:wght@400&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #f4f1ea; font-family: 'Noto Serif JP', serif; color: #2b2925; }
+
+  .stage {
+    position: absolute; top: 0; left: 0; right: 0;
+    height: calc(100% - 280px);
+    overflow: hidden;
+  }
+  canvas#c { display: block; }
+
+  .panel {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 280px;
+    background: rgba(255, 252, 244, 0.94);
+    border-top: 1px solid rgba(43,41,37,0.18);
+    padding: 16px 24px 18px;
+    display: flex; flex-direction: column; gap: 10px;
+    backdrop-filter: blur(6px);
+  }
+  .row { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
+  .controls {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px 28px; flex: 1; min-width: 0;
+  }
+  .ctl { display: flex; align-items: center; gap: 10px; }
+  .ctl label {
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: rgba(43,41,37,0.58); width: 96px; flex-shrink: 0;
+  }
+  .ctl input[type="range"] {
+    flex: 1; min-width: 0; height: 3px; -webkit-appearance: none; appearance: none;
+    background: rgba(43,41,37,0.22); border-radius: 2px; cursor: pointer;
+  }
+  .ctl input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #2b2925; cursor: pointer; border: none;
+  }
+  .ctl input[type="range"]::-moz-range-thumb {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #2b2925; cursor: pointer; border: none;
+  }
+  .ctl .val {
+    font-family: 'Cormorant', serif; font-style: italic;
+    font-size: 13px; color: rgba(43,41,37,0.82);
+    width: 44px; text-align: right; flex-shrink: 0;
+  }
+  .ctl select {
+    font-family: inherit; font-size: 12px;
+    background: rgba(255,255,255,0.7); border: 1px solid rgba(43,41,37,0.22);
+    padding: 3px 8px; border-radius: 2px; flex: 1; color: #2b2925;
+  }
+
+  .group-label {
+    font-size: 9px; letter-spacing: 0.24em; text-transform: uppercase;
+    color: rgba(43,41,37,0.45); margin-right: 6px;
+  }
+  button {
+    font-family: 'Noto Serif JP', serif; font-size: 11px;
+    padding: 5px 11px; border: 1px solid rgba(43,41,37,0.28);
+    background: rgba(255,255,255,0.7); color: #2b2925;
+    cursor: pointer; border-radius: 2px;
+    transition: background 0.15s ease;
+  }
+  button:hover { background: rgba(43,41,37,0.06); }
+  button.slot { width: 28px; height: 24px; padding: 0; font-size: 10px; }
+  button.slot.filled {
+    background: rgba(43,41,37,0.82); color: #f4f1ea;
+    border-color: rgba(43,41,37,0.82);
+  }
+  button.action {
+    font-family: 'Cormorant', serif; font-style: italic; font-size: 13px;
+    padding: 5px 14px;
+  }
+  button.pin {
+    background: rgba(43,41,37,0.85); color: #f4f1ea; border-color: rgba(43,41,37,0.85);
+  }
+  button.pin:hover { background: rgba(43,41,37,1); }
+
+  .count {
+    font-family: 'Cormorant', serif; font-style: italic;
+    font-size: 12px; color: rgba(43,41,37,0.6);
+    margin-left: 4px;
+  }
+
+  /* ── JSON モーダル ── */
+  .modal {
+    position: fixed; inset: 0; background: rgba(43,41,37,0.55);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; backdrop-filter: blur(4px);
+  }
+  .modal.hidden { display: none; }
+  .modal-inner {
+    background: #f4f1ea; border: 1px solid rgba(43,41,37,0.25);
+    width: min(720px, 90vw); max-height: 80vh;
+    display: flex; flex-direction: column; padding: 18px 22px 18px;
+    border-radius: 3px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.25);
+  }
+  .modal-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+    font-family: 'Cormorant', serif; font-style: italic; font-size: 18px;
+    color: rgba(43,41,37,0.85);
+  }
+  .modal-head button {
+    border: none; background: transparent; font-size: 22px; cursor: pointer;
+    color: rgba(43,41,37,0.6); padding: 0 6px;
+  }
+  .modal-inner textarea {
+    flex: 1; min-height: 280px;
+    font-family: 'Courier New', monospace; font-size: 11px;
+    background: rgba(255,255,255,0.7); border: 1px solid rgba(43,41,37,0.18);
+    padding: 10px 12px; resize: vertical; color: #2b2925;
+    border-radius: 2px;
+  }
+  .modal-actions {
+    display: flex; gap: 10px; align-items: center;
+    margin-top: 12px;
+  }
+  .status {
+    font-family: 'Cormorant', serif; font-style: italic; font-size: 12px;
+    color: rgba(43,41,37,0.6); margin-left: 8px;
+    opacity: 0; transition: opacity 0.3s ease;
+  }
+  .status.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="stage"><canvas id="c"></canvas></div>
+
+<div class="panel">
+  <div class="controls">
+    <div class="ctl"><label>Family</label>
+      <select id="family">
+        <option value="maurer">Maurer</option>
+        <option value="spiro">Spirograph</option>
+        <option value="rose">Rose</option>
+      </select>
+    </div>
+    <div class="ctl"><label>Symmetry</label>
+      <input type="range" id="symmetry" min="2" max="16" step="1" value="6"><span class="val">6</span></div>
+    <div class="ctl"><label>Step</label>
+      <input type="range" id="step" min="1" max="179" step="1" value="71"><span class="val">71°</span></div>
+    <div class="ctl"><label>Passes</label>
+      <input type="range" id="passes" min="1" max="6" step="1" value="1"><span class="val">1</span></div>
+    <div class="ctl"><label>Center hole</label>
+      <input type="range" id="centerHole" min="0" max="40" step="1" value="8"><span class="val">0.08</span></div>
+    <div class="ctl"><label>Sharpness</label>
+      <input type="range" id="sharpness" min="0" max="100" step="1" value="0"><span class="val">0.00</span></div>
+    <div class="ctl"><label>Phase</label>
+      <input type="range" id="phase" min="0" max="60" step="1" value="0"><span class="val">0°</span></div>
+  </div>
+
+  <div class="row">
+    <span class="group-label">Presets</span>
+    <button data-preset="0">星型</button>
+    <button data-preset="1">曼荼羅</button>
+    <button data-preset="2">柔花</button>
+    <button data-preset="3">八方印</button>
+    <button data-preset="4">開花</button>
+
+    <span class="group-label" style="margin-left:12px">Types</span>
+    <button class="slot" data-slot="0">1</button>
+    <button class="slot" data-slot="1">2</button>
+    <button class="slot" data-slot="2">3</button>
+    <button class="slot" data-slot="3">4</button>
+    <button class="slot" data-slot="4">5</button>
+    <button class="slot" data-slot="5">6</button>
+    <button class="slot" data-slot="6">7</button>
+    <button class="slot" data-slot="7">8</button>
+    <button class="slot" data-slot="8">9</button>
+    <button class="slot" data-slot="9">10</button>
+    <button class="slot" data-slot="10">11</button>
+    <button class="slot" data-slot="11">12</button>
+
+    <button id="pinBtn" class="action pin">📌 Pin</button>
+    <button id="clearBtn" class="action">Clear slot</button>
+    <button id="exportBtn" class="action">Export JSON</button>
+    <span class="count" id="count">0 / 12 filled</span>
+  </div>
+</div>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-inner">
+    <div class="modal-head">
+      <span>Type Definitions (JSON)</span>
+      <button id="modalClose" aria-label="閉じる">×</button>
+    </div>
+    <textarea id="jsonText" readonly spellcheck="false"></textarea>
+    <div class="modal-actions">
+      <button id="copyBtn" class="action">📋 Copy</button>
+      <button id="downloadBtn" class="action">⬇ Download .json</button>
+      <span class="status" id="status"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════
+   Mandala Studio — 7パラメータで気持ちいい塩梅を探って、
+   12タイプ印にピン留め、JSON で書き出す。
+   ════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  const PALETTE = {
+    ground:   '#f4f1ea',
+    ink:      '43,41,37',
+    inkAlpha: 0.36,        // 派手にしない上品さ
+  };
+
+  const state = {
+    family: 'maurer',
+    symmetry: 6, step: 71, passes: 1,
+    centerHole: 0.08, sharpness: 0, phase: 0,
+  };
+
+  // 5プリセット（ユーザー仕様）
+  const PRESETS = [
+    // 静かな星型
+    { family:'maurer', symmetry:6,  step:71, passes:1, centerHole:0.08, sharpness:0.75, phase:0 },
+    // 密な曼荼羅
+    { family:'maurer', symmetry:8,  step:43, passes:2, centerHole:0.04, sharpness:0.55, phase:0 },
+    // やわらかい花
+    { family:'spiro',  symmetry:7,  step:90, passes:1, centerHole:0.18, sharpness:0,    phase:0 },
+    // 緊張感ある八方印
+    { family:'maurer', symmetry:8,  step:67, passes:1, centerHole:0.02, sharpness:0.90, phase:0 },
+    // 開いた花弁型
+    { family:'rose',   symmetry:12, step:30, passes:1, centerHole:0.22, sharpness:0,    phase:0 },
+  ];
+
+  const slots = Array(12).fill(null);
+  let pinTarget = 0;
+
+  const cv = document.getElementById('c');
+  const ctx = cv.getContext('2d');
+
+  let W, H, DPR, CX, CY, SCALE;
+  function build() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    const stage = document.querySelector('.stage');
+    W = stage.clientWidth; H = stage.clientHeight;
+    cv.width = W * DPR; cv.height = H * DPR;
+    cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    CX = W / 2; CY = H / 2;
+    SCALE = Math.min(W, H) * 0.40;
+    render();
+  }
+
+  function denominator(x, tol = 0.0001) {
+    for (let q = 1; q <= 24; q++) if (Math.abs(x*q - Math.round(x*q)) < tol) return q;
+    return 12;
+  }
+
+  // 7パラメータから具体の曲線生成器を返す
+  function getCurve(s) {
+    const phaseRad = s.phase * Math.PI / 180;
+    if (s.family === 'maurer') {
+      const dRad = s.step * Math.PI / 180;
+      const sharpExp = 1 - s.sharpness * 0.7;          // 1 → 0.3
+      const pts = 361;
+      return {
+        pts,
+        point: i => {
+          const θ = i * dRad + phaseRad;
+          const ss = Math.sin(s.symmetry * (θ - phaseRad));
+          const r = Math.sign(ss) * Math.pow(Math.abs(ss), sharpExp);
+          return [r * Math.cos(θ), r * Math.sin(θ), Math.abs(r)];
+        },
+      };
+    } else if (s.family === 'spiro') {
+      const R = s.symmetry + 1, r = 1;
+      const d = (s.step / 180) * 5 + 0.5;
+      const k = (R - r) / r;
+      const q = denominator(k);
+      const pts = Math.min(6500, 1500 + q * 350);
+      const norm = (R - r) + d;
+      return {
+        pts,
+        point: i => {
+          const t = (i / pts) * 2 * Math.PI * q + phaseRad;
+          const x = ((R - r) * Math.cos(t) + d * Math.cos(k * t)) / norm;
+          const y = ((R - r) * Math.sin(t) - d * Math.sin(k * t)) / norm;
+          return [x, y, Math.hypot(x, y)];
+        },
+      };
+    } else {
+      // rose: k = symmetry + small irrational from step
+      const k = s.symmetry + (s.step % 19) / 60;
+      const q = denominator(k);
+      const sharpExp = 1 - s.sharpness * 0.7;
+      const pts = Math.min(6500, 2200 + q * 400);
+      const tMax = q > 1 ? 2 * Math.PI * q : Math.PI;
+      return {
+        pts,
+        point: i => {
+          const t = (i / pts) * tMax + phaseRad;
+          const ss = Math.cos(k * t);
+          const rr = Math.sign(ss) * Math.pow(Math.abs(ss), sharpExp);
+          return [rr * Math.cos(t), rr * Math.sin(t), Math.abs(rr)];
+        },
+      };
+    }
+  }
+
+  function drawCurve(cx, cy, scale, s) {
+    const c = getCurve(s);
+    ctx.beginPath();
+    let lastIn = false;
+    for (let i = 0; i <= c.pts; i++) {
+      const [ux, uy, mag] = c.point(i);
+      const inside = mag >= s.centerHole;
+      if (inside) {
+        const x = cx + ux * scale, y = cy + uy * scale;
+        if (lastIn) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+        lastIn = true;
+      } else lastIn = false;
+    }
+    ctx.stroke();
+  }
+
+  function render() {
+    ctx.fillStyle = PALETTE.ground;
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = `rgba(${PALETTE.ink},${PALETTE.inkAlpha})`;
+    ctx.lineWidth = 0.7;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    for (let p = 0; p < state.passes; p++) {
+      ctx.save();
+      ctx.translate(CX, CY);
+      ctx.rotate((p / state.passes) * Math.PI * 2);
+      ctx.translate(-CX, -CY);
+      drawCurve(CX, CY, SCALE, state);
+      ctx.restore();
+    }
+  }
+
+  /* ─ UI bindings ─ */
+  function fmt(key, raw) {
+    if (key === 'step' || key === 'phase') return raw + '°';
+    if (key === 'centerHole' || key === 'sharpness') return (raw / 100).toFixed(2);
+    return String(raw);
+  }
+  function syncUI() {
+    document.getElementById('family').value = state.family;
+    const set = (id, raw) => {
+      const el = document.getElementById(id);
+      el.value = raw;
+      el.nextElementSibling.textContent = fmt(id, raw);
+    };
+    set('symmetry', state.symmetry);
+    set('step', state.step);
+    set('passes', state.passes);
+    set('centerHole', Math.round(state.centerHole * 100));
+    set('sharpness', Math.round(state.sharpness * 100));
+    set('phase', state.phase);
+  }
+  function bindRange(id, key, scale = 1) {
+    document.getElementById(id).addEventListener('input', e => {
+      const raw = +e.target.value;
+      state[key] = scale === 1 ? raw : raw * scale;
+      e.target.nextElementSibling.textContent = fmt(id, raw);
+      render();
+    });
+  }
+  document.getElementById('family').addEventListener('change', e => {
+    state.family = e.target.value; render();
+  });
+  bindRange('symmetry', 'symmetry');
+  bindRange('step', 'step');
+  bindRange('passes', 'passes');
+  bindRange('centerHole', 'centerHole', 1/100);
+  bindRange('sharpness', 'sharpness', 1/100);
+  bindRange('phase', 'phase');
+
+  // Presets
+  document.querySelectorAll('[data-preset]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      Object.assign(state, PRESETS[+btn.dataset.preset]);
+      syncUI(); render();
+    });
+  });
+
+  // Slot click = load that slot's preset
+  document.querySelectorAll('.slot').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = +btn.dataset.slot;
+      if (slots[i]) {
+        Object.assign(state, slots[i]);
+        syncUI(); render();
+        pinTarget = i;  // 連続編集しやすいよう、編集中スロットを記憶
+        document.querySelectorAll('.slot').forEach(b => b.style.outline = '');
+        btn.style.outline = '2px solid rgba(43,41,37,0.55)';
+      }
+    });
+  });
+
+  // ── 状態表示ヘルパー ──
+  function updateCount() {
+    const n = slots.filter(s => s !== null).length;
+    document.getElementById('count').textContent = `${n} / 12 filled`;
+  }
+  function showStatus(msg) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(showStatus._t);
+    showStatus._t = setTimeout(() => el.classList.remove('show'), 2400);
+  }
+
+  // Pin: 次の空きスロットに保存
+  document.getElementById('pinBtn').addEventListener('click', () => {
+    let i = slots.findIndex(s => s === null);
+    if (i < 0) i = pinTarget;
+    slots[i] = { ...state };
+    document.querySelectorAll('.slot')[i].classList.add('filled');
+    pinTarget = (i + 1) % 12;
+    updateCount();
+  });
+
+  // Clear: 直近のスロットを空にする
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    let i = (pinTarget - 1 + 12) % 12;
+    if (!slots[i]) {
+      for (let k = 11; k >= 0; k--) if (slots[k]) { i = k; break; }
+    }
+    if (slots[i]) {
+      slots[i] = null;
+      const b = document.querySelectorAll('.slot')[i];
+      b.classList.remove('filled');
+      b.style.outline = '';
+      pinTarget = i;
+      updateCount();
+    }
+  });
+
+  // Export: モーダルで JSON を可視化＋コピー＆ダウンロード
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const filled = slots.filter(s => s !== null).length;
+    if (filled === 0) {
+      alert('まだピン留めされたタイプがありません。\n📌 Pin で気に入った形を保存してから Export してください。');
+      return;
+    }
+    const data = slots.map((s, i) => ({
+      type: 'type-' + (i + 1),
+      params: s,
+    }));
+    document.getElementById('jsonText').value = JSON.stringify(data, null, 2);
+    document.getElementById('modal').classList.remove('hidden');
+  });
+
+  document.getElementById('modalClose').addEventListener('click', () => {
+    document.getElementById('modal').classList.add('hidden');
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', () => {
+    const ta = document.getElementById('jsonText');
+    const fallback = () => { ta.select(); document.execCommand && document.execCommand('copy'); showStatus('コピーしました（手動でも可）'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(ta.value).then(
+        () => showStatus('クリップボードにコピーしました ✓'),
+        fallback
+      );
+    } else fallback();
+  });
+
+  document.getElementById('downloadBtn').addEventListener('click', () => {
+    const json = document.getElementById('jsonText').value;
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'silas-mandala-types.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showStatus('silas-mandala-types.json をダウンロードしました ✓');
+  });
+
+  window.addEventListener('resize', build);
+  build();
+  syncUI();
+  updateCount();
+})();
+</script>
+</body>
+</html>

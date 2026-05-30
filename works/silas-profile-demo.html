@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SILAS — blanc / self map (mark demo)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@200;300;400;500&family=Lora:ital,wght@0,400;0,500;1,400;1,500&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500&display=swap');
+
+:root{
+  --ground:#e8e8e5;--paper:#f7f7f5;--sumi:#222120;--sumi-soft:#3a3733;--sumi-mid:#6f6b64;
+  --sumi-faint:#8d887f;--sumi-pale:#cbc6bc;--hair:#e0ddd6;--hair-soft:#eae7e0;--shu:#a8392b;--ink-wash:rgba(34,33,31,0.075);
+  --sans:'Satoshi',ui-sans-serif,-apple-system,system-ui,sans-serif;
+  --serifjp:'Noto Serif JP',serif;--serif:'Lora',Georgia,'Times New Roman',serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--ground);color:var(--sumi);font-family:var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;min-height:100vh;}
+
+.page-head{text-align:center;padding:64px 24px 18px;}
+.page-head .mark{display:inline-flex;align-items:center;gap:9px;justify-content:center;margin-bottom:22px;}
+.page-head .mark svg{height:26px;width:auto;display:block;}
+.page-head .mark .wordmark{font-family:var(--sans);font-weight:500;font-size:14px;letter-spacing:.42em;color:var(--sumi);padding-left:.42em;}
+.page-head .kicker{font-family:var(--sans);font-weight:300;font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--sumi-mid);}
+.page-head .sub{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--sumi-faint);margin-top:12px;}
+
+.stage{display:flex;justify-content:center;align-items:flex-start;padding:40px 32px 36px;}
+.frame-wrap{display:flex;flex-direction:column;align-items:center;}
+.caption{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--sumi-mid);margin-top:22px;text-align:center;}
+.caption .ax{display:block;font-family:var(--sans);font-style:normal;font-weight:300;font-size:9px;letter-spacing:.26em;text-transform:uppercase;color:var(--sumi-faint);margin-top:6px;}
+
+.phone{width:312px;background:var(--paper);border:1px solid var(--hair);border-radius:30px;
+  box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 30px 60px -30px rgba(30,28,24,.34),0 8px 22px -16px rgba(30,28,24,.2);
+  overflow:hidden;display:flex;flex-direction:column;min-height:664px;position:relative;}
+.screen{flex:1;padding:30px 26px 0;display:flex;flex-direction:column;position:relative;}
+
+.cropmarks{position:absolute;inset:0;pointer-events:none;z-index:5;}
+.cropmarks i{position:absolute;width:9px;height:9px;}
+.cropmarks i::before,.cropmarks i::after{content:"";position:absolute;background:var(--sumi-pale);}
+.cropmarks i::before{width:9px;height:1px;top:0;}
+.cropmarks i::after{width:1px;height:9px;left:0;}
+.cropmarks .tl{top:15px;left:15px;}
+.cropmarks .tr{top:15px;right:15px;transform:scaleX(-1);}
+.cropmarks .bl{bottom:84px;left:15px;transform:scaleY(-1);}
+.cropmarks .br{bottom:84px;right:15px;transform:scale(-1);}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.back{display:flex;align-items:center;gap:8px;font-family:var(--serifjp);font-weight:300;font-size:12px;letter-spacing:.1em;color:var(--sumi-mid);}
+.back svg{width:14px;height:14px;stroke:var(--sumi-mid);fill:none;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;}
+.share{width:15px;height:15px;stroke:var(--sumi-faint);fill:none;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;}
+
+.pkick{font-family:var(--sans);font-weight:400;font-size:9.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--sumi-faint);}
+.pname{font-family:var(--sans);font-weight:500;font-size:25px;letter-spacing:.04em;color:var(--sumi);margin-top:7px;}
+.pmeta{font-family:var(--serif);font-style:italic;font-size:11.5px;color:var(--sumi-faint);margin-top:9px;}
+
+/* ── A: アーキタイプ ヒーロー（型印を背後に） ── */
+.arche{text-align:center;margin:32px 0 6px;position:relative;}
+.arche-mark{
+  position:absolute;
+  inset:-30px 0 -40px;
+  display:flex;justify-content:center;align-items:center;
+  z-index:0; opacity:0.085;
+  pointer-events:none;
+}
+.arche-mark svg{width:286px;height:286px;display:block;}
+.arche .en,.arche .quote,.arche .sub{position:relative;z-index:1;}
+.arche .en{font-family:var(--sans);font-weight:300;font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--sumi-faint);}
+.arche .quote{font-family:var(--serifjp);font-weight:400;font-size:18px;line-height:1.62;letter-spacing:.02em;color:var(--sumi);margin:16px 0 14px;}
+.arche .sub{font-family:var(--serifjp);font-weight:300;font-size:12px;line-height:1.85;letter-spacing:.03em;color:var(--sumi-mid);max-width:248px;margin:0 auto;}
+
+.block-label{font-family:var(--sans);font-weight:400;font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--sumi-faint);margin-bottom:14px;}
+.block-label .jp{font-family:var(--serifjp);letter-spacing:.1em;text-transform:none;color:var(--sumi-mid);margin-left:9px;font-size:11px;}
+.rule{height:1px;background:var(--hair-soft);border:0;}
+.body{font-family:var(--serifjp);font-weight:300;font-size:12.5px;line-height:2.1;color:var(--sumi-soft);}
+.body .k{color:var(--shu);}
+
+.intro .body{margin-bottom:15px;}
+.intro .body:last-child{margin-bottom:0;}
+
+.list .entry{margin-bottom:20px;}
+.list .entry:last-child{margin-bottom:0;}
+.entry .lead{position:relative;padding-left:15px;font-family:var(--serifjp);font-weight:500;font-size:12.5px;line-height:1.75;letter-spacing:.02em;color:var(--sumi);}
+.entry .lead::before{content:"";position:absolute;left:0;top:11px;width:6px;height:1px;background:var(--sumi-pale);}
+.entry.caution .lead::before{width:6px;height:6px;top:7px;background:none;border:1px solid var(--sumi-faint);border-radius:50%;}
+.entry.trap .lead::before{width:6px;height:6px;top:7px;background:none;border:1px solid var(--sumi-pale);transform:rotate(45deg);}
+.entry .exp{padding-left:15px;margin-top:7px;font-family:var(--serifjp);font-weight:300;font-size:11.5px;line-height:2.05;color:var(--sumi-soft);}
+.entry.num .lead{padding-left:25px;}
+.entry.num .lead::before{display:none;}
+.entry.num .lead .no{position:absolute;left:1px;top:1px;font-family:var(--serif);font-style:italic;font-size:13px;color:var(--sumi-faint);}
+.entry.num .exp{padding-left:25px;}
+
+.energy .eblock{display:flex;gap:15px;align-items:flex-start;margin-bottom:22px;}
+.energy .eblock:last-child{margin-bottom:0;}
+.energy .em{flex:0 0 38px;height:38px;position:relative;margin-top:3px;}
+.energy .em svg{position:absolute;inset:0;width:100%;height:100%;}
+.energy .ebody{flex:1;}
+.energy .et{font-family:var(--sans);font-weight:400;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--sumi-mid);}
+.energy .et .j{font-family:var(--serifjp);letter-spacing:.06em;text-transform:none;color:var(--sumi-faint);margin-left:8px;font-size:11px;}
+.energy .ed{font-family:var(--serifjp);font-weight:300;font-size:11.5px;line-height:2.05;color:var(--sumi-soft);margin-top:7px;}
+
+.nots .n{position:relative;padding-left:22px;font-family:var(--serifjp);font-weight:300;font-size:11.5px;line-height:2.05;color:var(--sumi-soft);margin-bottom:15px;}
+.nots .n:last-child{margin-bottom:0;}
+.nots .n::before{content:"";position:absolute;left:2px;top:10px;width:9px;height:9px;
+  background:linear-gradient(45deg,transparent 44%,var(--sumi-faint) 44%,var(--sumi-faint) 56%,transparent 56%),
+             linear-gradient(-45deg,transparent 44%,var(--sumi-faint) 44%,var(--sumi-faint) 56%,transparent 56%);}
+
+.reason{font-family:var(--serifjp);font-weight:300;font-size:11.5px;line-height:2.05;color:var(--sumi-mid);}
+
+.source{display:flex;flex-direction:column;gap:10px;}
+.source .ln{display:flex;align-items:baseline;gap:12px;}
+.source .ln .sys{flex:0 0 70px;font-family:var(--sans);font-weight:400;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--sumi-faint);}
+.source .ln .val{font-family:var(--serifjp);font-weight:300;font-size:11.5px;line-height:1.7;color:var(--sumi-soft);letter-spacing:.02em;}
+
+.acts{display:flex;flex-direction:column;gap:0;margin-top:6px;}
+.acts .act{display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--hair-soft);
+  font-family:var(--serifjp);font-weight:400;font-size:13.5px;letter-spacing:.04em;color:var(--sumi);}
+.acts .act:last-child{border-bottom:0;}
+.acts .act .arr{font-family:var(--serif);font-style:normal;font-size:13px;color:var(--sumi-faint);}
+.acts .act.primary .arr{color:var(--shu);}
+.acts .act.quiet{color:var(--sumi-mid);font-weight:300;font-size:12.5px;}
+
+.spacer{flex:1;min-height:20px;}
+
+.nav{display:flex;justify-content:space-between;align-items:flex-end;padding:15px 22px 22px;border-top:1px solid var(--hair-soft);margin-top:18px;}
+.nav .item{display:flex;flex-direction:column;align-items:center;gap:7px;flex:1;}
+.nav .item svg{width:19px;height:19px;display:block;stroke:var(--sumi-faint);fill:none;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;}
+.nav .item span{font-family:var(--sans);font-weight:300;font-size:8.5px;letter-spacing:.12em;color:var(--sumi-faint);}
+.nav .item.active svg{stroke:var(--sumi);}
+.nav .item.active span{color:var(--sumi);font-weight:400;}
+
+.frame-wrap{opacity:0;transform:translateY(14px);animation:rise .9s cubic-bezier(.2,.7,.2,1) forwards .1s;}
+.page-head{opacity:0;animation:rise .9s ease forwards;}
+@keyframes rise{to{opacity:1;transform:translateY(0);}}
+
+/* ── B: フッターの朱印を型印に ── */
+.page-foot{text-align:center;padding:14px 24px 64px;}
+.page-foot .seal{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;border-radius:3px;
+  background:var(--shu);
+  box-shadow:inset 0 0 0 1.5px rgba(244,235,225,.32);
+  margin-bottom:14px;
+}
+.page-foot .seal svg{width:30px;height:30px;display:block;}
+.page-foot .line{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--sumi-faint);}
+</style>
+</head>
+<body>
+
+<svg style="position:absolute;width:0;height:0" aria-hidden="true">
+  <symbol id="silas-mark" viewBox="0 0 143.31 221.18">
+    <path d="M71.75,221.18l-.13-.68-.16-.68c9.34-2.23,20.56-7.34,31.28-15.33,2.53-2.1,4.21-4.04,4.82-5.62.39-1.01.34-1.84-.16-2.51-1.13-1.34-3.65.38-8.38,3.78-5.88,4.23-14.78,10.62-27.21,13.58l-.32-1.35c12.17-2.89,20.93-9.19,26.72-13.36,4.98-3.58,8.27-5.95,10.28-3.52l.02.02c.56.74,1.07,2.02.35,3.87-.04.09-.07.19-.12.28,17.9-15.57,32.98-39.62,33.18-72.13-2.59-.26-6.47-2.1-8.03-10.37-.24-1.25-.52-2.51-.85-3.73l.63-.17-.63.17c-6.09-22.86-26.86-38.83-50.51-38.83-16.16,0-29.31,13.15-29.31,29.31,0,9.34,7.85,15.13,15.12,15.13,1.06.02,6.36-.15,7.71-4.82l1.34.39c-1.27,4.37-5.67,5.87-9.06,5.82-7.93,0-16.51-6.32-16.51-16.52,0-16.93,13.77-30.71,30.7-30.71,24.28,0,45.61,16.39,51.86,39.86.34,1.26.63,2.55.87,3.84,1.05,5.58,3.4,8.82,6.66,9.23-.4-32.41-26.89-58.66-59.39-58.66-20.09,0-36.44,16.35-36.44,36.44,0,12.27,9.98,22.26,22.25,22.26,7.44,0,13.49-6.05,13.49-13.49,0-2.19-.85-4.24-2.41-5.76-1.53-1.49-3.54-2.32-5.67-2.32-1.61,0-2.69.74-3.31,1.36-.9.9-1.41,2.13-1.41,3.36,0,.9.41,1.5.76,1.85.51.51,1.2.8,1.9.8.65,0,1.37-.56,1.37-1.37,0-.28-.24-.58-.59-.58v-1.39c1.09,0,1.98.89,1.98,1.97,0,1.65-1.43,2.77-2.77,2.77-1.06,0-2.11-.44-2.88-1.21-.75-.75-1.17-1.76-1.16-2.83,0-1.6.66-3.19,1.82-4.35,1.14-1.14,2.66-1.76,4.29-1.76,2.49,0,4.85.96,6.64,2.71,1.82,1.78,2.83,4.18,2.82,6.75,0,8.2-6.68,14.88-14.88,14.88-6.02,0-12.01-2.44-16.44-6.69-4.65-4.47-7.21-10.49-7.21-16.96,0-10.19,3.98-19.74,11.21-26.88,7.15-7.06,16.61-10.95,26.62-10.95,16.33,0,31.63,6.36,43.1,17.9,5.55,5.59,9.91,12.09,12.95,19.33,3.14,7.47,4.73,15.4,4.73,23.55,0,30.21-13.04,51.55-23.98,64.13-5.02,5.78-10.63,10.94-16.74,15.4-3.31,2.58-7.06,4.82-9.21,6.03-1.56.88-3.16,1.72-4.77,2.52-.82.41-1.65.81-2.47,1.19-5.38,2.49-10.59,4.35-14.38,5.06Z"/>
+    <circle class="hi" cx="71.64" cy="110.83" r="6.18"/>
+    <path d="M71.64,117.71c-3.79,0-6.88-3.09-6.88-6.88s3.09-6.88,6.88-6.88,6.88,3.09,6.88,6.88-3.09,6.88-6.88,6.88ZM71.64,105.35c-3.03,0-5.49,2.46-5.49,5.49s2.46,5.49,5.49,5.49,5.49-2.46,5.49-5.49-2.46-5.49-5.49-5.49Z"/>
+    <path d="M71.64,113.25c-1.33,0-2.42-1.09-2.42-2.42s1.09-2.42,2.42-2.42,2.42,1.09,2.42,2.42-1.09,2.42-2.42,2.42ZM71.64,110.5c-.18,0-.33.15-.33.33s.15.33.33.33.33-.15.33-.33-.15-.33-.33-.33Z"/>
+  </symbol>
+</svg>
+<style>.silas-svg path{fill:var(--sumi);}.silas-svg .hi{fill:var(--paper);}.page-head .mark .silas-svg .hi{fill:var(--ground);}</style>
+
+<header class="page-head">
+  <div class="mark"><svg class="silas-svg" viewBox="0 0 143.31 221.18"><use href="#silas-mark"/></svg><span class="wordmark">SILAS</span></div>
+  <div class="kicker">blanc — you, read like a structure</div>
+  <div class="sub">five systems, woven into one reading.</div>
+</header>
+
+<main class="stage">
+  <div class="frame-wrap">
+    <div class="phone">
+      <div class="cropmarks"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
+      <div class="screen">
+        <div class="topbar">
+          <div class="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>診断結果に戻る</div>
+          <svg class="share" viewBox="0 0 24 24"><path d="M12 16V4M8 8l4-4 4 4M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/></svg>
+        </div>
+
+        <div class="pkick">Self-map</div>
+        <div class="pname">あなたの構造</div>
+        <div class="pmeta">占術5体系を統合した文章マップ</div>
+
+        <div class="arche">
+          <!-- ── 型印・背景 watermark ── -->
+          <div class="arche-mark" aria-hidden="true">
+            <svg viewBox="-100 -100 200 200">
+              <path id="heroMark" fill="none" stroke="var(--sumi)" stroke-width="0.35" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+          </div>
+
+          <div class="en">Artist</div>
+          <div class="quote">「完璧な形を求めながら、<br>次々と新しい線を<br>繋がずにはいられない人」</div>
+          <div class="sub">精密な分析と衝動的な行動の間で揺れ動き、最後に独自の構造を生み出す人</div>
+        </div>
+
+        <hr class="rule" style="margin:26px 0 22px">
+        <div class="intro">
+          <p class="body">あなたは、内側に極めて精密で繊細なセンサーを持ちながら、外側では常に複数の情報や可能性に向かって動き続けている構造を持っています。一つの物事を見ているようで、頭の中では同時に三つも四つも別の領域へと線を繋ぎ、まだ誰も気づいていない新しいパターンの断片を拾い集めているでしょう。しかし、その軽やかで多動的な思考の裏側には、「自分の中の理想の形に届かないと苦しい」という強い美意識と、完璧を求める切実な欲求が横たわっています。火がついた瞬間、考えるより先に手が動いてしまうほどの圧倒的な衝動を持ちながら、感情が動いた直後には「なぜそう感じたのか」を冷静に分析しようとする。<span class="k">この「熱い推進力」と「冷たい分析力」の同居</span>が、あなたの複雑で魅力的なエンジンとなっています。</p>
+          <p class="body">日常の場面では、この構造は「周囲の雑な説明や、みんなが流している小さな違和感をそのまま受け取れない」という形で現れます。他の人が「これでいいだろう」と見過ごす論理の隙間や、言葉の裏にある不協和音に気づいてしまい、一人で思考を深めることが多くなります。一方で、興味を惹かれる新しい刺激に出会うと瞬時にそちらへ意識が向き、複数のプロジェクトを同時に走らせる器用さも持っています。ただ、他者のペースに巻き込まれると自分と他者の境界線が曖昧になりやすく、手放すべきものを抱え込んでしまう傾向があります。</p>
+          <p class="body">見落とされがちなのは、「自然体で楽しみたい」という純粋な欲求と、「社会的な見え方や品格を保ちたい」というプライドが、常に内側で綱引きをしている点です。楽しめないと続かないのに、ただ遊んでいるだけでは満たされない。その葛藤こそが、あなたにしか生み出せない質の高い成果の源泉です。今は、与えられた正解ではなく自分で見つけた構造を築き上げる流れの中にいます。まずは一番熱量の高い「火種」を一つ選び、それを形にすることにエネルギーを注いでみてください。</p>
+        </div>
+
+        <hr class="rule" style="margin:26px 0 22px">
+        <div class="block-label">Strength<span class="jp">強み</span></div>
+        <div class="list">
+          <div class="entry">
+            <div class="lead">無数の点から瞬時に独自の線を繋ぐ力</div>
+            <div class="exp">異なる分野の情報や、一見無関係に思える事象を同時に処理し、結びつけて新しい文脈を生み出す場面で圧倒的な力を発揮します。混沌とした状況でも、頭の中で素早く全体像をマッピングし、次に打つべき最適な手を見つけ出せます。</div>
+          </div>
+          <div class="entry">
+            <div class="lead">違和感を放置せず、理想の形まで磨き上げる力</div>
+            <div class="exp">他者が「このくらいで十分」と妥協するラインを越え、自分の中の精密な基準に達するまで追求します。雑な論理や美しくない構造を見逃さず修正を繰り返すため、生み出される成果物は純度が高く、強固な骨組みを持ちます。</div>
+          </div>
+          <div class="entry">
+            <div class="lead">衝動を確かな現実に落とし込む構築力</div>
+            <div class="exp">突発的なアイデアや情熱だけで終わらせず、最後まで形にして社会に提示する責任感と実行力があります。ゼロからイチを生む瞬発力と、それを現実のシステムに適合させる粘り強さを併せ持つ、確かな結果を残す実践者です。</div>
+          </div>
+        </div>
+
+        <hr class="rule" style="margin:24px 0 22px">
+        <div class="block-label">Caution<span class="jp">注意点</span></div>
+        <div class="list">
+          <div class="entry caution">
+            <div class="lead">情報と興味を広げすぎて中心を見失う</div>
+            <div class="exp">次々と新しい可能性にアクセスできるため、あれもこれもと手を出した結果、本当にエネルギーを注ぐべき核が分からなくなる瞬間があります。興味が拡散し、着地点が見えずプロジェクトが空中分解するリスクを抱えています。</div>
+          </div>
+          <div class="entry caution">
+            <div class="lead">焦燥感に駆られ、休むことを自分に許せない</div>
+            <div class="exp">常に背中に見えない焦りが張り付いており、じっとしていると罪悪感を覚えます。心身が休息を求めるサインを見落とし、限界を超えてから突然システムダウンを起こすパターンに陥りやすいです。</div>
+          </div>
+          <div class="entry caution">
+            <div class="lead">他者の課題まで抱え込み、手放せなくなる</div>
+            <div class="exp">自分の領域を守る壁が薄くなりがちで、他者の期待に応えようとするうちに、本来負うべきではない責任まで背負い込みます。切り捨てる前にとりあえず保留し、気づけば両手が塞がって動けなくなることがあります。</div>
+          </div>
+        </div>
+
+        <hr class="rule" style="margin:24px 0 22px">
+        <div class="block-label">Practice<span class="jp">自分の活かし方</span></div>
+        <div class="list">
+          <div class="entry num">
+            <div class="lead"><span class="no">1</span>思考が飽和したら、まず外部の「枠」に吐き出す</div>
+            <div class="exp">線が絡み合い処理が追いつかなくなったら、考えるのをやめて手を動かす。文章なら1段落、ノートなら1ページと、物理的に制限のある枠へ書き出すことで脳内メモリを解放し、次へ進む余白を作れます。</div>
+          </div>
+          <div class="entry num">
+            <div class="lead"><span class="no">2</span>「楽しむための時間」を強制的にブロックする</div>
+            <div class="exp">責任感が強すぎて余白はすぐ作業で埋まります。「何の役にも立たないが純粋に楽しめること」を仕事と同じようにカレンダーに書き込み死守する。その無駄な時間が、枯渇したエネルギーを最も早く回復させます。</div>
+          </div>
+          <div class="entry num">
+            <div class="lead"><span class="no">3</span>違和感を感じたら「これは誰の課題か」を自問する</div>
+            <div class="exp">他者の問題や不協和音に気づいても、すぐ解決に動かず一呼吸置く。自分の責任範囲かを確認し、違えば「気づいたけれど手は出さない」と選ぶ練習が、あなたのキャパシティを守る盾になります。</div>
+          </div>
+          <div class="entry num">
+            <div class="lead"><span class="no">4</span>「完成度70%」で一度、他者の目に触れさせる</div>
+            <div class="exp">完璧主義が発動したときこそ、未完成のまま信頼できる人に共有してみる。自分が「まだ足りない」と思う部分が、他者にはすでに十分な価値を持っていると気づき、無駄な調整作業を減らせます。</div>
+          </div>
+          <div class="entry num">
+            <div class="lead"><span class="no">5</span>物理的な環境を変えて、衝動のスイッチを切り替える</div>
+            <div class="exp">焦りから同じ作業に固執したら、思考を制御しようとせず身体の居場所を移す。カフェや散歩、別の部屋へ移るだけで視覚情報が変わり、脳のモードが切り替わって執着から解放されます。</div>
+          </div>
+        </div>
+
+        <hr class="rule" style="margin:24px 0 22px">
+        <div class="block-label">Pitfall<span class="jp">陥りやすい罠</span></div>
+        <div class="list">
+          <div class="entry trap">
+            <div class="lead">「考えたい」と「動きたい」の板挟みでフリーズする</div>
+            <div class="exp">完璧な計画を立ててから動きたい欲求と、今すぐ行動しなければという衝動が同時に発火する。アクセルとブレーキを同時に踏み込み、莫大なエネルギーを使うのに現実が1ミリも進まない罠に陥ります。</div>
+          </div>
+          <div class="entry trap">
+            <div class="lead">「品格」を気にして、本音の表現を抑え込む</div>
+            <div class="exp">本当は型破りなアプローチを楽しみたいのに「どう見られるか」が介入し、無難な選択に落ち着く。本来の鋭い感性や熱量が薄められ、誰にでも作れる退屈な成果物になって、後から激しく後悔します。</div>
+          </div>
+          <div class="entry trap">
+            <div class="lead">「見えない完璧」を追い求め、永遠に完成しない</div>
+            <div class="exp">頭の中の理想が鮮明すぎて現実の出力が追いつかず、いつまでも修正を繰り返す。他者には十分な出来でも自分が納得できず、最後の「完了ボタン」を押せずに機会を逃してしまいます。</div>
+          </div>
+        </div>
+
+        <hr class="rule" style="margin:24px 0 24px">
+        <div class="block-label">Energy<span class="jp">エネルギー構造</span></div>
+        <div class="energy">
+          <div class="eblock">
+            <div class="em">
+              <svg viewBox="0 0 40 40"><defs><radialGradient id="e1" cx="50%" cy="62%" r="55%"><stop offset="0%" stop-color="rgba(34,33,31,0.22)"/><stop offset="100%" stop-color="rgba(34,33,31,0)"/></radialGradient></defs><ellipse cx="20" cy="26" rx="17" ry="11" fill="url(#e1)"/><path d="M3 27 Q12 21 20 25 T37 26" fill="none" stroke="var(--sumi-faint)" stroke-width="1"/></svg>
+            </div>
+            <div class="ebody">
+              <div class="et">Base<span class="j">土台</span></div>
+              <div class="ed">何層にも積み重なった堅牢な「岩盤」の上に広がる、静かで澄み切った「湖」。動じない重みを持ちながら、その表面は周囲のわずかな光の変化を精密に映し出します。あらゆるものを吸収し蓄積する、底知れぬ容量を持っています。</div>
+            </div>
+          </div>
+          <div class="eblock">
+            <div class="em">
+              <svg viewBox="0 0 40 40"><path d="M20 6 a14 14 0 1 1 -13 14 a10 10 0 1 1 9 -10 a6 6 0 1 1 -5 6" fill="none" stroke="var(--sumi-faint)" stroke-width="1"/><circle cx="20" cy="20" r="1.6" fill="var(--sumi-soft)"/></svg>
+            </div>
+            <div class="ebody">
+              <div class="et">Drive<span class="j">駆動力</span></div>
+              <div class="ed">地殻の奥で燃え盛り、亀裂を見つけて噴出する「マグマ」の熱量と、野原を吹き抜ける「突風」の好奇心。まだ見ぬ可能性を察知した瞬間、熱と風が合わさって爆発的な推進力を生み、既存の風景を一瞬で塗り替えます。</div>
+            </div>
+          </div>
+          <div class="eblock">
+            <div class="em">
+              <svg viewBox="0 0 40 40"><defs><radialGradient id="e3a" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="rgba(34,33,31,0.16)"/><stop offset="100%" stop-color="rgba(34,33,31,0)"/></radialGradient></defs><circle cx="15" cy="20" r="11" fill="url(#e3a)"/><circle cx="25" cy="20" r="11" fill="url(#e3a)"/><circle cx="20" cy="20" r="1.4" fill="var(--sumi-soft)"/></svg>
+            </div>
+            <div class="ebody">
+              <div class="et">Paradox<span class="j">葛藤</span></div>
+              <div class="ed">「完璧な静寂の中で思考を深めたい」願いと、「混沌に飛び込んで無数の線を繋ぎたい」衝動が激しく衝突しています。この矛盾こそが、思いつきを強固なシステムへ鍛え、冷たい論理に熱い命を吹き込む、あなた独自の創造の源泉です。</div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="rule" style="margin:24px 0 22px">
+        <div class="block-label">Not you<span class="jp">あなたに当てはまらないもの</span></div>
+        <div class="nots">
+          <div class="n">「一つの場所にとどまり、同じ作業を永遠に繰り返すだけの職人」ではありません。あなたの頭脳は常に新しい刺激を求め、一つの分野を掘り下げる最中にも、別の領域へ線を繋いで新しい文脈を発見せずにはいられないからです。</div>
+          <div class="n">「他人の感情に寄り添い、ただ共感して終わるだけのカウンセラー」ではありません。他者の感情の動きを鋭く察知しますが、そのまま受け入れるのではなく「なぜそうなるのか」を即座に分析し、構造的な解決策を探ろうとするからです。</div>
+          <div class="n">「その場のノリと勢いだけで全てを突破する楽天家」ではありません。軽やかに動いて見えても内側では精密な批判精神が働いており、自分が納得できる確固たる形を残さなければ決して満足できないからです。</div>
+        </div>
+
+        <hr class="rule" style="margin:24px 0 22px">
+        <div class="block-label">Reasoning<span class="jp">占術での読み方</span></div>
+        <p class="reason">この読みは中央星「調舒星」、丙火＋火 優勢、双子座集中（太陽・水星・火星）、月乙女座、太陽×月 square、月×火星 square、水星×木星 opposition、大運甲寅、子丑天中殺、数秘8、八白土星 等を統合しています。Artist の選定は調舒星 × 火 優勢（午月）の交差に依拠。双子座の多動性と月乙女座の分析力の葛藤、調舒星の完璧主義と火優勢の衝動のぶつかり合いをコアに抽出し、木・金の欠落は境界線の曖昧さと抱え込みやすさとして翻訳しました。</p>
+
+        <hr class="rule" style="margin:24px 0 22px">
+        <div class="block-label">Source<span class="jp">分析ソース</span></div>
+        <div class="source">
+          <div class="ln"><span class="sys">西洋</span><span class="val">双子座（太陽・水星・火星集中 / 月 乙女座）</span></div>
+          <div class="ln"><span class="sys">四柱</span><span class="val">年 癸亥 ・ 月 戊午 ・ 日 丙子 ・ 時 戊戌</span></div>
+          <div class="ln"><span class="sys">九星</span><span class="val">八白土星</span></div>
+          <div class="ln"><span class="sys">数秘</span><span class="val">8</span></div>
+          <div class="ln"><span class="sys">五行</span><span class="val">木0 ・ 火4 ・ 土3 ・ 金0 ・ 水3</span></div>
+          <div class="ln"><span class="sys">Aspect</span><span class="val">太陽×月 square / 月×火星 square / 太陽×土星 trine / 水星×木星 opposition</span></div>
+        </div>
+
+        <hr class="rule" style="margin:24px 0 6px">
+        <div class="acts">
+          <div class="act primary">この構造を、対話で深める<span class="arr">→</span></div>
+          <div class="act">記録に、構造を重ねて見る<span class="arr">→</span></div>
+          <div class="act quiet">自己マップをシェア<span class="arr">↗</span></div>
+          <div class="act quiet">構造を読み直す<span class="arr">↻</span></div>
+        </div>
+        <div class="spacer"></div>
+      </div>
+      <nav class="nav">
+        <div class="item"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg><span>今</span></div>
+        <div class="item"><svg viewBox="0 0 24 24"><path d="M5 5h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H9l-4 4V6a1 1 0 0 1 1-1z"/></svg><span>対話</span></div>
+        <div class="item"><svg viewBox="0 0 24 24"><path d="M6 4h12a1 1 0 0 1 1 1v15l-7-4-7 4V5a1 1 0 0 1 1-1z"/></svg><span>記録</span></div>
+        <div class="item"><svg viewBox="0 0 24 24"><circle cx="9" cy="12" r="5"/><circle cx="15" cy="12" r="5"/></svg><span>関係</span></div>
+        <div class="item active"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg><span>プロフィール</span></div>
+      </nav>
+    </div>
+    <div class="caption">You — the structure you live inside<span class="ax">構造 / 活かし方 / エネルギー / 根拠</span></div>
+  </div>
+</main>
+
+<footer class="page-foot">
+  <!-- ── 朱印を型印に置き換え ── -->
+  <div class="seal" aria-label="Artist 型印">
+    <svg viewBox="-100 -100 200 200" aria-hidden="true">
+      <path id="sealMark" fill="none" stroke="#f4ebe1" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" opacity="0.92"/>
+    </svg>
+  </div>
+  <div class="line">You are not the reading. You are the one reading.</div>
+</footer>
+
+<script>
+/* Artist 用の型印: Maurer rose n=8, d=43° — "繊細な網状＝多くの線を結ぶ"アーティスト性 */
+const TYPE = { family: 'maurer', n: 8, d: 43 };
+
+function maurerPath(n, dDeg, scale) {
+  const dRad = dDeg * Math.PI / 180;
+  let path = '';
+  for (let i = 0; i <= 360; i++) {
+    const θ = i * dRad;
+    const r = Math.sin(n * θ);
+    const x = r * Math.cos(θ) * scale;
+    const y = r * Math.sin(θ) * scale;
+    path += (i === 0 ? 'M' : 'L') + x.toFixed(2) + ' ' + y.toFixed(2);
+  }
+  return path;
+}
+
+// viewBox は -100..100。scale 95 で外周いっぱい
+document.getElementById('heroMark').setAttribute('d', maurerPath(TYPE.n, TYPE.d, 95));
+document.getElementById('sealMark').setAttribute('d', maurerPath(TYPE.n, TYPE.d, 78));
+</script>
+
+</body>
+</html>

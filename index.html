@@ -172,6 +172,28 @@
   .caption {
     padding: 1.05rem 1.1rem 1.25rem;
   }
+  .caption .meta {
+    display: flex; align-items: center; gap: 0.55rem;
+    font-family: 'Satoshi', sans-serif; font-weight: 400;
+    font-size: 0.6rem; letter-spacing: 0.22em;
+    color: var(--muted);
+    margin-bottom: 0.55rem;
+    text-transform: uppercase;
+  }
+  .caption .meta .no { color: var(--ink); letter-spacing: 0.18em; }
+  .caption .meta .ver { opacity: 0.7; }
+  .caption .meta .archived-tag {
+    color: #a8392b; letter-spacing: 0.16em; opacity: 0.85;
+  }
+  .tile.archived .frame { opacity: 0.55; filter: saturate(0.8); }
+  .tile.archived .frame::after {
+    content: 'ARCHIVED';
+    position: absolute; top: 0.8rem; left: 0.8rem; z-index: 4;
+    font-family: 'Satoshi', sans-serif; font-weight: 500;
+    font-size: 0.58rem; letter-spacing: 0.22em;
+    color: #a8392b; background: rgba(249,248,246,0.85);
+    padding: 0.22rem 0.55rem; border-radius: 2px;
+  }
   .caption .use {
     display: inline-block;
     font-family: 'Satoshi', sans-serif; font-weight: 400;
@@ -297,9 +319,24 @@
   // ====== 作品の登録 ======
   // 新作はここに1行足すだけ。file は works/ 配下の相対パス。
   // still は静止プレビュー画像（任意）。無ければ和紙の空き額のまま。
-  // project = どのプロダクト向けの案か / use = 用途。この2軸だけで束ねる。
+  //
+  // ▼ 識別子とバージョン
+  //   no       : F001〜の通し番号。一度振ったら変えない（改訂版でも継承）
+  //   version  : 'v1' / 'v2' / ... 同じ作品の改訂を重ねる
+  //   status   : 'current' | 'archived'
+  //              旧版は消さずに残し archived にする。
+  //              （手痕跡を構造として残すという指針＝subtractive-vs-overbuild）
+  //
+  // ▼ 改訂手順
+  //   1) 既存エントリの status を 'archived' に変更
+  //   2) 同じ no で新しいエントリを追加（version='v2', status='current'）
+  //   3) ファイル名は `-v2` サフィックス推奨（例: sd-todays-mountain-v2.html）
+  //      git 履歴で前バージョンは常に取り出せるが、並べて見たいので別ファイルで残す
+  //
+  // project = どのプロダクト向けの案か / use = 用途。この2軸で束ねる。
   const WORKS = [
     {
+      no: 'F001', version: 'v1', status: 'current',
       project: 'STUDIES',          // 習作・どのプロダクトにも属さない単独作
       use: '鑑賞 / Standalone',
       ja: '六段階の変容',
@@ -308,6 +345,7 @@
       still: '' // 例: 'works/thumbs/mandala.png'
     },
     {
+      no: 'F002', version: 'v1', status: 'current',
       project: 'STUDIES',
       use: '工房 / Studio',
       ja: '曼荼羅工房',
@@ -316,6 +354,7 @@
       still: ''
     },
     {
+      no: 'F003', version: 'v1', status: 'current',
       project: 'SILAS',
       use: '診断の待ち時間 / Loading',
       ja: '起動の星座',
@@ -324,6 +363,7 @@
       still: ''
     },
     {
+      no: 'F004', version: 'v1', status: 'current',
       project: 'SILAS',
       use: '瞑想の線画 / Loading',
       ja: '禅の筆',
@@ -332,6 +372,7 @@
       still: ''
     },
     {
+      no: 'F005', version: 'v1', status: 'current',
       project: 'SILAS',
       use: '診断の待ち時間 / Loading',
       ja: '深い収束',
@@ -340,6 +381,7 @@
       still: ''
     },
     {
+      no: 'F006', version: 'v1', status: 'current',
       project: 'SILAS',
       use: 'ロゴの鼓動 / Idle',
       ja: '鼓動',
@@ -348,6 +390,7 @@
       still: ''
     },
     {
+      no: 'F007', version: 'v1', status: 'current',
       project: 'SILAS',
       use: '瞑想の間 / Pause',
       ja: '瞑想の鼓動',
@@ -356,6 +399,7 @@
       still: ''
     },
     {
+      no: 'F008', version: 'v1', status: 'current',
       project: 'SILAS',
       use: 'オープニング / Reveal',
       ja: '広がる渦',
@@ -364,6 +408,7 @@
       still: ''
     },
     {
+      no: 'F009', version: 'v1', status: 'current',
       project: 'SILAS',
       use: '診断の待ち時間 / 結果遷移',
       ja: '収束する星座',
@@ -372,6 +417,7 @@
       still: ''
     },
     {
+      no: 'F010', version: 'v1', status: 'current',
       project: 'SILAS',
       use: 'ジェネラティブ / Generative',
       ja: '枯山水',
@@ -380,6 +426,7 @@
       still: ''
     },
     {
+      no: 'F011', version: 'v1', status: 'current',
       project: 'SILAS',
       use: 'ジェネラティブ / Generative',
       ja: '数式の曼荼羅',
@@ -388,6 +435,7 @@
       still: ''
     },
     {
+      no: 'F012', version: 'v1', status: 'current',
       project: 'SILAS',
       use: '型印 / Type Marks',
       ja: '12タイプ印',
@@ -396,6 +444,7 @@
       still: ''
     },
     {
+      no: 'F013', version: 'v1', status: 'current',
       project: 'SILAS',
       use: 'プロファイル / Profile',
       ja: 'プロファイル試作',
@@ -404,6 +453,7 @@
       still: ''
     },
     {
+      no: 'F014', version: 'v1', status: 'current',
       project: 'SILAS',
       use: 'Home / Today',
       ja: '今日の山',
@@ -455,7 +505,7 @@
 
   function makeTile(w) {
     const tile = document.createElement('article');
-    tile.className = 'tile';
+    tile.className = 'tile' + (w.status === 'archived' ? ' archived' : '');
     tile.style.transitionDelay = (0.1 + order++ * 0.07) + 's';
 
     const frame = document.createElement('div');
@@ -470,7 +520,16 @@
 
     const caption = document.createElement('div');
     caption.className = 'caption';
+    const metaLine =
+      (w.no || w.version)
+        ? `<div class="meta">` +
+            (w.no ? `<span class="no">${w.no}</span>` : '') +
+            (w.version ? `<span class="ver">${w.version}</span>` : '') +
+            (w.status === 'archived' ? `<span class="archived-tag">旧版</span>` : '') +
+          `</div>`
+        : '';
     caption.innerHTML =
+      metaLine +
       (w.use ? `<span class="use">${w.use}</span>` : '') +
       `<span class="ja">${w.ja}</span>` +
       `<span class="en">${w.en}</span>`;

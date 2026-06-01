@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SILAS — 比の渦 / Ratio Spirals</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400&family=Lora:ital@1&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500&display=swap');
+:root{
+  --ground:#e8e8e5;--paper:#f7f7f5;--sumi:#222120;--sumi-soft:#3a3733;--sumi-mid:#6f6b64;
+  --sumi-faint:#a39e95;--sumi-pale:#cbc6bc;--hair:#e0ddd6;--hair-soft:#eae7e0;--shu:#a8392b;
+  --sans:'Satoshi',ui-sans-serif,system-ui,sans-serif;--serifjp:'Noto Serif JP',serif;--serif:'Lora',Georgia,serif;--mono:ui-monospace,Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--ground);color:var(--sumi);font-family:var(--sans);-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1200px;margin:0 auto;padding:52px 32px 80px;}
+.head{margin-bottom:30px;}
+.kicker{font-family:var(--sans);font-weight:300;font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--sumi-mid);}
+h1{font-family:var(--serifjp);font-weight:400;font-size:30px;letter-spacing:.02em;margin:14px 0 10px;}
+.sub{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--sumi-faint);}
+
+.controls{display:flex;align-items:center;gap:30px;flex-wrap:wrap;padding:18px 22px;background:var(--paper);border:1px solid var(--hair);border-radius:6px;margin-bottom:26px;}
+.modes{display:flex;border:1px solid var(--hair);border-radius:4px;overflow:hidden;}
+.modes button{background:var(--paper);border:0;border-left:1px solid var(--hair);padding:11px 16px;font-family:var(--sans);font-weight:400;font-size:10.5px;letter-spacing:.14em;color:var(--sumi-mid);cursor:pointer;transition:.15s;}
+.modes button:first-child{border-left:0;}
+.modes button.on{background:var(--sumi);color:var(--paper);}
+.slider{display:flex;flex-direction:column;gap:6px;min-width:130px;}
+.slider label{font-family:var(--sans);font-weight:400;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--sumi-mid);display:flex;justify-content:space-between;align-items:baseline;}
+.slider label .val{font-family:var(--mono);font-size:10.5px;color:var(--sumi-faint);text-transform:none;letter-spacing:0;}
+input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:1px;background:var(--sumi-pale);outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:13px;height:13px;border-radius:50%;background:var(--paper);border:1px solid var(--sumi-mid);cursor:pointer;}
+input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--paper);border:1px solid var(--sumi-mid);cursor:pointer;}
+.toggles{display:flex;gap:18px;}
+.tg{display:flex;align-items:center;gap:8px;font-family:var(--sans);font-weight:300;font-size:11px;letter-spacing:.06em;color:var(--sumi-mid);cursor:pointer;}
+.tg input{accent-color:var(--shu);}
+
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
+.tile{background:var(--paper);border:1px solid var(--hair);border-radius:6px;padding:18px 16px 20px;display:flex;flex-direction:column;align-items:center;}
+.tile h3{font-family:var(--serifjp);font-weight:400;font-size:18px;margin:0;display:flex;align-items:baseline;gap:10px;letter-spacing:.04em;}
+.tile h3 .sym{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--sumi-mid);letter-spacing:0;}
+.canvas-wrap{width:240px;height:240px;display:flex;align-items:center;justify-content:center;margin:14px 0 12px;}
+.tile canvas{display:block;}
+.tile .params{font-family:var(--mono);font-size:10px;color:var(--sumi-faint);text-align:center;line-height:1.7;letter-spacing:.04em;}
+.tile .params .accent{color:var(--shu);}
+
+.note{font-family:var(--serif);font-style:italic;font-size:13px;line-height:1.85;color:var(--sumi-faint);margin-top:34px;text-align:center;max-width:740px;margin-left:auto;margin-right:auto;}
+
+@media (max-width:960px){.grid{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:540px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="head">
+  <div class="kicker">SILAS · proportional marks</div>
+  <h1>比の渦</h1>
+  <div class="sub">golden vs silver vs yamato vs bronze — same draw rule, only the ratio changes</div>
+</div>
+
+<div class="controls">
+  <div class="modes">
+    <button data-m="spiral" class="on">螺旋</button>
+    <button data-m="phyllo">充填</button>
+    <button data-m="petal">重ね</button>
+  </div>
+
+  <div class="slider" id="sl_turns">
+    <label>回転数 <span class="val">3.0</span></label>
+    <input type="range" min="1.5" max="5" step="0.1" value="3.0">
+  </div>
+  <div class="slider" id="sl_N" style="display:none;">
+    <label>点の数 <span class="val">500</span></label>
+    <input type="range" min="100" max="1200" step="10" value="500">
+  </div>
+  <div class="slider" id="sl_weight">
+    <label>筆圧 <span class="val">1.00</span></label>
+    <input type="range" min="0.4" max="2.2" step="0.01" value="1.0">
+  </div>
+  <div class="slider" id="sl_petals" style="display:none;">
+    <label>重ねの数 <span class="val">5</span></label>
+    <input type="range" min="2" max="12" step="1" value="5">
+  </div>
+
+  <div class="toggles">
+    <label class="tg"><input type="checkbox" id="tgShu"> 朱の核</label>
+    <label class="tg"><input type="checkbox" id="tgFlip"> 反転</label>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="tile" data-r="gold">
+    <h3>黄金 <span class="sym">φ</span></h3>
+    <div class="canvas-wrap"><canvas></canvas></div>
+    <div class="params" id="p_gold">—</div>
+  </div>
+  <div class="tile" data-r="silver">
+    <h3>白銀 <span class="sym">1+√2</span></h3>
+    <div class="canvas-wrap"><canvas></canvas></div>
+    <div class="params" id="p_silver">—</div>
+  </div>
+  <div class="tile" data-r="yamato">
+    <h3>大和 <span class="sym">√2</span></h3>
+    <div class="canvas-wrap"><canvas></canvas></div>
+    <div class="params" id="p_yamato">—</div>
+  </div>
+  <div class="tile" data-r="bronze">
+    <h3>青銅 <span class="sym">(3+√13)/2</span></h3>
+    <div class="canvas-wrap"><canvas></canvas></div>
+    <div class="params" id="p_bronze">—</div>
+  </div>
+</div>
+
+<div class="note">
+  螺旋では四半回転で「比」倍に膨らむ。同じ規則・同じパラメータ。違うのは比だけ。<br>
+  φ は西洋古典、白銀／大和は日本伝統に通じる。並べると初めて、ロゴが「どの文化の比に乗っているか」が見える。
+</div>
+
+</div>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const TILE = 240;
+
+  const RATIOS = [
+    { key: 'gold',   ratio: (1+Math.sqrt(5))/2 },
+    { key: 'silver', ratio: 1+Math.sqrt(2) },
+    { key: 'yamato', ratio: Math.sqrt(2) },
+    { key: 'bronze', ratio: (3+Math.sqrt(13))/2 },
+  ];
+
+  let mode = 'spiral';
+
+  // setup canvases
+  const canvases = {};
+  document.querySelectorAll('.tile').forEach(t => {
+    const key = t.dataset.r;
+    const cv = t.querySelector('canvas');
+    cv.style.width = TILE + 'px';
+    cv.style.height = TILE + 'px';
+    cv.width = TILE * dpr;
+    cv.height = TILE * dpr;
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    canvases[key] = { ctx };
+  });
+
+  // ----- geometry generators -----
+  function genSpiral(ratio, turns) {
+    const b = Math.log(ratio) / (Math.PI/2);
+    const a = 0.6;
+    const steps = Math.floor(turns * 140);
+    const pts = [];
+    for (let i = 0; i <= steps; i++) {
+      const th = (i/steps) * turns * 2 * Math.PI;
+      const r = a * Math.exp(b * th);
+      pts.push({ x: r*Math.cos(th), y: r*Math.sin(th), t: i/steps });
+    }
+    return { pts, b };
+  }
+
+  function genPhyllo(ratio, N) {
+    // metallic-style angle: 360° × (1 - 1/ratio)
+    const angle = 2*Math.PI * (1 - 1/ratio);
+    const c = 0.18;
+    const pts = [];
+    for (let i = 1; i <= N; i++) {
+      const a = i * angle;
+      const r = c * Math.sqrt(i);
+      pts.push({ x: r*Math.cos(a), y: r*Math.sin(a), t: i/N });
+    }
+    let angDeg = (angle * 180/Math.PI) % 360;
+    if (angDeg > 180) angDeg = 360 - angDeg; // canonical 0-180
+    return { pts, angleDeg: angDeg };
+  }
+
+  function genPetal(ratio, turns, M) {
+    const b = Math.log(ratio) / (Math.PI/2);
+    const a = 0.6;
+    const steps = Math.floor(turns * 90);
+    const paths = [];
+    for (let m = 0; m < M; m++) {
+      const offset = (m / M) * 2 * Math.PI;
+      const pts = [];
+      for (let i = 0; i <= steps; i++) {
+        const th = (i/steps) * turns * 2 * Math.PI;
+        const r = a * Math.exp(b * th);
+        pts.push({ x: r*Math.cos(th + offset), y: r*Math.sin(th + offset), t: i/steps });
+      }
+      paths.push(pts);
+    }
+    return { paths, b };
+  }
+
+  function bbox(pts) {
+    let mnx=1e9, mny=1e9, mxx=-1e9, mxy=-1e9;
+    for (const p of pts) {
+      if (p.x < mnx) mnx = p.x;
+      if (p.y < mny) mny = p.y;
+      if (p.x > mxx) mxx = p.x;
+      if (p.y > mxy) mxy = p.y;
+    }
+    return { mnx, mny, mxx, mxy, w: mxx-mnx, h: mxy-mny, cx: (mnx+mxx)/2, cy: (mny+mxy)/2 };
+  }
+
+  // ----- draw -----
+  function drawStroke(ctx, size, pts, w, taperRatio, flip) {
+    const pad = size * 0.12;
+    const bb = bbox(pts);
+    const sc = (size - 2*pad) / Math.max(bb.w, bb.h, 1e-3);
+    const ox = size/2 - bb.cx*sc, oy = size/2 - bb.cy*sc;
+    const X = p => ox + (flip ? -p.x : p.x)*sc, Y = p => oy + p.y*sc;
+    for (let i = 1; i < pts.length; i++) {
+      const p0 = pts[i-1], p1 = pts[i];
+      const tt = p1.t;
+      const lw = Math.max(0.4, (size*0.014)*w*(1 - taperRatio*(1-tt)));
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(34,33,31,0.93)';
+      ctx.lineWidth = lw;
+      ctx.lineCap = 'round';
+      ctx.moveTo(X(p0), Y(p0));
+      ctx.lineTo(X(p1), Y(p1));
+      ctx.stroke();
+    }
+  }
+
+  function drawDots(ctx, size, pts, w, flip) {
+    const pad = size * 0.10;
+    const bb = bbox(pts);
+    const sc = (size - 2*pad) / Math.max(bb.w, bb.h, 1e-3);
+    const ox = size/2 - bb.cx*sc, oy = size/2 - bb.cy*sc;
+    const X = p => ox + (flip ? -p.x : p.x)*sc, Y = p => oy + p.y*sc;
+    for (const p of pts) {
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(34,33,31,0.88)';
+      const r = Math.max(0.4, size*0.005*w*(0.6 + 0.7*p.t));
+      ctx.arc(X(p), Y(p), r, 0, 6.283);
+      ctx.fill();
+    }
+  }
+
+  function drawPetal(ctx, size, paths, w, flip) {
+    const allPts = paths.flat();
+    const pad = size * 0.10;
+    const bb = bbox(allPts);
+    const sc = (size - 2*pad) / Math.max(bb.w, bb.h, 1e-3);
+    const ox = size/2 - bb.cx*sc, oy = size/2 - bb.cy*sc;
+    const X = p => ox + (flip ? -p.x : p.x)*sc, Y = p => oy + p.y*sc;
+    for (const pts of paths) {
+      for (let i = 1; i < pts.length; i++) {
+        const p0 = pts[i-1], p1 = pts[i];
+        const tt = p1.t;
+        const lw = Math.max(0.3, (size*0.011)*w*(1 - 0.6*(1-tt)));
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(34,33,31,0.55)';
+        ctx.lineWidth = lw;
+        ctx.lineCap = 'round';
+        ctx.moveTo(X(p0), Y(p0));
+        ctx.lineTo(X(p1), Y(p1));
+        ctx.stroke();
+      }
+    }
+  }
+
+  function drawShu(ctx, size) {
+    ctx.beginPath();
+    ctx.fillStyle = '#a8392b';
+    ctx.arc(size/2, size/2, size*0.018, 0, 6.283);
+    ctx.fill();
+  }
+
+  function renderAll() {
+    const turns = parseFloat(document.querySelector('#sl_turns input').value);
+    const N = parseInt(document.querySelector('#sl_N input').value, 10);
+    const w = parseFloat(document.querySelector('#sl_weight input').value);
+    const M = parseInt(document.querySelector('#sl_petals input').value, 10);
+    const shu = $('tgShu').checked;
+    const flip = $('tgFlip').checked;
+    document.querySelector('#sl_turns .val').textContent = turns.toFixed(1);
+    document.querySelector('#sl_N .val').textContent = N;
+    document.querySelector('#sl_weight .val').textContent = w.toFixed(2);
+    document.querySelector('#sl_petals .val').textContent = M;
+
+    RATIOS.forEach(R => {
+      const { ctx } = canvases[R.key];
+      ctx.clearRect(0, 0, TILE, TILE);
+      let paramText = '';
+      if (mode === 'spiral') {
+        const G = genSpiral(R.ratio, turns);
+        drawStroke(ctx, TILE, G.pts, w, 0.7, flip);
+        paramText = `${R.ratio.toFixed(3)} · b=${G.b.toFixed(3)}`;
+      } else if (mode === 'phyllo') {
+        const G = genPhyllo(R.ratio, N);
+        drawDots(ctx, TILE, G.pts, w, flip);
+        paramText = `${R.ratio.toFixed(3)} · ${G.angleDeg.toFixed(1)}°`;
+      } else {
+        const G = genPetal(R.ratio, turns, M);
+        drawPetal(ctx, TILE, G.paths, w, flip);
+        paramText = `${R.ratio.toFixed(3)} · b=${G.b.toFixed(3)} · ×${M}`;
+      }
+      if (shu) drawShu(ctx, TILE);
+      $('p_' + R.key).textContent = paramText;
+    });
+  }
+
+  // mode buttons
+  document.querySelectorAll('.modes button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.modes button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    mode = b.dataset.m;
+    $('sl_turns').style.display = (mode === 'spiral' || mode === 'petal') ? '' : 'none';
+    $('sl_N').style.display = (mode === 'phyllo') ? '' : 'none';
+    $('sl_petals').style.display = (mode === 'petal') ? '' : 'none';
+    renderAll();
+  }));
+
+  // sliders / toggles
+  document.querySelectorAll('.controls input[type=range]').forEach(el => el.addEventListener('input', renderAll));
+  $('tgShu').addEventListener('change', renderAll);
+  $('tgFlip').addEventListener('change', renderAll);
+
+  renderAll();
+})();
+</script>
+</body>
+</html>

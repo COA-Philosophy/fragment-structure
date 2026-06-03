@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>枯山水 — FLOW-FIELD × BLUE-NOISE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --washi: #e8e2d5;
+    --washi-edge: #ddd5c5;
+    --ink: 38,34,28;
+    --shu: #9a4a2c;
+    --line: rgba(38,34,28,0.55);
+    --line-soft: rgba(38,34,28,0.30);
+    --grot: "Archivo","Helvetica Neue",Helvetica,sans-serif;
+    --mono: ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    background:#cfc7b6;
+    font-family:var(--grot);
+    color:rgba(var(--ink),0.85);
+    display:flex; flex-direction:column;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .frame{
+    flex:1;
+    display:flex; flex-direction:column;
+    max-width:1180px; width:100%; margin:0 auto;
+    padding:clamp(16px,3vw,40px);
+    gap:14px;
+  }
+  /* ---- masthead ---- */
+  header{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    border-bottom:1px solid rgba(var(--ink),0.28);
+    padding-bottom:10px;
+  }
+  .title{ display:flex; align-items:baseline; gap:14px; }
+  .title h1{
+    font-weight:600; font-size:clamp(15px,1.6vw,19px);
+    letter-spacing:0.42em; text-transform:uppercase;
+  }
+  .title .jp{
+    font-size:clamp(15px,1.6vw,19px); letter-spacing:0.5em;
+    font-weight:500; opacity:0.9;
+  }
+  .annot{
+    font-family:var(--mono);
+    font-size:10px; letter-spacing:0.14em; text-transform:uppercase;
+    opacity:0.55; line-height:1.5; text-align:right;
+  }
+  .reg{ color:var(--shu); }
+  /* ---- stage ---- */
+  .stage{
+    position:relative;
+    width:100%;
+    aspect-ratio: 3 / 2;
+    background:var(--washi);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 18px 50px -28px rgba(40,34,26,0.55);
+    overflow:hidden;
+  }
+  canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; cursor:crosshair; }
+  .overlay{
+    position:absolute; inset:0; pointer-events:none;
+    font-family:var(--mono); font-size:9.5px; letter-spacing:0.1em;
+    text-transform:uppercase; color:rgba(var(--ink),0.42);
+  }
+  .ov-tl{ position:absolute; top:12px; left:13px; line-height:1.6; }
+  .ov-br{ position:absolute; bottom:12px; right:13px; text-align:right; line-height:1.6; }
+  .crosshair{ position:absolute; width:11px; height:11px; opacity:0.5; }
+  .crosshair::before,.crosshair::after{ content:""; position:absolute; background:rgba(var(--ink),0.5); }
+  .crosshair::before{ left:5px; top:0; width:1px; height:11px; }
+  .crosshair::after{ left:0; top:5px; width:11px; height:1px; }
+  .ch-tr{ top:12px; right:13px; }
+  .ch-bl{ bottom:12px; left:13px; }
+  /* ---- controls ---- */
+  .panel{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap:10px 26px;
+    align-items:end;
+    border-top:1px solid rgba(var(--ink),0.22);
+    padding-top:14px;
+  }
+  .ctrl{ display:flex; flex-direction:column; gap:7px; }
+  .ctrl label{
+    font-family:var(--mono); font-size:9.5px; letter-spacing:0.16em;
+    text-transform:uppercase; opacity:0.6;
+    display:flex; justify-content:space-between;
+  }
+  .ctrl label .val{ opacity:0.85; color:rgba(var(--ink),0.95); }
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:1px;
+    background:rgba(var(--ink),0.35); outline:none; cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none;
+    width:9px; height:9px; border-radius:50%;
+    background:var(--washi); border:1px solid rgba(var(--ink),0.8);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--washi); border:1px solid rgba(var(--ink),0.8); cursor:pointer;
+  }
+  .seedbox{ display:flex; gap:0; }
+  input[type=text]{
+    width:100%; background:transparent; border:none;
+    border-bottom:1px solid rgba(var(--ink),0.4);
+    font-family:var(--mono); font-size:12px; letter-spacing:0.08em;
+    color:rgba(var(--ink),0.95); padding:3px 0; outline:none;
+  }
+  input[type=text]:focus{ border-color:rgba(var(--ink),0.85); }
+  .actions{ display:flex; gap:8px; align-items:end; }
+  button{
+    font-family:var(--mono); font-size:10px; letter-spacing:0.16em;
+    text-transform:uppercase; cursor:pointer;
+    background:transparent; color:rgba(var(--ink),0.85);
+    border:1px solid rgba(var(--ink),0.55);
+    padding:9px 13px; transition:all .18s ease; white-space:nowrap;
+  }
+  button:hover{ background:rgba(var(--ink),0.85); color:var(--washi); }
+  button.primary{ border-color:var(--shu); color:var(--shu); }
+  button.primary:hover{ background:var(--shu); color:var(--washi); border-color:var(--shu); }
+  .grain-toggle{ display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
+  .grain-toggle .box{
+    width:11px; height:11px; border:1px solid rgba(var(--ink),0.6);
+    display:flex; align-items:center; justify-content:center; font-size:9px;
+  }
+  footer{
+    font-family:var(--mono); font-size:9px; letter-spacing:0.12em;
+    text-transform:uppercase; opacity:0.4; text-align:center; padding-top:4px;
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+  <header>
+    <div class="title">
+      <span class="jp">枯山水</span>
+      <h1>Karesansui</h1>
+    </div>
+    <div class="annot">
+      <span class="reg">⊕</span> Flow-field × Blue-noise<br>
+      Deterministic · Seed-locked · v1
+    </div>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="cv"></canvas>
+    <div class="overlay">
+      <div class="ov-tl" id="ovTL">FIG.01<br>—</div>
+      <div class="ov-br" id="ovBR">砂紋 / SAND</div>
+      <div class="crosshair ch-tr"></div>
+      <div class="crosshair ch-bl"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ctrl" style="grid-column:span 1;">
+      <label>Seed</label>
+      <div class="seedbox"><input type="text" id="seed" value="almana" spellcheck="false"></div>
+    </div>
+    <div class="ctrl">
+      <label>石 / Stones <span class="val" id="vStones">9</span></label>
+      <input type="range" id="stones" min="1" max="24" value="9">
+    </div>
+    <div class="ctrl">
+      <label>砂紋間隔 / Spacing <span class="val" id="vSpace">7</span></label>
+      <input type="range" id="space" min="4" max="16" value="7" step="0.5">
+    </div>
+    <div class="ctrl">
+      <label>斥力 / Repulsion <span class="val" id="vRep">1.6</span></label>
+      <input type="range" id="rep" min="0.4" max="3.4" value="1.6" step="0.1">
+    </div>
+    <div class="ctrl">
+      <label>流向 / Flow <span class="val" id="vAngle">12°</span></label>
+      <input type="range" id="angle" min="0" max="180" value="12">
+    </div>
+    <div class="ctrl">
+      <label>仕上げ / Finish</label>
+      <div class="grain-toggle" id="grainT"><span class="box" id="grainBox">✓</span><span class="annot" style="opacity:.7">紙の粒子 Grain</span></div>
+    </div>
+    <div class="ctrl actions" style="grid-column: 1 / -1; justify-content:flex-start; padding-top:4px;">
+      <button class="primary" id="rake">砂を掻く / Rake</button>
+      <button id="regen">新しい庭 / Regenerate</button>
+      <button id="export">PNG 書き出し / Export ↓</button>
+    </div>
+  </div>
+
+  <footer>The Modern Zen Archive — placement speaks · 配置が喋る</footer>
+</div>
+
+<script>
+/* ============================================================
+   枯山水 — Karesansui generative system
+   Layer 1: blue-noise (clustered, asymmetric) stone voids
+   Layer 2: even-spaced flow-field streamlines (raked sand)
+   Deterministic: same seed -> same garden.
+   ============================================================ */
+
+// ---------- deterministic PRNG ----------
+function hashStr(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} return h>>>0; }
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+// ---------- value/perlin noise (subtle hand-raked drift) ----------
+function buildPerlin(rand){
+  const perm=[...Array(256).keys()];
+  for(let i=255;i>0;i--){ const j=(rand()*(i+1))|0; [perm[i],perm[j]]=[perm[j],perm[i]]; }
+  const p=new Int16Array(512); for(let i=0;i<512;i++) p[i]=perm[i&255];
+  const fade=t=>t*t*t*(t*(t*6-15)+10);
+  const lerp=(a,b,t)=>a+t*(b-a);
+  const grad=(h,x,y)=>((h&1)?-x:x)+((h&2)?-y:y);
+  return (x,y)=>{
+    const X=Math.floor(x)&255, Y=Math.floor(y)&255;
+    x-=Math.floor(x); y-=Math.floor(y);
+    const u=fade(x), v=fade(y);
+    const aa=p[p[X]+Y], ab=p[p[X]+Y+1], ba=p[p[X+1]+Y], bb=p[p[X+1]+Y+1];
+    return lerp(lerp(grad(aa,x,y),grad(ba,x-1,y),u), lerp(grad(ab,x,y-1),grad(bb,x-1,y-1),u), v);
+  };
+}
+
+// ---------- helpers ----------
+const TAU=Math.PI*2;
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const smooth=(e0,e1,x)=>{ const t=clamp((x-e0)/(e1-e0),0,1); return t*t*(3-2*t); };
+
+// ---------- state ----------
+const stage=document.getElementById('stage');
+const cv=document.getElementById('cv');
+const ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1;
+let stones=[], lines=[], noise=null;
+const params={ seed:'almana', stones:9, spacing:7, rep:1.6, angle:12, grain:true };
+let anim=null;
+
+// ---------- geometry: stones (blue-noise, clustered, asymmetric) ----------
+function buildStones(rand){
+  const out=[];
+  const minDim=Math.min(W,H);
+  const margin=minDim*0.10;
+  const target=params.stones;
+  const nClusters=clamp(Math.round(target/3),1,5);
+  const baseUnit=minDim*0.026;
+  let guard=0;
+  while(out.length<target && guard++<200){
+    const remaining=target-out.length;
+    // asymmetric cluster center: bias toward thirds, never dead-center
+    let cx=W*(0.16+rand()*0.68), cy=H*(0.16+rand()*0.68);
+    const k=clamp(1+Math.floor(rand()*4), 1, remaining);
+    const clusterR=baseUnit*(0.9+rand()*0.7);
+    for(let i=0;i<k;i++){
+      const dominant=(i===0);
+      const r = dominant ? clusterR*(1.15+rand()*0.5) : clusterR*(0.45+rand()*0.55);
+      const ang=rand()*TAU;
+      const dist = dominant ? 0 : clusterR*(1.4+rand()*2.0);
+      let sx=clamp(cx+Math.cos(ang)*dist, margin+r, W-margin-r);
+      let sy=clamp(cy+Math.sin(ang)*dist, margin+r, H-margin-r);
+      // reject if overlapping/crowding an existing stone
+      let ok=true;
+      for(const s of out){ if(Math.hypot(sx-s.x,sy-s.y) < (s.r+r)*1.25){ ok=false; break; } }
+      if(ok){ out.push({x:sx,y:sy,r}); if(out.length>=target) break; }
+    }
+  }
+  return out;
+}
+
+// ---------- flow field: base direction + tangential wrap around stones ----------
+function flowAngle(x,y){
+  const base=params.angle*Math.PI/180;
+  const drift=noise(x*0.0016, y*0.0016)*0.22; // subtle imperfection
+  let vx=Math.cos(base+drift), vy=Math.sin(base+drift);
+  const STR=8.0;
+  for(const s of stones){
+    const dx=x-s.x, dy=y-s.y;
+    const d=Math.hypot(dx,dy)||1e-4;
+    const band=s.r*(1.2+params.rep);
+    if(d > s.r+band) continue;
+    const w=smooth(s.r+band, s.r, d);            // 1 at boundary -> 0 at band edge
+    const tx=-dy/d, ty=dx/d;                       // CCW tangent
+    vx += tx*w*STR; vy += ty*w*STR;
+  }
+  return Math.atan2(vy,vx);
+}
+function stoneHit(x,y){
+  for(const s of stones){ if(Math.hypot(x-s.x,y-s.y) <= s.r+0.6) return true; }
+  return false;
+}
+
+// ---------- even-spaced streamlines (simplified Jobard–Lefer) ----------
+function buildLines(rand){
+  const dsep=params.spacing;
+  const dtest=dsep*0.5;
+  const step=clamp(dsep*0.42, 1.2, 3);
+  const maxSteps=Math.min(2400, Math.ceil((W+H)/step)*2);
+  const cell=dsep;
+  const grid=new Map();
+  const key=(x,y)=>((x/cell)|0)+','+((y/cell)|0);
+  const add=(x,y)=>{ const k=key(x,y); let a=grid.get(k); if(!a){a=[];grid.set(k,a);} a.push(x,y); };
+  const near=(x,y,minD)=>{
+    const gx=(x/cell)|0, gy=(y/cell)|0, md2=minD*minD;
+    for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){
+      const a=grid.get((gx+i)+','+(gy+j)); if(!a) continue;
+      for(let p=0;p<a.length;p+=2){ const ddx=x-a[p], ddy=y-a[p+1]; if(ddx*ddx+ddy*ddy<md2) return true; }
+    }
+    return false;
+  };
+
+  function integrate(sx,sy){
+    if(sx<0||sy<0||sx>W||sy>H||stoneHit(sx,sy)||near(sx,sy,dtest)) return null;
+    const fwd=[], bwd=[];
+    for(const dir of [1,-1]){
+      let x=sx,y=sy; const arr=(dir===1?fwd:bwd);
+      for(let n=0;n<maxSteps;n++){
+        const a=flowAngle(x,y);                    // RK2 (midpoint)
+        const mx=x+Math.cos(a)*step*0.5*dir, my=y+Math.sin(a)*step*0.5*dir;
+        const a2=flowAngle(mx,my);
+        const nx=x+Math.cos(a2)*step*dir, ny=y+Math.sin(a2)*step*dir;
+        if(nx<0||ny<0||nx>W||ny>H) break;
+        if(stoneHit(nx,ny)) break;
+        if(near(nx,ny,dtest)) break;
+        // closed-ring guard
+        if(n>12 && Math.hypot(nx-sx,ny-sy)<step*1.1){ arr.push(nx,ny); break; }
+        arr.push(nx,ny);
+        x=nx; y=ny;
+      }
+    }
+    const pts=[];
+    for(let i=bwd.length-2;i>=0;i-=2) pts.push(bwd[i],bwd[i+1]);
+    pts.push(sx,sy);
+    for(let i=0;i<fwd.length;i+=2) pts.push(fwd[i],fwd[i+1]);
+    if(pts.length<6) return null;               // discard stubs
+    for(let i=0;i<pts.length;i+=2) add(pts[i],pts[i+1]);
+    return pts;
+  }
+
+  const result=[];
+  const queue=[];
+  // initial seeds: a small scatter so rings nucleate around stones too
+  queue.push([W*(0.3+rand()*0.4), H*(0.3+rand()*0.4)]);
+  for(const s of stones){ queue.push([s.x+ (s.r+dsep*1.2), s.y]); }
+
+  let guard=0, cap=20000;
+  while(queue.length && guard++<cap){
+    const [qx,qy]=queue.shift();
+    const pts=integrate(qx,qy);
+    if(!pts) continue;
+    const alpha=0.30+rand()*0.22;
+    const width=0.55+rand()*0.35;
+    result.push({pts, alpha, width});
+    // spawn perpendicular candidate seeds along the new line
+    for(let i=0;i<pts.length-2;i+=4){
+      const ax=pts[i], ay=pts[i+1], bx=pts[i+2], by=pts[i+3];
+      let nx=-(by-ay), ny=(bx-ax); const L=Math.hypot(nx,ny)||1; nx/=L; ny/=L;
+      for(const sgn of [1,-1]){
+        const cx=ax+nx*sgn*dsep, cy=ay+ny*sgn*dsep;
+        if(cx<0||cy<0||cx>W||cy>H) continue;
+        if(stoneHit(cx,cy)) continue;
+        if(near(cx,cy,dsep*0.92)) continue;
+        queue.push([cx,cy]);
+      }
+    }
+  }
+  return result;
+}
+
+// ---------- compute whole garden from seed ----------
+function compute(){
+  const rand=mulberry32(hashStr(params.seed));
+  noise=buildPerlin(mulberry32(hashStr(params.seed+'~n')));
+  stones=buildStones(rand);
+  lines=buildLines(rand);
+  document.getElementById('ovTL').innerHTML='FIG.01<br>'+params.seed.toUpperCase().slice(0,14);
+  document.getElementById('ovBR').innerHTML='石 '+String(stones.length).padStart(2,'0')+' / 線 '+String(lines.length).padStart(3,'0');
+}
+
+// ---------- rendering ----------
+function paintBackground(c, w, h){
+  c.fillStyle='#e8e2d5'; c.fillRect(0,0,w,h);
+  const g=c.createRadialGradient(w*0.5,h*0.42,Math.min(w,h)*0.2, w*0.5,h*0.5,Math.max(w,h)*0.72);
+  g.addColorStop(0,'rgba(255,253,247,0.35)');
+  g.addColorStop(1,'rgba(150,138,118,0.20)');
+  c.fillStyle=g; c.fillRect(0,0,w,h);
+  if(params.grain) paintGrain(c,w,h);
+}
+function paintGrain(c,w,h){
+  const n=Math.floor(w*h*0.04);
+  const r=mulberry32(hashStr(params.seed+'~g'));
+  for(let i=0;i<n;i++){
+    const x=r()*w, y=r()*h, a=r()*0.035;
+    c.fillStyle = r()<0.5 ? 'rgba(40,34,26,'+a+')' : 'rgba(255,255,248,'+a*0.8+')';
+    c.fillRect(x,y,1,1);
+  }
+}
+function strokeLine(c,line,sw){
+  const p=line.pts;
+  c.lineWidth=line.width*sw;
+  c.strokeStyle='rgba(38,34,28,'+line.alpha+')';
+  c.beginPath(); c.moveTo(p[0],p[1]);
+  for(let i=2;i<p.length;i+=2) c.lineTo(p[i],p[i+1]);
+  c.stroke();
+}
+function renderStatic(){
+  cancelAnim();
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  paintBackground(ctx,W,H);
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  for(const line of lines) strokeLine(ctx,line,1);
+}
+function cancelAnim(){ if(anim){ cancelAnimationFrame(anim); anim=null; } }
+
+// ---------- slow draw (raking) ----------
+function playRake(){
+  cancelAnim();
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  paintBackground(ctx,W,H);
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  const total=lines.reduce((s,l)=>s+l.pts.length/2,0);
+  const perFrame=Math.max(40, Math.ceil(total/300)); // ~5s contemplative
+  let li=0, pi=0;
+  function frame(){
+    let budget=perFrame;
+    while(budget>0 && li<lines.length){
+      const line=lines[li], p=line.pts;
+      ctx.lineWidth=line.width; ctx.strokeStyle='rgba(38,34,28,'+line.alpha+')';
+      const start=Math.max(0,pi-1);
+      const end=Math.min(p.length/2, pi+budget);
+      if(end-start>=2){
+        ctx.beginPath(); ctx.moveTo(p[start*2],p[start*2+1]);
+        for(let k=start+1;k<end;k++) ctx.lineTo(p[k*2],p[k*2+1]);
+        ctx.stroke();
+      }
+      budget-=(end-pi);
+      pi=end;
+      if(pi>=p.length/2){ li++; pi=0; }
+    }
+    if(li<lines.length) anim=requestAnimationFrame(frame);
+    else anim=null;
+  }
+  frame();
+}
+
+// ---------- export high-res PNG ----------
+function exportPNG(){
+  const longEdge=3000;
+  const S=longEdge/Math.max(W,H);
+  const off=document.createElement('canvas');
+  off.width=Math.round(W*S); off.height=Math.round(H*S);
+  const oc=off.getContext('2d');
+  oc.setTransform(S,0,0,S,0,0);
+  paintBackground(oc,W,H);
+  oc.lineCap='round'; oc.lineJoin='round';
+  for(const line of lines) strokeLine(oc,line,1);
+  off.toBlob(b=>{
+    const url=URL.createObjectURL(b);
+    const a=document.createElement('a');
+    a.href=url; a.download='karesansui_'+params.seed+'_'+off.width+'x'+off.height+'.png';
+    a.click(); setTimeout(()=>URL.revokeObjectURL(url),2000);
+  },'image/png');
+}
+
+// ---------- canvas sizing ----------
+function fit(){
+  const r=stage.getBoundingClientRect();
+  DPR=Math.min(window.devicePixelRatio||1, 2);
+  W=Math.round(r.width); H=Math.round(r.height);
+  cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+}
+
+// ---------- wiring ----------
+const $=id=>document.getElementById(id);
+function readControls(){
+  params.seed=$('seed').value.trim()||'almana';
+  params.stones=+$('stones').value;
+  params.spacing=+$('space').value;
+  params.rep=+$('rep').value;
+  params.angle=+$('angle').value;
+  $('vStones').textContent=params.stones;
+  $('vSpace').textContent=params.spacing;
+  $('vRep').textContent=params.rep.toFixed(1);
+  $('vAngle').textContent=params.angle+'°';
+}
+let pending=false;
+function tuneStatic(){
+  readControls();
+  if(pending) return; pending=true;
+  requestAnimationFrame(()=>{ pending=false; compute(); renderStatic(); });
+}
+['stones','space','rep','angle'].forEach(id=> $(id).addEventListener('input',tuneStatic));
+$('seed').addEventListener('change',()=>{ readControls(); compute(); playRake(); });
+$('seed').addEventListener('keydown',e=>{ if(e.key==='Enter'){ readControls(); compute(); playRake(); } });
+
+$('rake').addEventListener('click',()=>{ readControls(); compute(); playRake(); });
+$('regen').addEventListener('click',()=>{
+  const r=Math.random().toString(36).slice(2,8);
+  $('seed').value=r; readControls(); compute(); playRake();
+});
+$('export').addEventListener('click',exportPNG);
+
+$('grainT').addEventListener('click',()=>{
+  params.grain=!params.grain;
+  $('grainBox').textContent=params.grain?'✓':'';
+  renderStatic();
+});
+cv.addEventListener('click',()=>{ if(anim) renderStatic(); }); // click to settle instantly
+
+let rt=null;
+window.addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ fit(); compute(); renderStatic(); },180); });
+
+// ---------- boot ----------
+readControls();
+fit();
+compute();
+playRake();
+</script>
+</body>
+</html>

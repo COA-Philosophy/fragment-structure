@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALMANA — 個の紋 / Personal Seal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@300;400;500&family=Shippori+Mincho:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --washi:#e8e2d5; --ink:#1f1f1d; --shu:#a8392b;
+    --grot:"Archivo","Helvetica Neue",sans-serif;
+    --jp:"Zen Kaku Gothic New",sans-serif;
+    --mincho:"Shippori Mincho",serif;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    background:var(--washi); color:var(--ink); font-family:var(--jp);
+    -webkit-font-smoothing:antialiased; min-height:100vh;
+    background-image:radial-gradient(125% 120% at 50% 38%, rgba(255,253,247,0.30) 0%, rgba(150,138,118,0.14) 100%);
+  }
+  .wrap{ max-width:1180px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column;
+         padding:clamp(20px,3vw,40px) clamp(24px,5vw,64px); }
+
+  /* masthead */
+  header{ display:flex; align-items:flex-start; justify-content:space-between;
+          border-bottom:1px solid rgba(31,31,29,0.22); padding-bottom:12px; }
+  .brand{ display:flex; align-items:baseline; gap:12px; }
+  .brand svg{ height:clamp(15px,1.7vw,18px); width:auto; display:block; }
+  .brand .tag{ font-family:var(--mincho); font-size:11px; letter-spacing:0.22em; color:rgba(31,31,29,0.6); }
+  .annot{ font-family:var(--grot); font-size:10px; letter-spacing:0.18em; text-transform:uppercase;
+          text-align:right; line-height:1.7; color:rgba(31,31,29,0.5); }
+  .annot .reg{ color:var(--shu); }
+
+  /* main */
+  main{ flex:1; display:grid; grid-template-columns:minmax(280px,1fr) minmax(320px,560px);
+        gap:clamp(28px,5vw,72px); align-items:center; padding:clamp(20px,4vh,48px) 0; }
+  @media (max-width:820px){ main{ grid-template-columns:1fr; gap:36px; } }
+
+  /* left column */
+  .col-left{ max-width:440px; }
+  .lede h1{ font-family:var(--jp); font-weight:300; font-size:clamp(24px,3.2vw,36px);
+            line-height:1.45; letter-spacing:0.04em; }
+  .lede p{ margin-top:16px; font-size:13.5px; line-height:1.95; letter-spacing:0.04em;
+           color:rgba(31,31,29,0.7); }
+
+  .form{ margin-top:clamp(26px,3.5vw,40px); }
+  .fields{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:18px 22px; }
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  .field label{ font-family:var(--grot); font-size:9.5px; letter-spacing:0.16em; text-transform:uppercase; color:rgba(31,31,29,0.5); }
+  .field .row{ display:flex; align-items:baseline; gap:6px; }
+  .field input{ width:var(--w,54px); background:transparent; border:none; border-bottom:1px solid rgba(31,31,29,0.42);
+                font-family:var(--grot); font-size:18px; letter-spacing:0.04em; color:var(--ink);
+                padding:3px 0; text-align:center; outline:none; }
+  .field input:focus{ border-color:var(--ink); }
+  .field .unit{ font-family:var(--mincho); font-size:12px; color:rgba(31,31,29,0.55); }
+  .field .opt{ font-family:var(--mincho); font-size:10px; color:rgba(31,31,29,0.45); margin-left:4px; }
+
+  .submit{ margin-top:28px; display:inline-flex; align-items:center; gap:14px;
+           font-family:var(--jp); font-weight:500; font-size:14px; letter-spacing:0.16em; color:var(--ink);
+           border:1px solid var(--ink); padding:14px 28px; background:transparent; cursor:pointer;
+           transition:background .35s,color .35s,gap .35s; }
+  .submit .arrow{ color:var(--shu); transition:transform .35s,color .35s; }
+  .submit:hover{ background:var(--ink); color:var(--washi); gap:19px; }
+  .submit:hover .arrow{ color:var(--washi); transform:translateX(3px); }
+  .err{ margin-top:14px; font-size:12px; color:var(--shu); letter-spacing:0.04em; min-height:16px; }
+
+  .note{ margin-top:24px; font-family:var(--mincho); font-size:11.5px; line-height:1.9; color:rgba(31,31,29,0.5); }
+  .note .mk{ color:var(--shu); }
+  .privacy{ margin-top:10px; font-family:var(--grot); font-size:9.5px; letter-spacing:0.1em;
+            text-transform:uppercase; color:rgba(31,31,29,0.38); }
+
+  /* readout (post-generation) */
+  .readout{ display:none; }
+  .readout.show{ display:block; }
+  .readout .sealno{ font-family:var(--grot); font-size:11px; letter-spacing:0.26em; color:var(--shu); }
+  .readout .date{ font-family:var(--grot); font-size:13px; letter-spacing:0.1em; color:rgba(31,31,29,0.75); margin-top:8px; }
+  .specs{ margin-top:18px; display:flex; flex-wrap:wrap; gap:8px 20px;
+          font-family:var(--grot); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:rgba(31,31,29,0.6); }
+  .specs b{ font-weight:500; color:var(--ink); margin-left:6px; }
+  .desc{ margin-top:20px; font-family:var(--mincho); font-size:14px; line-height:2.0; letter-spacing:0.03em; color:rgba(31,31,29,0.82); }
+  .ro-actions{ margin-top:30px; display:flex; gap:12px; flex-wrap:wrap; }
+  .btn-min{ font-family:var(--grot); font-size:10px; letter-spacing:0.16em; text-transform:uppercase; cursor:pointer;
+            background:transparent; color:rgba(31,31,29,0.85); border:1px solid rgba(31,31,29,0.5); padding:11px 16px;
+            transition:all .25s; }
+  .btn-min:hover{ background:rgba(31,31,29,0.85); color:var(--washi); }
+  .immutable{ margin-top:20px; font-family:var(--mincho); font-size:11px; line-height:1.8; color:rgba(31,31,29,0.5); }
+
+  /* seal stage */
+  .stage-wrap{ display:flex; justify-content:center; }
+  .stage{ position:relative; width:100%; max-width:560px; aspect-ratio:1/1; }
+  canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .cross{ position:absolute; width:12px; height:12px; opacity:0.45; }
+  .cross::before,.cross::after{ content:""; position:absolute; background:rgba(31,31,29,0.55); }
+  .cross::before{ left:5px; top:0; width:1px; height:12px; }
+  .cross::after{ left:0; top:5px; width:12px; height:1px; }
+  .c-tl{ top:2px; left:2px; } .c-tr{ top:2px; right:2px; } .c-bl{ bottom:2px; left:2px; } .c-br{ bottom:2px; right:2px; }
+  .stage-cap{ position:absolute; bottom:-2px; left:50%; transform:translateX(-50%);
+              font-family:var(--grot); font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:rgba(31,31,29,0.38); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="9.0 -689.0 7095.0 718.0" aria-label="ALMANA"><g transform="scale(1,-1)">
+        <path d="M33 0V16L97 49L353 665H398L650 52L717 16V0H469V16L557 50L482 235H239L165 50L249 16V0ZM262 290H460L361 536Z" fill="#1f1f1d"/>
+        <path d="M1195 0V16L1275 56V604L1195 644V660H1455V644L1365 604V55H1608L1676 222H1692V0Z" fill="#1f1f1d"/>
+        <path d="M2202 0V16L2281 56L2302 603L2216 644V660H2401L2632 128L2862 660H3038V644L2954 604L2971 56L3041 16V0H2811V16L2885 55L2875 548L2636 -5H2591L2356 541L2343 55L2424 16V0Z" fill="#1f1f1d"/>
+        <path d="M3514 0V16L3578 49L3834 665H3879L4131 52L4198 16V0H3950V16L4038 50L3963 235H3720L3646 50L3730 16V0ZM3743 290H3941L3842 536Z" fill="#1f1f1d"/>
+        <path d="M4671 0V16L4751 56V602L4672 644V660H4819L5201 180V606L5101 644V660H5350V644L5271 605V-5H5234L4821 516V55L4921 16V0Z" fill="#1f1f1d"/>
+        <path d="M5823 0V16L5887 49L6143 665H6188L6440 52L6507 16V0H6259V16L6347 50L6272 235H6029L5955 50L6039 16V0ZM6052 290H6250L6151 536Z" fill="#1f1f1d"/>
+        <circle cx="7025.0" cy="55.0" r="55.0" fill="#a8392b"/>
+      </g></svg>
+      <span class="tag">自己理解AI</span>
+    </div>
+    <div class="annot"><span class="reg">⊕</span> 個の紋 / Personal Seal<br>Deterministic · One of one</div>
+  </header>
+
+  <main>
+    <div class="col-left">
+      <!-- input state -->
+      <div id="inputState">
+        <div class="lede">
+          <h1>生年月日から、<br>あなたの紋を結ぶ。</h1>
+          <p>砂は同心に巡り、石を避け、ひとつの円になる。<br>同じ日付は、いつも同じ紋を結びます。</p>
+        </div>
+        <div class="form">
+          <div class="fields">
+            <div class="field"><label>Year 生年</label><div class="row"><input id="y" inputmode="numeric" placeholder="1990" style="--w:74px"><span class="unit">年</span></div></div>
+            <div class="field"><label>Month 月</label><div class="row"><input id="m" inputmode="numeric" placeholder="05"><span class="unit">月</span></div></div>
+            <div class="field"><label>Day 日</label><div class="row"><input id="d" inputmode="numeric" placeholder="22"><span class="unit">日</span></div></div>
+            <div class="field"><label>Time 時刻 <span class="opt">任意</span></label><div class="row"><input id="hh" inputmode="numeric" placeholder="--" style="--w:44px"><span class="unit">:</span><input id="mi" inputmode="numeric" placeholder="--" style="--w:44px"></div></div>
+          </div>
+          <button class="submit" id="bind">紋を結ぶ <span class="arrow">→</span></button>
+          <div class="err" id="err"></div>
+          <div class="note"><span class="mk">⊕</span> この紋は引き直せません。生成は構造の記述であり、運勢の予言ではありません。</div>
+          <div class="privacy">入力はこの端末内だけで処理されます · No data leaves this device</div>
+        </div>
+      </div>
+
+      <!-- readout state -->
+      <div class="readout" id="readout">
+        <div class="sealno" id="ro-no">ALM-0000-00</div>
+        <div class="date" id="ro-date">1990.05.22</div>
+        <div class="specs" id="ro-specs"></div>
+        <div class="desc" id="ro-desc"></div>
+        <div class="ro-actions">
+          <button class="btn-min" id="exportBtn">PNG 書き出し ↓</button>
+          <button class="btn-min" id="resetBtn">別の生年月日</button>
+        </div>
+        <div class="immutable">同じ生年月日からは、いつも同じこの紋が結ばれます。<br>引き直すことはできません。</div>
+      </div>
+    </div>
+
+    <div class="stage-wrap">
+      <div class="stage" id="stage">
+        <canvas id="seal"></canvas>
+        <span class="cross c-tl"></span><span class="cross c-tr"></span><span class="cross c-bl"></span><span class="cross c-br"></span>
+        <span class="stage-cap" id="stageCap">未結 / UNBOUND</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   個の紋 — circular karesansui generated from birth date/time.
+   Base field = superposition of seeded flow-vortices (cores);
+   blue-noise stone voids; even-spaced raked streamlines.
+   Deterministic. Same input -> same seal. No reroll.
+   ============================================================ */
+const INK='31,31,29';
+function hashStr(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function buildPerlin(rand){const perm=[...Array(256).keys()];for(let i=255;i>0;i--){const j=(rand()*(i+1))|0;[perm[i],perm[j]]=[perm[j],perm[i]];}
+  const p=new Int16Array(512);for(let i=0;i<512;i++)p[i]=perm[i&255];const fade=t=>t*t*t*(t*(t*6-15)+10),lerp=(a,b,t)=>a+t*(b-a),grad=(h,x,y)=>((h&1)?-x:x)+((h&2)?-y:y);
+  return(x,y)=>{const X=Math.floor(x)&255,Y=Math.floor(y)&255;x-=Math.floor(x);y-=Math.floor(y);const u=fade(x),v=fade(y),aa=p[p[X]+Y],ab=p[p[X]+Y+1],ba=p[p[X+1]+Y],bb=p[p[X+1]+Y+1];
+    return lerp(lerp(grad(aa,x,y),grad(ba,x-1,y),u),lerp(grad(ab,x,y-1),grad(bb,x-1,y-1),u),v);};}
+const TAU=Math.PI*2, clamp=(v,a,b)=>v<a?a:v>b?b:v, smooth=(e0,e1,x)=>{const t=clamp((x-e0)/(e1-e0),0,1);return t*t*(3-2*t);};
+const pad=(n)=>String(n).padStart(2,'0');
+
+const stage=document.getElementById('seal'), ctx=stage.getContext('2d'), stageEl=document.getElementById('stage');
+let W=0,H=0,DPR=1,cx=0,cy=0,R=0;
+let P=null, cores=[], stones=[], lines=[], noise=null, anim=null;
+
+function fit(){ const r=stageEl.getBoundingClientRect(); DPR=Math.min(window.devicePixelRatio||1,2);
+  W=Math.round(r.width); H=Math.round(r.height); stage.width=Math.round(W*DPR); stage.height=Math.round(H*DPR);
+  cx=W/2; cy=H/2; R=Math.min(W,H)/2 - Math.min(W,H)*0.085; }
+
+/* ---- derive structure from birth data ---- */
+function derive(y,m,d,hasTime,hh,mi){
+  const key=`${y}-${pad(m)}-${pad(d)}`+(hasTime?`T${pad(hh)}:${pad(mi)}`:'');
+  const rand=mulberry32(hashStr(key));
+  noise=buildPerlin(mulberry32(hashStr(key+'~n')));
+  const dsum=String(y).split('').reduce((a,c)=>a+ +c,0)+m+d;
+
+  // flow cores (渦) — topology driver
+  const K = 1 + ((d+m)%2) + (m%4===0?1:0);          // 1..3, mostly 1-2
+  const cs=[];
+  for(let i=0;i<K;i++){
+    const rad = i===0 ? R*0.06*rand() : R*(0.20+0.42*rand());
+    const ang = rand()*TAU;
+    cs.push({
+      x:cx+Math.cos(ang)*rad, y:cy+Math.sin(ang)*rad,
+      sign: rand()<0.5?1:-1,
+      strength: 0.65+rand()*0.9,
+      falloff: (0.55+rand()*0.9)/R,
+      spiral: (rand()-0.5)*0.55
+    });
+  }
+  // stones (石) — blue-noise voids
+  const M = 2 + (d%4);                                // 2..5
+  const st=[], minDim=R; let g=0;
+  while(st.length<M && g++<400){
+    const a=rand()*TAU, rr=R*(0.18+rand()*0.6);
+    const sx=cx+Math.cos(a)*rr, sy=cy+Math.sin(a)*rr;
+    const sr=minDim*(st.length===0?0.085+rand()*0.05:0.035+rand()*0.05);
+    let ok=Math.hypot(sx-cx,sy-cy)<R-sr*1.4;
+    for(const s of st) if(Math.hypot(sx-s.x,sy-s.y)<(s.r+sr)*1.3){ok=false;break;}
+    if(ok) st.push({x:sx,y:sy,r:sr});
+  }
+  const spacing = 5 + Math.round(rand()*3);           // 5..8
+  const biasAngle = (m/12)*TAU + rand()*0.4;
+  const handed = cs.reduce((a,c)=>a+c.sign,0) >= 0 ? '右' : '左';
+  const id='ALM-'+hashStr(key).toString(16).toUpperCase().padStart(8,'0').slice(0,4)+'-'+hashStr(key+'~x').toString(16).toUpperCase().padStart(2,'0').slice(0,2);
+  return {key,y,m,d,hasTime,hh,mi, K, M, spacing, biasAngle, handed, id, rand, dsum};
+}
+
+function flowAngle(x,y){
+  let vx=Math.cos(P.biasAngle)*0.18, vy=Math.sin(P.biasAngle)*0.18;
+  vx+=noise(x*0.0013,y*0.0013)*0.10;
+  for(const c of cores){
+    const dx=x-c.x, dy=y-c.y, d=Math.hypot(dx,dy)||1e-4;
+    const w=c.strength/(d*c.falloff+1);
+    const tx=-dy/d*c.sign, ty=dx/d*c.sign;       // tangential
+    const rx=dx/d, ry=dy/d;                       // radial (spiral)
+    vx+=(tx+rx*c.spiral)*w; vy+=(ty+ry*c.spiral)*w;
+  }
+  const STR=7.0;
+  for(const s of stones){
+    const dx=x-s.x, dy=y-s.y, d=Math.hypot(dx,dy)||1e-4, band=s.r*2.9;
+    if(d>s.r+band)continue;
+    const wv=smooth(s.r+band,s.r,d), tx=-dy/d, ty=dx/d;
+    vx+=tx*wv*STR; vy+=ty*wv*STR;
+  }
+  return Math.atan2(vy,vx);
+}
+const inDisc=(x,y,m=0)=>{const dx=x-cx,dy=y-cy;return dx*dx+dy*dy<=(R-m)*(R-m);};
+const stoneHit=(x,y)=>{for(const s of stones)if(Math.hypot(x-s.x,y-s.y)<=s.r+0.6)return true;return false;};
+
+function buildLines(){
+  const rand=P.rand, dsep=P.spacing, dtest=dsep*0.5, step=clamp(dsep*0.4,1.2,2.6);
+  const maxSteps=Math.min(3000,Math.ceil(R*TAU/step)*2), cell=dsep;
+  const grid=new Map(), key=(x,y)=>((x/cell)|0)+','+((y/cell)|0);
+  const add=(x,y)=>{const k=key(x,y);let a=grid.get(k);if(!a){a=[];grid.set(k,a);}a.push(x,y);};
+  const near=(x,y,md)=>{const gx=(x/cell)|0,gy=(y/cell)|0,m2=md*md;
+    for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){const a=grid.get((gx+i)+','+(gy+j));if(!a)continue;
+      for(let p=0;p<a.length;p+=2){const ddx=x-a[p],ddy=y-a[p+1];if(ddx*ddx+ddy*ddy<m2)return true;}}return false;};
+  function integrate(sx,sy){
+    if(!inDisc(sx,sy,1)||stoneHit(sx,sy)||near(sx,sy,dtest))return null;
+    const fwd=[],bwd=[];
+    for(const dir of[1,-1]){let x=sx,y=sy;const arr=(dir===1?fwd:bwd);
+      for(let n=0;n<maxSteps;n++){
+        const a=flowAngle(x,y),mx=x+Math.cos(a)*step*0.5*dir,my=y+Math.sin(a)*step*0.5*dir,a2=flowAngle(mx,my);
+        const nx=x+Math.cos(a2)*step*dir,ny=y+Math.sin(a2)*step*dir;
+        if(!inDisc(nx,ny,0.5))break;
+        if(stoneHit(nx,ny))break;
+        if(near(nx,ny,dtest))break;
+        if(n>14&&Math.hypot(nx-sx,ny-sy)<step*1.1){arr.push(nx,ny);break;}
+        arr.push(nx,ny); x=nx;y=ny;
+      }}
+    const pts=[];for(let i=bwd.length-2;i>=0;i-=2)pts.push(bwd[i],bwd[i+1]);
+    pts.push(sx,sy);for(let i=0;i<fwd.length;i+=2)pts.push(fwd[i],fwd[i+1]);
+    if(pts.length<6)return null;
+    for(let i=0;i<pts.length;i+=2)add(pts[i],pts[i+1]);
+    return pts;
+  }
+  const out=[],queue=[];
+  queue.push([cx,cy]);
+  for(let a=0;a<TAU;a+=TAU/9) queue.push([cx+Math.cos(a)*R*0.5, cy+Math.sin(a)*R*0.5]);
+  for(const s of stones) queue.push([s.x+(s.r+dsep*1.2),s.y]);
+  let guard=0;
+  while(queue.length&&guard++<40000){
+    const[qx,qy]=queue.shift(); const pts=integrate(qx,qy); if(!pts)continue;
+    let ax=0,ay=0;for(let i=0;i<pts.length;i+=2){ax+=pts[i];ay+=pts[i+1];} ax/=(pts.length/2); ay/=(pts.length/2);
+    const edge=1-smooth(R*0.80,R,Math.hypot(ax-cx,ay-cy));   // soft edge fade
+    out.push({pts, alpha:(0.26+rand()*0.16)*clamp(edge,0.12,1), width:0.55+rand()*0.30});
+    for(let i=0;i<pts.length-2;i+=4){
+      const a1x=pts[i],a1y=pts[i+1],b1x=pts[i+2],b1y=pts[i+3];
+      let nx=-(b1y-a1y),ny=(b1x-a1x);const L=Math.hypot(nx,ny)||1;nx/=L;ny/=L;
+      for(const sg of[1,-1]){const px=a1x+nx*sg*dsep,py=a1y+ny*sg*dsep;
+        if(!inDisc(px,py,1)||stoneHit(px,py)||near(px,py,dsep*0.92))continue; queue.push([px,py]);}
+    }
+  }
+  return out;
+}
+
+/* ---- rendering ---- */
+function drawFrame(c,Cx,Cy,Rr,sw){
+  c.beginPath(); c.arc(Cx,Cy,Rr,0,TAU); c.lineWidth=1.1*sw; c.strokeStyle='rgba('+INK+',0.55)'; c.stroke();
+  c.beginPath(); c.arc(Cx,Cy,Rr+5*sw,0,TAU); c.lineWidth=0.6*sw; c.strokeStyle='rgba('+INK+',0.22)'; c.stroke();
+  // 朱 tick at 12 o'clock
+  c.beginPath(); c.moveTo(Cx,Cy-Rr-3*sw); c.lineTo(Cx,Cy-Rr-12*sw); c.lineWidth=1.4*sw; c.strokeStyle='#a8392b'; c.stroke();
+  c.beginPath(); c.arc(Cx,Cy-Rr-15*sw,2.2*sw,0,TAU); c.fillStyle='#a8392b'; c.fill();
+}
+function strokeLines(c,sw){ c.lineCap='round'; c.lineJoin='round';
+  for(const l of lines){ const p=l.pts; c.lineWidth=l.width*sw; c.strokeStyle='rgba('+INK+','+l.alpha+')';
+    c.beginPath(); c.moveTo(p[0],p[1]); for(let i=2;i<p.length;i+=2)c.lineTo(p[i],p[i+1]); c.stroke(); } }
+function cancelAnim(){ if(anim){cancelAnimationFrame(anim);anim=null;} }
+
+function drawEmpty(){ cancelAnim(); ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H); drawFrame(ctx,cx,cy,R,1); }
+
+function playRake(onDone){
+  cancelAnim(); ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
+  ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,R-0.5,0,TAU); ctx.clip();
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  const total=lines.reduce((s,l)=>s+l.pts.length/2,0), perFrame=Math.max(50,Math.ceil(total/210));
+  let li=0,pi=0;
+  (function frame(){
+    let b=perFrame;
+    while(b>0&&li<lines.length){ const l=lines[li],p=l.pts;
+      ctx.lineWidth=l.width; ctx.strokeStyle='rgba('+INK+','+l.alpha+')';
+      const start=Math.max(0,pi-1), end=Math.min(p.length/2,pi+b);
+      if(end-start>=2){ctx.beginPath();ctx.moveTo(p[start*2],p[start*2+1]);for(let k=start+1;k<end;k++)ctx.lineTo(p[k*2],p[k*2+1]);ctx.stroke();}
+      b-=(end-pi); pi=end; if(pi>=p.length/2){li++;pi=0;} }
+    if(li<lines.length) anim=requestAnimationFrame(frame);
+    else { ctx.restore(); drawFrame(ctx,cx,cy,R,1); anim=null; if(onDone)onDone(); }
+  })();
+}
+
+/* ---- structural description (observational, not predictive) ---- */
+function describe(){
+  const 芯=P.cores0Central?'中心に':'中心からわずかにずれて';
+  const 旋回=P.handed==='右'?'右回りに':'左回りに';
+  const k=P.K, m=P.M;
+  const a = k===1?'ひとつの芯を持ち':(k===2?'ふたつの芯が響き合い':'みっつの芯が絡み');
+  return `${芯}結ばれた砂が、${旋回}巡る紋。${a}、${m}つの石を避けながら、ひとつの円に収まっている。`;
+}
+
+/* ---- generate ---- */
+function generate(y,m,d,hasTime,hh,mi){
+  P=derive(y,m,d,hasTime,hh,mi);
+  cores=null; stones=null;
+  // rebuild geometry using derived values
+  cores=[]; // re-derive cores/stones deterministically (derive already consumed rand for them)
+  // NOTE: derive() built cores/stones internally; rebuild here from same seed for clarity:
+  rebuildGeometry();
+  lines=buildLines();
+  P.cores0Central = Math.hypot(cores[0].x-cx, cores[0].y-cy) < R*0.12;
+  // readout
+  document.getElementById('inputState').style.display='none';
+  const ro=document.getElementById('readout'); ro.classList.add('show');
+  document.getElementById('ro-no').textContent=P.id;
+  document.getElementById('ro-date').textContent=`${P.y}.${pad(P.m)}.${pad(P.d)}`+(P.hasTime?`  ${pad(P.hh)}:${pad(P.mi)}`:'');
+  document.getElementById('ro-specs').innerHTML=
+    `<span>芯<b>×${P.K}</b></span><span>石<b>×${P.M}</b></span><span>旋回<b>${P.handed}</b></span><span>節<b>${P.spacing}</b></span>`;
+  document.getElementById('ro-desc').textContent=describe();
+  document.getElementById('stageCap').textContent='個の紋 / SEAL '+P.id;
+  playRake();
+}
+
+// rebuild cores+stones from the seed deterministically (kept separate so geometry is reproducible)
+function rebuildGeometry(){
+  const rand=mulberry32(hashStr(P.key));   // fresh stream, same as derive used first
+  // cores
+  const K=P.K; cores=[];
+  for(let i=0;i<K;i++){ const rad=i===0?R*0.06*rand():R*(0.20+0.42*rand()); const ang=rand()*TAU;
+    cores.push({x:cx+Math.cos(ang)*rad,y:cy+Math.sin(ang)*rad,sign:rand()<0.5?1:-1,strength:0.65+rand()*0.9,falloff:(0.55+rand()*0.9)/R,spiral:(rand()-0.5)*0.55}); }
+  // stones
+  const M=P.M; stones=[]; let g=0;
+  while(stones.length<M&&g++<400){ const a=rand()*TAU,rr=R*(0.18+rand()*0.6); const sx=cx+Math.cos(a)*rr,sy=cy+Math.sin(a)*rr;
+    const sr=R*(stones.length===0?0.085+rand()*0.05:0.035+rand()*0.05); let ok=Math.hypot(sx-cx,sy-cy)<R-sr*1.4;
+    for(const s of stones)if(Math.hypot(sx-s.x,sy-s.y)<(s.r+sr)*1.3){ok=false;break;} if(ok)stones.push({x:sx,y:sy,r:sr}); }
+  // re-fetch spacing/bias from same stream order used in derive (already set on P)
+  P.rand=mulberry32(hashStr(P.key+'~draw'));  // independent stream for line alpha jitter
+}
+
+/* ---- export certificate PNG ---- */
+function exportPNG(){
+  const w=1600,h=2000, off=document.createElement('canvas'); off.width=w; off.height=h;
+  const c=off.getContext('2d');
+  c.fillStyle='#e8e2d5'; c.fillRect(0,0,w,h);
+  const grd=c.createRadialGradient(w/2,h*0.40,120,w/2,h*0.42,h*0.7); grd.addColorStop(0,'rgba(255,253,247,0.30)'); grd.addColorStop(1,'rgba(150,138,118,0.13)');
+  c.fillStyle=grd; c.fillRect(0,0,w,h);
+  // seal
+  const SR=560, SCx=w/2, SCy=h*0.40, S=SR/R;
+  c.save(); c.translate(SCx,SCy); c.scale(S,S); c.translate(-cx,-cy);
+  c.save(); c.beginPath(); c.arc(cx,cy,R-0.5,0,TAU); c.clip(); strokeLines(c,1); c.restore();
+  drawFrame(c,cx,cy,R,1); c.restore();
+  // caption block
+  c.textAlign='center'; c.fillStyle='#1f1f1d';
+  c.font='600 64px Archivo, sans-serif'; const wm='ALMANA';
+  c.fillText(wm, w/2-18, h*0.74);
+  const tw=c.measureText(wm).width; c.beginPath(); c.arc(w/2-18+tw/2+30, h*0.74-6, 9,0,TAU); c.fillStyle='#a8392b'; c.fill();
+  c.fillStyle='rgba(31,31,29,0.85)'; c.font='500 30px Archivo, sans-serif'; c.fillText(P.id, w/2, h*0.785);
+  c.fillStyle='rgba(31,31,29,0.7)'; c.font='400 30px Archivo, sans-serif';
+  c.fillText(`${P.y}.${pad(P.m)}.${pad(P.d)}`+(P.hasTime?`  ${pad(P.hh)}:${pad(P.mi)}`:''), w/2, h*0.82);
+  c.fillStyle='rgba(31,31,29,0.45)'; c.font='400 22px Archivo, sans-serif';
+  c.fillText('個の紋  ·  PERSONAL SEAL  ·  ONE OF ONE', w/2, h*0.86);
+  off.toBlob(b=>{const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='almana_seal_'+P.id+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(u),2000);},'image/png');
+}
+
+/* ---- wiring ---- */
+function readInputs(){
+  const y=+document.getElementById('y').value, m=+document.getElementById('m').value, d=+document.getElementById('d').value;
+  const hhv=document.getElementById('hh').value.trim(), miv=document.getElementById('mi').value.trim();
+  const err=document.getElementById('err');
+  if(!y||y<1900||y>2100){err.textContent='生年を正しく入力してください（1900–2100）。';return null;}
+  if(!m||m<1||m>12){err.textContent='月を正しく入力してください（1–12）。';return null;}
+  if(!d||d<1||d>31){err.textContent='日を正しく入力してください（1–31）。';return null;}
+  let hasTime=false,hh=0,mi=0;
+  if(hhv!==''||miv!==''){ hh=+hhv; mi=+miv; if(isNaN(hh)||hh<0||hh>23||isNaN(mi)||mi<0||mi>59){err.textContent='時刻は 0–23 時 / 0–59 分で入力してください。';return null;} hasTime=true; }
+  err.textContent='';
+  return {y,m,d,hasTime,hh,mi};
+}
+document.getElementById('bind').addEventListener('click',()=>{ const v=readInputs(); if(v) generate(v.y,v.m,v.d,v.hasTime,v.hh,v.mi); });
+['y','m','d','hh','mi'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{ if(e.key==='Enter'){const v=readInputs(); if(v) generate(v.y,v.m,v.d,v.hasTime,v.hh,v.mi);} }));
+document.getElementById('exportBtn').addEventListener('click',exportPNG);
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  document.getElementById('readout').classList.remove('show');
+  document.getElementById('inputState').style.display='block';
+  document.getElementById('stageCap').textContent='未結 / UNBOUND';
+  drawEmpty();
+});
+let rt=null; addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{fit(); if(P&&document.getElementById('readout').classList.contains('show')){rebuildGeometry();lines=buildLines(); cancelAnim(); ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H); ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,R-0.5,0,TAU); ctx.clip(); strokeLines(ctx,1); ctx.restore(); drawFrame(ctx,cx,cy,R,1);} else drawEmpty();},160);});
+
+// boot
+fit(); drawEmpty();
+</script>
+</body>
+</html>

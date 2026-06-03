@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALMANA — 紋が育つ / The Mark Grows</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@300;400;500&family=Shippori+Mincho:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{ --washi:#e8e2d5; --ink:#1f1f1d; --shu:#a8392b;
+    --grot:"Archivo","Helvetica Neue",sans-serif; --jp:"Zen Kaku Gothic New",sans-serif; --mincho:"Shippori Mincho",serif; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{ background:var(--washi); color:var(--ink); font-family:var(--jp); -webkit-font-smoothing:antialiased; min-height:100vh;
+    background-image:radial-gradient(125% 120% at 50% 36%, rgba(255,253,247,0.30) 0%, rgba(150,138,118,0.14) 100%); }
+  .wrap{ max-width:1180px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; padding:clamp(20px,3vw,40px) clamp(24px,5vw,64px); }
+  header{ display:flex; align-items:flex-start; justify-content:space-between; border-bottom:1px solid rgba(31,31,29,0.22); padding-bottom:12px; }
+  .brand{ display:flex; align-items:baseline; gap:12px; }
+  .brand svg{ height:clamp(15px,1.7vw,18px); width:auto; display:block; }
+  .brand .tag{ font-family:var(--mincho); font-size:11px; letter-spacing:0.22em; color:rgba(31,31,29,0.6); }
+  .annot{ font-family:var(--grot); font-size:10px; letter-spacing:0.18em; text-transform:uppercase; text-align:right; line-height:1.7; color:rgba(31,31,29,0.5); }
+  .annot .reg{ color:var(--shu); }
+
+  main{ flex:1; display:grid; grid-template-columns:minmax(280px,0.95fr) minmax(300px,500px); gap:clamp(28px,5vw,60px); align-items:center; padding:clamp(18px,3vh,32px) 0 0; }
+  @media (max-width:860px){ main{ grid-template-columns:1fr; gap:28px; } }
+  .col-left{ max-width:440px; }
+  .lede h1{ font-weight:300; font-size:clamp(23px,3vw,34px); line-height:1.45; letter-spacing:0.04em; }
+  .lede p{ margin-top:14px; font-family:var(--mincho); font-size:13px; line-height:1.95; color:rgba(31,31,29,0.72); }
+
+  .form,.journal{ margin-top:clamp(22px,3vw,34px); }
+  .fields{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px 20px; }
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  .field label{ font-family:var(--grot); font-size:9.5px; letter-spacing:0.16em; text-transform:uppercase; color:rgba(31,31,29,0.5); }
+  .field .row{ display:flex; align-items:baseline; gap:6px; }
+  .field input{ width:var(--w,50px); background:transparent; border:none; border-bottom:1px solid rgba(31,31,29,0.42); font-family:var(--grot); font-size:18px; color:var(--ink); padding:3px 0; text-align:center; outline:none; }
+  .field input:focus{ border-color:var(--ink); }
+  .field .unit{ font-family:var(--mincho); font-size:12px; color:rgba(31,31,29,0.55); }
+  .field .opt{ font-family:var(--mincho); font-size:10px; color:rgba(31,31,29,0.45); }
+  .submit{ margin-top:24px; display:inline-flex; align-items:center; gap:14px; font-family:var(--jp); font-weight:500; font-size:14px; letter-spacing:0.16em; color:var(--ink); border:1px solid var(--ink); padding:13px 26px; background:transparent; cursor:pointer; transition:background .35s,color .35s,gap .35s; }
+  .submit .arrow{ color:var(--shu); transition:transform .35s,color .35s; }
+  .submit:hover{ background:var(--ink); color:var(--washi); gap:19px; }
+  .submit:hover .arrow{ color:var(--washi); transform:translateX(3px); }
+  .err{ margin-top:12px; font-size:12px; color:var(--shu); min-height:15px; }
+
+  .journal{ display:none; }
+  .journal.show{ display:block; }
+  .ro-head{ display:flex; align-items:baseline; justify-content:space-between; }
+  .ro-head .no{ font-family:var(--grot); font-size:11px; letter-spacing:0.26em; text-transform:uppercase; color:var(--shu); }
+  .ro-head .fill{ font-family:var(--grot); font-size:11px; letter-spacing:0.12em; color:rgba(31,31,29,0.6); }
+  textarea{ margin-top:16px; width:100%; min-height:64px; resize:vertical; background:transparent; border:1px solid rgba(31,31,29,0.3);
+    font-family:var(--jp); font-size:14px; line-height:1.8; color:var(--ink); padding:12px 14px; outline:none; }
+  textarea:focus{ border-color:rgba(31,31,29,0.6); }
+  .states{ margin-top:14px; display:flex; gap:8px; }
+  .chip{ font-family:var(--jp); font-size:12px; letter-spacing:0.1em; color:rgba(31,31,29,0.6); border:1px solid rgba(31,31,29,0.32); padding:8px 14px; cursor:pointer; transition:all .2s; }
+  .chip.on{ background:var(--ink); color:var(--washi); border-color:var(--ink); }
+  .jrow{ margin-top:18px; display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  .rec-btn{ display:inline-flex; align-items:center; gap:12px; font-family:var(--jp); font-weight:500; font-size:13px; letter-spacing:0.14em; color:var(--ink); border:1px solid var(--ink); padding:12px 22px; background:transparent; cursor:pointer; transition:all .3s; }
+  .rec-btn:hover{ background:var(--ink); color:var(--washi); }
+  .rec-btn .mk{ color:var(--shu); } .rec-btn:hover .mk{ color:var(--washi); }
+  .mini{ font-family:var(--grot); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(31,31,29,0.55); cursor:pointer; background:none; border:none; }
+  .mini:hover{ color:var(--ink); }
+  .note{ margin-top:20px; font-family:var(--mincho); font-size:12px; line-height:1.95; color:rgba(31,31,29,0.55); border-left:1px solid rgba(31,31,29,0.3); padding-left:14px; }
+  .footrow{ margin-top:14px; display:flex; align-items:center; gap:16px; }
+  .privacy{ font-family:var(--grot); font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(31,31,29,0.38); }
+  .reset-link{ font-family:var(--grot); font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(31,31,29,0.32); background:none; border:none; cursor:pointer; padding:0; }
+  .reset-link:hover{ color:rgba(31,31,29,0.6); }
+
+  .stage-wrap{ display:flex; justify-content:center; }
+  .stage{ position:relative; width:100%; max-width:500px; aspect-ratio:1/1; }
+  canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .stage-cap{ position:absolute; bottom:-2px; left:50%; transform:translateX(-50%); font-family:var(--grot); font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:rgba(31,31,29,0.38); }
+  .skip{ position:absolute; bottom:10px; right:12px; display:none; font-family:var(--grot); font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:rgba(31,31,29,0.55); background:rgba(232,226,213,0.7); border:1px solid rgba(31,31,29,0.3); padding:7px 12px; cursor:pointer; }
+  .skip.show{ display:block; }
+
+  .growth{ display:none; margin-top:clamp(20px,3vh,34px); padding-top:18px; border-top:1px solid rgba(31,31,29,0.22); }
+  .growth.show{ display:block; }
+  .g-top{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; flex-wrap:wrap; }
+  .g-title{ font-family:var(--grot); font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:rgba(31,31,29,0.55); }
+  .play{ display:inline-flex; align-items:center; gap:12px; font-family:var(--jp); font-weight:500; font-size:13px; letter-spacing:0.14em; color:var(--shu); background:transparent; border:1px solid var(--shu); padding:12px 22px; cursor:pointer; transition:all .3s; }
+  .play:hover{ background:var(--shu); color:var(--washi); }
+  .play .tri{ font-size:11px; }
+  input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:1px; background:rgba(31,31,29,0.35); outline:none; cursor:pointer; }
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:12px; height:12px; border-radius:50%; background:var(--shu); border:none; }
+  input[type=range]::-moz-range-thumb{ width:12px; height:12px; border-radius:50%; background:var(--shu); border:none; }
+  .g-foot{ margin-top:8px; font-family:var(--mincho); font-size:11px; color:rgba(31,31,29,0.5); }
+
+  footer{ font-family:var(--grot); font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(31,31,29,0.35); text-align:center; padding:16px 0 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="9.0 -689.0 7095.0 718.0" aria-label="ALMANA"><g transform="scale(1,-1)">
+        <path d="M33 0V16L97 49L353 665H398L650 52L717 16V0H469V16L557 50L482 235H239L165 50L249 16V0ZM262 290H460L361 536Z" fill="#1f1f1d"/>
+        <path d="M1195 0V16L1275 56V604L1195 644V660H1455V644L1365 604V55H1608L1676 222H1692V0Z" fill="#1f1f1d"/>
+        <path d="M2202 0V16L2281 56L2302 603L2216 644V660H2401L2632 128L2862 660H3038V644L2954 604L2971 56L3041 16V0H2811V16L2885 55L2875 548L2636 -5H2591L2356 541L2343 55L2424 16V0Z" fill="#1f1f1d"/>
+        <path d="M3514 0V16L3578 49L3834 665H3879L4131 52L4198 16V0H3950V16L4038 50L3963 235H3720L3646 50L3730 16V0ZM3743 290H3941L3842 536Z" fill="#1f1f1d"/>
+        <path d="M4671 0V16L4751 56V602L4672 644V660H4819L5201 180V606L5101 644V660H5350V644L5271 605V-5H5234L4821 516V55L4921 16V0Z" fill="#1f1f1d"/>
+        <path d="M5823 0V16L5887 49L6143 665H6188L6440 52L6507 16V0H6259V16L6347 50L6272 235H6029L5955 50L6039 16V0ZM6052 290H6250L6151 536Z" fill="#1f1f1d"/>
+        <circle cx="7025.0" cy="55.0" r="55.0" fill="#a8392b"/>
+      </g></svg>
+      <span class="tag">自己理解AI</span>
+    </div>
+    <div class="annot"><span class="reg">⊕</span> 紋が育つ / The Mark Grows<br>Structure fixed · Record by record</div>
+  </header>
+
+  <main>
+    <div class="col-left">
+      <div id="inputState">
+        <div class="lede">
+          <h1>記録した分だけ、<br>紋が満ちていく。</h1>
+          <p>構造（生まれ持った石組）は変わらない。<br>あなたが記録するたび、その場に砂が掻かれていく。</p>
+        </div>
+        <div class="form">
+          <div class="fields">
+            <div class="field"><label>Year 生年</label><div class="row"><input id="y" inputmode="numeric" placeholder="1990" style="--w:70px"><span class="unit">年</span></div></div>
+            <div class="field"><label>Month 月</label><div class="row"><input id="m" inputmode="numeric" placeholder="05"><span class="unit">月</span></div></div>
+            <div class="field"><label>Day 日</label><div class="row"><input id="d" inputmode="numeric" placeholder="22"><span class="unit">日</span></div></div>
+            <div class="field"><label>Time 時刻 <span class="opt">任意</span></label><div class="row"><input id="hh" inputmode="numeric" placeholder="--" style="--w:40px"><span class="unit">:</span><input id="mi" inputmode="numeric" placeholder="--" style="--w:40px"></div></div>
+          </div>
+          <button class="submit" id="bind">紋をひらく <span class="arrow">→</span></button>
+          <div class="err" id="err"></div>
+        </div>
+      </div>
+
+      <div class="journal" id="journal">
+        <div class="ro-head"><span class="no" id="ro-no">ALM-0000-00</span><span class="fill" id="ro-fill">記録 0日 · 砂紋 0%</span></div>
+        <textarea id="entry" placeholder="今日のこと。短くていい。"></textarea>
+        <div class="states" id="states">
+          <span class="chip" data-s="calm">穏やか</span>
+          <span class="chip on" data-s="neutral">ふつう</span>
+          <span class="chip" data-s="unsettled">揺れ</span>
+        </div>
+        <div class="jrow">
+          <button class="rec-btn" id="recBtn">記録する <span class="mk">⊕</span></button>
+          <button class="mini" id="exportBtn">PNG 書き出し ↓</button>
+          <button class="mini" id="resetInput">別の生年月日</button>
+        </div>
+        <div class="note">砂が増えても、石は動かない。<br>形は生まれ持ったもの、満ちていく質感は、生きた記録のもの。</div>
+        <div class="footrow">
+          <span class="privacy">記録はこの端末にローカル保存 · No data leaves this device</span>
+          <button class="reset-link" id="clearBtn">この紋の記録を初期化</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-wrap"><div class="stage" id="stage">
+      <canvas id="seal"></canvas>
+      <span class="stage-cap" id="stageCap">未記録 / EMPTY</span>
+      <button class="skip" id="skipBtn">スキップ</button>
+    </div></div>
+  </main>
+
+  <div class="growth" id="growth">
+    <div class="g-top">
+      <span class="g-title">成長 / Growth — 記録の堆積</span>
+      <button class="play" id="playBtn">成長を再生 <span class="tri">▷</span></button>
+    </div>
+    <input type="range" id="scrub" min="0" max="48" value="0">
+    <div class="g-foot" id="gFoot">スライダーで成長の軌跡をなぞれます。記録するたび、ここが一段進みます。</div>
+  </div>
+
+  <footer>Deterministic seal · Grown by record · The Modern Zen Archive</footer>
+</div>
+
+<script>
+const INK='31,31,29';
+function hashStr(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function buildPerlin(rand){const perm=[...Array(256).keys()];for(let i=255;i>0;i--){const j=(rand()*(i+1))|0;[perm[i],perm[j]]=[perm[j],perm[i]];}
+  const p=new Int16Array(512);for(let i=0;i<512;i++)p[i]=perm[i&255];const fd=t=>t*t*t*(t*(t*6-15)+10),lp=(a,b,t)=>a+t*(b-a),gr=(h,x,y)=>((h&1)?-x:x)+((h&2)?-y:y);
+  return(x,y)=>{const X=Math.floor(x)&255,Y=Math.floor(y)&255;x-=Math.floor(x);y-=Math.floor(y);const u=fd(x),v=fd(y),aa=p[p[X]+Y],ab=p[p[X]+Y+1],ba=p[p[X+1]+Y],bb=p[p[X+1]+Y+1];
+    return lp(lp(gr(aa,x,y),gr(ba,x-1,y),u),lp(gr(ab,x,y-1),gr(bb,x-1,y-1),u),v);};}
+const TAU=Math.PI*2, clamp=(v,a,b)=>v<a?a:v>b?b:v, smooth=(e0,e1,x)=>{const t=clamp((x-e0)/(e1-e0),0,1);return t*t*(3-2*t);}, pad=n=>String(n).padStart(2,'0');
+
+// growth model
+const FILL=40, MATURE=90, LAYER_EVERY=30;
+const STATE={ calm:{a:0.55,w:0.70}, neutral:{a:1.0,w:1.0}, unsettled:{a:1.55,w:1.35} };
+function revealFrac(n){ if(n<=0)return 0; if(n>=FILL)return 1; return Math.pow(n/FILL,0.6); }       // front-loaded
+function maturity(n){ return clamp((n-FILL)/(MATURE-FILL),0,1); }
+function layersOf(n){ return n>MATURE ? Math.floor((n-MATURE)/LAYER_EVERY)+1 : 0; }
+
+const memJournal={};
+function loadJournal(id){ try{const s=localStorage.getItem('almana_journal_'+id);return s?JSON.parse(s):[];}catch(e){return memJournal[id]||[];} }
+function saveJournal(id,a){ try{localStorage.setItem('almana_journal_'+id,JSON.stringify(a));}catch(e){memJournal[id]=a;} }
+function introSeen(){ try{return localStorage.getItem('almana_intro_seen')==='1';}catch(e){return memJournal.__intro;} }
+function markIntro(){ try{localStorage.setItem('almana_intro_seen','1');}catch(e){memJournal.__intro=true;} }
+
+const cvs=document.getElementById('seal'), ctx=cvs.getContext('2d'), stageEl=document.getElementById('stage');
+let W=0,H=0,DPR=1,cx=0,cy=0,R=0;
+let P=null, cores=[], stones=[], lines=[], lineStyle=[], boundaries=[], noise=null;
+let records=[], state='neutral', displayCount=0, matNow=0, anim=null, intro=false, introCancel=null;
+
+function fit(){ const r=stageEl.getBoundingClientRect(); DPR=Math.min(window.devicePixelRatio||1,2);
+  W=Math.round(r.width); H=Math.round(r.height); cvs.width=Math.round(W*DPR); cvs.height=Math.round(H*DPR);
+  cx=W/2; cy=H/2; R=Math.min(W,H)/2 - Math.min(W,H)*0.075; }
+
+/* engine */
+function derive(y,m,d,hasTime,hh,mi){
+  const key=`${y}-${pad(m)}-${pad(d)}`+(hasTime?`T${pad(hh)}:${pad(mi)}`:'');
+  noise=buildPerlin(mulberry32(hashStr(key+'~n')));
+  const K=1+((d+m)%2)+(m%4===0?1:0), M=2+(d%4), spacing=5+Math.round(mulberry32(hashStr(key+'~s'))()*3), biasAngle=(m/12)*TAU;
+  const id='ALM-'+hashStr(key).toString(16).toUpperCase().padStart(8,'0').slice(0,4)+'-'+hashStr(key+'~x').toString(16).toUpperCase().padStart(2,'0').slice(0,2);
+  return {key,y,m,d,hasTime,hh,mi,K,M,spacing,biasAngle,id};
+}
+function rebuildGeometry(){
+  const rand=mulberry32(hashStr(P.key)); cores=[];
+  for(let i=0;i<P.K;i++){ const rad=i===0?R*0.06*rand():R*(0.20+0.42*rand()); const ang=rand()*TAU;
+    cores.push({x:cx+Math.cos(ang)*rad,y:cy+Math.sin(ang)*rad,sign:rand()<0.5?1:-1,strength:0.65+rand()*0.9,falloff:(0.55+rand()*0.9)/R,spiral:(rand()-0.5)*0.55}); }
+  stones=[]; let g=0;
+  while(stones.length<P.M&&g++<400){ const a=rand()*TAU,rr=R*(0.18+rand()*0.6); const sx=cx+Math.cos(a)*rr,sy=cy+Math.sin(a)*rr;
+    const sr=R*(stones.length===0?0.085+rand()*0.05:0.035+rand()*0.05); let ok=Math.hypot(sx-cx,sy-cy)<R-sr*1.4;
+    for(const s of stones)if(Math.hypot(sx-s.x,sy-s.y)<(s.r+sr)*1.3){ok=false;break;} if(ok)stones.push({x:sx,y:sy,r:sr}); }
+}
+function flowAngle(x,y){
+  let vx=Math.cos(P.biasAngle)*0.18, vy=Math.sin(P.biasAngle)*0.18; vx+=noise(x*0.0013,y*0.0013)*0.10;
+  for(const c of cores){ const dx=x-c.x,dy=y-c.y,d=Math.hypot(dx,dy)||1e-4,w=c.strength/(d*c.falloff+1);
+    const tx=-dy/d*c.sign,ty=dx/d*c.sign,rx=dx/d,ry=dy/d; vx+=(tx+rx*c.spiral)*w; vy+=(ty+ry*c.spiral)*w; }
+  const STR=7.0;
+  for(const s of stones){ const dx=x-s.x,dy=y-s.y,d=Math.hypot(dx,dy)||1e-4,band=s.r*2.9; if(d>s.r+band)continue;
+    const wv=smooth(s.r+band,s.r,d),tx=-dy/d,ty=dx/d; vx+=tx*wv*STR; vy+=ty*wv*STR; }
+  return Math.atan2(vy,vx);
+}
+const inDisc=(x,y,m=0)=>{const dx=x-cx,dy=y-cy;return dx*dx+dy*dy<=(R-m)*(R-m);};
+const stoneHit=(x,y)=>{for(const s of stones)if(Math.hypot(x-s.x,y-s.y)<=s.r+0.6)return true;return false;};
+function buildLines(){
+  const rand=mulberry32(hashStr(P.key+'~draw')), dsep=P.spacing, dtest=dsep*0.5, step=clamp(dsep*0.42,1.3,2.6);
+  const maxSteps=Math.min(2600,Math.ceil(R*TAU/step)*2), cell=dsep, grid=new Map(), key=(x,y)=>((x/cell)|0)+','+((y/cell)|0);
+  const add=(x,y)=>{const k=key(x,y);let a=grid.get(k);if(!a){a=[];grid.set(k,a);}a.push(x,y);};
+  const near=(x,y,md)=>{const gx=(x/cell)|0,gy=(y/cell)|0,m2=md*md;for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){const a=grid.get((gx+i)+','+(gy+j));if(!a)continue;for(let p=0;p<a.length;p+=2){const ddx=x-a[p],ddy=y-a[p+1];if(ddx*ddx+ddy*ddy<m2)return true;}}return false;};
+  function integ(sx,sy){ if(!inDisc(sx,sy,1)||stoneHit(sx,sy)||near(sx,sy,dtest))return null;
+    const fwd=[],bwd=[]; for(const dir of[1,-1]){let x=sx,y=sy;const arr=(dir===1?fwd:bwd);
+      for(let n=0;n<maxSteps;n++){ const a=flowAngle(x,y),mx=x+Math.cos(a)*step*0.5*dir,my=y+Math.sin(a)*step*0.5*dir,a2=flowAngle(mx,my);
+        const nx=x+Math.cos(a2)*step*dir,ny=y+Math.sin(a2)*step*dir;
+        if(!inDisc(nx,ny,0.5))break; if(stoneHit(nx,ny))break; if(near(nx,ny,dtest))break;
+        if(n>14&&Math.hypot(nx-sx,ny-sy)<step*1.1){arr.push(nx,ny);break;} arr.push(nx,ny); x=nx;y=ny; }}
+    const pts=[];for(let i=bwd.length-2;i>=0;i-=2)pts.push(bwd[i],bwd[i+1]); pts.push(sx,sy); for(let i=0;i<fwd.length;i+=2)pts.push(fwd[i],fwd[i+1]);
+    if(pts.length<6)return null; for(let i=0;i<pts.length;i+=2)add(pts[i],pts[i+1]); return pts; }
+  const out=[],queue=[]; queue.push([cx,cy]);
+  for(let a=0;a<TAU;a+=TAU/9)queue.push([cx+Math.cos(a)*R*0.5,cy+Math.sin(a)*R*0.5]);
+  for(const s of stones)queue.push([s.x+(s.r+dsep*1.2),s.y]);
+  let guard=0; while(queue.length&&guard++<36000){ const[qx,qy]=queue.shift(); const pts=integ(qx,qy); if(!pts)continue; out.push(pts);
+    for(let i=0;i<pts.length-2;i+=4){ const a1x=pts[i],a1y=pts[i+1],b1x=pts[i+2],b1y=pts[i+3]; let nx=-(b1y-a1y),ny=(b1x-a1x);const L=Math.hypot(nx,ny)||1;nx/=L;ny/=L;
+      for(const sg of[1,-1]){const px=a1x+nx*sg*dsep,py=a1y+ny*sg*dsep; if(!inDisc(px,py,1)||stoneHit(px,py)||near(px,py,dsep*0.92))continue; queue.push([px,py]);}}}
+  const rs=mulberry32(hashStr(P.key+'~style')); lineStyle=out.map(()=>({a:0.26+rs()*0.16, w:0.55+rs()*0.30}));
+  boundaries=[0]; for(let r=1;r<=FILL;r++) boundaries[r]=Math.round(out.length*revealFrac(r));
+  return out;
+}
+const revealedLines=n=>Math.round(lines.length*revealFrac(n));
+function ownerOfLine(i){ for(let r=1;r<=FILL;r++) if(i<boundaries[r]) return r; return FILL; }
+
+/* render */
+function lineColor(i){
+  const r=ownerOfLine(i); const rec=records[r-1];
+  const st=(rec&&STATE[rec.state])?STATE[rec.state]:STATE.neutral; const base=lineStyle[i]||{a:0.3,w:0.6};
+  const deepen=1+0.30*matNow;            // post-fill maturation deepens texture
+  return { a:clamp(base.a*st.a*deepen,0.05,0.9), w:base.w*st.w*(1+0.12*matNow) };
+}
+function paintBase(c){
+  c.fillStyle='#e8e2d5'; c.fillRect(0,0,W,H);
+  const g=c.createRadialGradient(cx,cy*0.92,R*0.2,cx,cy,R*1.05); g.addColorStop(0,'rgba(255,253,247,0.22)'); g.addColorStop(1,'rgba(150,138,118,0.10)');
+  c.fillStyle=g; c.fillRect(0,0,W,H);
+  for(const s of stones){ c.beginPath(); c.arc(s.x,s.y,s.r,0,TAU); c.fillStyle='rgba('+INK+',0.05)'; c.fill();
+    c.lineWidth=0.7; c.strokeStyle='rgba('+INK+',0.16)'; c.beginPath(); c.arc(s.x,s.y,s.r,0,TAU); c.stroke(); }
+}
+function drawLineFull(c,i){ const p=lines[i],s=lineColor(i); c.lineWidth=s.w; c.strokeStyle='rgba('+INK+','+s.a+')';
+  c.beginPath(); c.moveTo(p[0],p[1]); for(let k=2;k<p.length;k+=2)c.lineTo(p[k],p[k+1]); c.stroke(); }
+function decorations(){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,TAU); ctx.lineWidth=1; ctx.strokeStyle='rgba('+INK+',0.5)'; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,cy-R-3); ctx.lineTo(cx,cy-R-11); ctx.lineWidth=1.3; ctx.strokeStyle='#a8392b'; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy-R-14,2.1,0,TAU); ctx.fillStyle='#a8392b'; ctx.fill();
+  const lay=layersOf(displayCount);                      // season/period layers as faint rim ticks
+  for(let k=0;k<lay;k++){ const a=-Math.PI/2+(k+1)*0.16; const x1=cx+Math.cos(a)*(R+4),y1=cy+Math.sin(a)*(R+4),x2=cx+Math.cos(a)*(R+11),y2=cy+Math.sin(a)*(R+11);
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.lineWidth=0.8; ctx.strokeStyle='rgba('+INK+',0.32)'; ctx.stroke(); }
+}
+function cancelAnim(){ if(anim){cancelAnimationFrame(anim);anim=null;} }
+function renderStatic(upto){
+  cancelAnim(); ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
+  ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,R-0.5,0,TAU); ctx.clip(); paintBase(ctx);
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  const n=Math.min(upto,lines.length); for(let i=0;i<n;i++) drawLineFull(ctx,i);
+  ctx.restore(); decorations();
+}
+function revealTimed(fromLine,toLine,dur,onDone){
+  cancelAnim();
+  ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
+  ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,R-0.5,0,TAU); ctx.clip(); paintBase(ctx); ctx.lineCap='round'; ctx.lineJoin='round';
+  for(let i=0;i<fromLine;i++) drawLineFull(ctx,i); ctx.restore(); decorations();
+  const seq=[]; for(let i=fromLine;i<toLine&&i<lines.length;i++) seq.push(i);
+  if(!seq.length){ if(onDone)onDone(); return; }
+  const totalPts=Math.max(1,seq.reduce((a,i)=>a+lines[i].length/2,0)), rate=totalPts/dur, t0=performance.now();
+  let pos=0,pi=0,drawn=0;
+  function frame(now){
+    const target=Math.min(totalPts,(now-t0)*rate);
+    ctx.setTransform(DPR,0,0,DPR,0,0); ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,R-0.5,0,TAU); ctx.clip(); ctx.lineCap='round'; ctx.lineJoin='round';
+    while(drawn<target&&pos<seq.length){ const i=seq[pos],p=lines[i],s=lineColor(i);
+      ctx.lineWidth=s.w; ctx.strokeStyle='rgba('+INK+','+s.a+')';
+      const start=Math.max(0,pi-1), avail=Math.ceil(target-drawn), end=Math.min(p.length/2,pi+avail);
+      if(end-start>=2){ctx.beginPath();ctx.moveTo(p[start*2],p[start*2+1]);for(let k=start+1;k<end;k++)ctx.lineTo(p[k*2],p[k*2+1]);ctx.stroke();}
+      drawn+=(end-pi); pi=end; if(pi>=p.length/2){pos++;pi=0;}
+    }
+    ctx.restore();
+    if(pos<seq.length) anim=requestAnimationFrame(frame); else { anim=null; renderStatic(toLine); if(onDone)onDone(); }
+  }
+  anim=requestAnimationFrame(frame);
+}
+
+/* readout / display */
+function fillText(){
+  const live=records.length, f=Math.round(revealFrac(live)*100);
+  let suf=''; if(live>FILL){ suf = live>MATURE ? ' · 層 '+layersOf(live) : ' · 深まり'; }
+  return `記録 ${live}日 · 砂紋 ${f}%${suf}` + (displayCount!==live?`  （表示 ${displayCount}）`:'');
+}
+function updatePlayLabel(){
+  const b=document.getElementById('playBtn'); if(!b)return;
+  b.innerHTML=(records.length>0?'ここまでの育ちを再生 ':'満ちるまでをプレビュー ')+'<span class="tri">▷</span>';
+}
+function updateReadout(){
+  if(!P)return;
+  document.getElementById('ro-no').textContent=P.id;
+  document.getElementById('ro-fill').textContent=fillText();
+  document.getElementById('stageCap').textContent = (records.length===0&&displayCount===0)?'未記録 / EMPTY':'紋 '+P.id;
+  document.getElementById('scrub').value=Math.min(displayCount,48);
+  updatePlayLabel();
+}
+function setDisplay(n,animate){
+  const prev=displayCount; displayCount=Math.max(0,n); matNow=maturity(displayCount);
+  const fromL=revealedLines(prev), toL=revealedLines(displayCount);
+  if(animate&&toL>fromL) revealTimed(fromL,toL,Math.max(650,(toL-fromL)*9),updateReadout);
+  else { renderStatic(toL); updateReadout(); }
+}
+
+/* journaling */
+function addRecord(){
+  const text=document.getElementById('entry').value.trim();
+  records.push({ d:new Date().toISOString().slice(0,10), text, state }); saveJournal(P.id,records);
+  document.getElementById('entry').value='';
+  setDisplay(records.length, true);
+}
+/* manual play: replay to 現在地 if recorded; otherwise preview the potential */
+function play(){
+  if(intro)return; cancelAnim();
+  if(records.length>0){
+    const target=Math.min(records.length,48); displayCount=target; matNow=maturity(target);
+    const dur=clamp((target/FILL)*6000,2500,6000);
+    revealTimed(0, revealedLines(target), dur, ()=>{ updateReadout(); });
+  } else {
+    displayCount=FILL; matNow=0;
+    revealTimed(0, revealedLines(FILL), 5400, ()=>{
+      setTimeout(()=>{ const t0=performance.now(), dur=1500, startN=FILL;
+        (function step(now){ const p=clamp((now-t0)/dur,0,1), n=Math.round(startN*(1-p));
+          renderStatic(revealedLines(n)); if(p<1) anim=requestAnimationFrame(step);
+          else { displayCount=0; matNow=0; renderStatic(0); updateReadout(); } })(performance.now());
+      },700);
+    });
+  }
+}
+/* one-time intro: grow, hold, recede to empty, return ready */
+function introPlay(){
+  intro=true; document.getElementById('skipBtn').classList.add('show');
+  displayCount=FILL; matNow=0;
+  revealTimed(0, revealedLines(FILL), 5400, ()=>{
+    if(!intro)return;
+    setTimeout(()=>{ if(!intro)return; recede(); }, 700);
+  });
+  function recede(){
+    const t0=performance.now(), dur=1500, startN=FILL;
+    (function step(now){ if(!intro)return; const p=clamp((now-t0)/dur,0,1), n=Math.round(startN*(1-p));
+      renderStatic(revealedLines(n)); if(p<1) anim=requestAnimationFrame(step); else finishIntro(); })(performance.now());
+  }
+  introCancel=finishIntro;
+  function finishIntro(){ intro=false; introCancel=null; cancelAnim(); markIntro();
+    document.getElementById('skipBtn').classList.remove('show'); displayCount=0; matNow=0; renderStatic(0); updateReadout(); }
+}
+
+/* generate */
+function generate(y,m,d,hasTime,hh,mi){
+  P=derive(y,m,d,hasTime,hh,mi); rebuildGeometry(); lines=buildLines(); records=loadJournal(P.id);
+  document.getElementById('inputState').style.display='none';
+  document.getElementById('journal').classList.add('show');
+  document.getElementById('growth').classList.add('show');
+  if(records.length>0){ displayCount=records.length; matNow=maturity(displayCount); setDisplay(displayCount,false); }
+  else if(!introSeen()){ renderStatic(0); updateReadout(); introPlay(); }
+  else { displayCount=0; renderStatic(0); updateReadout(); }
+}
+
+/* export */
+function exportPNG(){
+  const w=1600,h=2000, off=document.createElement('canvas'); off.width=w; off.height=h; const c=off.getContext('2d');
+  c.fillStyle='#e8e2d5'; c.fillRect(0,0,w,h);
+  const SR=560,SCx=w/2,SCy=h*0.40,S=SR/R;
+  c.save(); c.translate(SCx,SCy); c.scale(S,S); c.translate(-cx,-cy);
+  c.save(); c.beginPath(); c.arc(cx,cy,R-0.5,0,TAU); c.clip(); paintBase(c); c.lineCap='round';c.lineJoin='round';
+  const n=Math.min(revealedLines(displayCount),lines.length); for(let i=0;i<n;i++)drawLineFull(c,i); c.restore();
+  c.beginPath(); c.arc(cx,cy,R,0,TAU); c.lineWidth=1; c.strokeStyle='rgba('+INK+',0.5)'; c.stroke(); c.restore();
+  c.textAlign='center'; c.fillStyle='#1f1f1d'; c.font='600 64px Archivo, sans-serif'; c.fillText('ALMANA', w/2-18, h*0.74);
+  const tw=c.measureText('ALMANA').width; c.beginPath(); c.arc(w/2-18+tw/2+30,h*0.74-6,9,0,TAU); c.fillStyle='#a8392b'; c.fill();
+  c.fillStyle='rgba(31,31,29,0.85)'; c.font='500 30px Archivo, sans-serif'; c.fillText(P.id, w/2, h*0.785);
+  c.fillStyle='rgba(31,31,29,0.7)'; c.font='400 30px Archivo, sans-serif';
+  c.fillText('記録 '+records.length+'日 · 砂紋 '+Math.round(revealFrac(records.length)*100)+'%', w/2, h*0.82);
+  c.fillStyle='rgba(31,31,29,0.45)'; c.font='400 22px Archivo, sans-serif'; c.fillText('紋が育つ · THE MARK GROWS · ONE OF ONE', w/2, h*0.86);
+  off.toBlob(b=>{const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='almana_grown_'+P.id+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(u),2000);},'image/png');
+}
+
+/* wiring */
+function readInputs(){
+  const y=+document.getElementById('y').value,m=+document.getElementById('m').value,d=+document.getElementById('d').value;
+  const hhv=document.getElementById('hh').value.trim(),miv=document.getElementById('mi').value.trim(),err=document.getElementById('err');
+  if(!y||y<1900||y>2100){err.textContent='生年を正しく（1900–2100）。';return null;}
+  if(!m||m<1||m>12){err.textContent='月を正しく（1–12）。';return null;}
+  if(!d||d<1||d>31){err.textContent='日を正しく（1–31）。';return null;}
+  let hasTime=false,hh=0,mi=0; if(hhv!==''||miv!==''){hh=+hhv;mi=+miv; if(isNaN(hh)||hh<0||hh>23||isNaN(mi)||mi<0||mi>59){err.textContent='時刻は 0–23 / 0–59。';return null;} hasTime=true;}
+  err.textContent=''; return {y,m,d,hasTime,hh,mi};
+}
+document.getElementById('bind').addEventListener('click',()=>{const v=readInputs();if(v)generate(v.y,v.m,v.d,v.hasTime,v.hh,v.mi);});
+['y','m','d','hh','mi'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter'){const v=readInputs();if(v)generate(v.y,v.m,v.d,v.hasTime,v.hh,v.mi);}}));
+document.getElementById('states').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');state=c.dataset.s;});
+document.getElementById('recBtn').addEventListener('click',addRecord);
+document.getElementById('playBtn').addEventListener('click',play);
+document.getElementById('exportBtn').addEventListener('click',exportPNG);
+document.getElementById('scrub').addEventListener('input',e=>{ if(intro)return; setDisplay(+e.target.value,false); });
+document.getElementById('skipBtn').addEventListener('click',()=>{ if(introCancel)introCancel(); });
+cvs.addEventListener('click',()=>{ if(intro&&introCancel)introCancel(); });
+document.getElementById('clearBtn').addEventListener('click',()=>{
+  if(!P)return;
+  if(window.confirm('この紋に保存された記録を初期化します。\n生年月日から結ばれた紋そのものは変わりません。\nこの操作は元に戻せません。')){
+    records=[]; saveJournal(P.id,records); displayCount=0; matNow=0; renderStatic(0); updateReadout(); }
+});
+document.getElementById('resetInput').addEventListener('click',()=>{
+  if(introCancel)introCancel();
+  document.getElementById('journal').classList.remove('show'); document.getElementById('growth').classList.remove('show');
+  document.getElementById('inputState').style.display='block'; P=null; displayCount=0;
+  ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
+  ctx.beginPath();ctx.arc(cx,cy,R,0,TAU);ctx.lineWidth=1;ctx.strokeStyle='rgba('+INK+',0.5)';ctx.stroke();
+  document.getElementById('stageCap').textContent='未記録 / EMPTY';
+});
+let rt=null; addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{fit(); if(P){rebuildGeometry();lines=buildLines();renderStatic(revealedLines(displayCount));}else{ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);ctx.beginPath();ctx.arc(cx,cy,R,0,TAU);ctx.lineWidth=1;ctx.strokeStyle='rgba('+INK+',0.5)';ctx.stroke();}},160);});
+
+// boot
+fit();
+ctx.beginPath();ctx.arc(cx,cy,R,0,TAU);ctx.lineWidth=1;ctx.strokeStyle='rgba('+INK+',0.5)';ctx.stroke();
+</script>
+</body>
+</html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALMANA — あなたの流れを、静かに読み解く。</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@300;400;500&family=Shippori+Mincho:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --washi:#e8e2d5;
+    --ink:#1f1f1d;
+    --shu:#a8392b;
+    --ink-line:rgba(31,31,29,0.30);
+    --grot:"Archivo","Helvetica Neue",sans-serif;
+    --jp:"Zen Kaku Gothic New",sans-serif;
+    --mincho:"Shippori Mincho",serif;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    background:var(--washi); color:var(--ink);
+    font-family:var(--jp);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    overflow:hidden;
+  }
+  .hero{ position:relative; width:100vw; height:100vh; overflow:hidden; }
+  canvas#garden{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  /* subtle legibility lift on the left, where copy sits */
+  .scrim{
+    position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(102deg,
+      rgba(232,226,213,0.62) 0%,
+      rgba(232,226,213,0.30) 34%,
+      rgba(232,226,213,0.0) 58%);
+  }
+  /* atmospheric paper vignette */
+  .vignette{
+    position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(120% 120% at 50% 40%,
+      rgba(255,253,247,0.25) 0%, rgba(150,138,118,0.16) 100%);
+    mix-blend-mode:multiply;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead{
+    position:absolute; top:0; left:0; right:0;
+    display:flex; align-items:flex-start; justify-content:space-between;
+    padding:clamp(22px,3vw,40px) clamp(24px,4.5vw,64px);
+    z-index:5;
+  }
+  .brand{ display:flex; align-items:baseline; gap:13px; }
+  .brand svg.wordmark{ height:clamp(15px,1.7vw,19px); width:auto; display:block; }
+  .brand .tag{
+    font-family:var(--mincho); font-size:11px; letter-spacing:0.22em;
+    color:rgba(31,31,29,0.62); white-space:nowrap;
+  }
+  .annot{
+    font-family:var(--grot); font-size:10px; letter-spacing:0.18em;
+    text-transform:uppercase; text-align:right; line-height:1.7;
+    color:rgba(31,31,29,0.5);
+  }
+  .annot .reg{ color:var(--shu); }
+
+  /* ---------- copy ---------- */
+  .copy{
+    position:absolute; left:clamp(24px,6.5vw,96px); top:50%;
+    transform:translateY(-50%);
+    max-width:min(680px,52vw);
+    z-index:4;
+  }
+  .eyebrow{
+    font-family:var(--grot); font-size:10.5px; letter-spacing:0.34em;
+    text-transform:uppercase; color:rgba(31,31,29,0.45);
+    margin-bottom:clamp(18px,2.4vw,30px);
+    display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow .mk{ color:var(--shu); }
+  .eyebrow .ln{ width:34px; height:1px; background:rgba(31,31,29,0.35); display:inline-block; }
+
+  h1.headline{
+    font-family:var(--jp); font-weight:300;
+    font-size:clamp(31px,4.6vw,62px);
+    line-height:1.32; letter-spacing:0.04em;
+    color:var(--ink);
+  }
+  h1.headline .line{ display:block; }
+
+  p.body{
+    margin-top:clamp(22px,3vw,38px);
+    font-family:var(--jp); font-weight:400;
+    font-size:clamp(13.5px,1.32vw,17px);
+    line-height:2.0; letter-spacing:0.05em;
+    color:rgba(31,31,29,0.78);
+  }
+  p.body .line{ display:block; }
+
+  .cta{ margin-top:clamp(30px,4vw,52px); }
+  a.primary{
+    display:inline-flex; align-items:center; gap:14px;
+    font-family:var(--jp); font-weight:500;
+    font-size:clamp(13px,1.1vw,15px); letter-spacing:0.14em;
+    color:var(--ink); text-decoration:none;
+    border:1px solid var(--ink);
+    padding:15px 26px;
+    background:transparent; cursor:pointer;
+    transition:background .35s ease, color .35s ease, gap .35s ease;
+  }
+  a.primary .arrow{ color:var(--shu); transition:transform .35s ease, color .35s ease; }
+  a.primary:hover{ background:var(--ink); color:var(--washi); gap:20px; }
+  a.primary:hover .arrow{ color:var(--washi); transform:translateX(3px); }
+
+  .pillars{
+    margin-top:clamp(18px,2vw,26px);
+    display:flex; flex-wrap:wrap; align-items:center;
+    font-family:var(--jp); font-weight:400;
+    font-size:clamp(10.5px,0.95vw,12.5px); letter-spacing:0.16em;
+    color:rgba(31,31,29,0.5);
+  }
+  .pillars .bar{ color:rgba(31,31,29,0.28); margin:0 clamp(12px,1.4vw,20px); }
+
+  /* ---------- staggered reveal ---------- */
+  .reveal{ opacity:0; transform:translateY(11px); }
+  .hero.ready .reveal{
+    animation:rise .95s cubic-bezier(.22,.61,.36,1) both;
+  }
+  @keyframes rise{ from{opacity:0; transform:translateY(11px);} to{opacity:1; transform:translateY(0);} }
+
+  .hero.ready .masthead .reveal{ animation-delay:.15s; }
+  .hero.ready .eyebrow{ animation-delay:.7s; }
+  .hero.ready h1.headline .line:nth-child(1){ animation-delay:1.0s; }
+  .hero.ready h1.headline .line:nth-child(2){ animation-delay:1.5s; }
+  .hero.ready p.body .line:nth-child(1){ animation-delay:2.15s; }
+  .hero.ready p.body .line:nth-child(2){ animation-delay:2.45s; }
+  .hero.ready p.body .line:nth-child(3){ animation-delay:2.75s; }
+  .hero.ready .cta{ animation-delay:3.4s; }
+  .hero.ready .pillars{ animation-delay:3.85s; }
+
+  .footnote{
+    position:absolute; bottom:clamp(18px,2.4vw,30px); right:clamp(24px,4.5vw,64px);
+    font-family:var(--grot); font-size:9px; letter-spacing:0.16em;
+    text-transform:uppercase; color:rgba(31,31,29,0.34);
+    text-align:right; line-height:1.7; z-index:5;
+  }
+
+  @media (max-width:720px){
+    .copy{ top:auto; bottom:8vh; transform:none; max-width:88vw; }
+    .scrim{ background:linear-gradient(0deg, rgba(232,226,213,0.78) 0%, rgba(232,226,213,0.25) 42%, rgba(232,226,213,0) 70%); }
+    .brand .tag{ display:none; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .hero.ready .reveal{ animation:none; opacity:1; transform:none; }
+  }
+</style>
+</head>
+<body>
+<div class="hero" id="hero">
+  <canvas id="garden"></canvas>
+  <div class="scrim"></div>
+  <div class="vignette"></div>
+
+  <header class="masthead">
+    <div class="brand reveal">
+      <svg class="wordmark" xmlns="http://www.w3.org/2000/svg" viewBox="9.0 -689.0 7095.0 718.0" aria-label="ALMANA">
+        <g transform="scale(1,-1)">
+          <path d="M33 0V16L97 49L353 665H398L650 52L717 16V0H469V16L557 50L482 235H239L165 50L249 16V0ZM262 290H460L361 536Z" fill="#1f1f1d"/>
+          <path d="M1195 0V16L1275 56V604L1195 644V660H1455V644L1365 604V55H1608L1676 222H1692V0Z" fill="#1f1f1d"/>
+          <path d="M2202 0V16L2281 56L2302 603L2216 644V660H2401L2632 128L2862 660H3038V644L2954 604L2971 56L3041 16V0H2811V16L2885 55L2875 548L2636 -5H2591L2356 541L2343 55L2424 16V0Z" fill="#1f1f1d"/>
+          <path d="M3514 0V16L3578 49L3834 665H3879L4131 52L4198 16V0H3950V16L4038 50L3963 235H3720L3646 50L3730 16V0ZM3743 290H3941L3842 536Z" fill="#1f1f1d"/>
+          <path d="M4671 0V16L4751 56V602L4672 644V660H4819L5201 180V606L5101 644V660H5350V644L5271 605V-5H5234L4821 516V55L4921 16V0Z" fill="#1f1f1d"/>
+          <path d="M5823 0V16L5887 49L6143 665H6188L6440 52L6507 16V0H6259V16L6347 50L6272 235H6029L5955 50L6039 16V0ZM6052 290H6250L6151 536Z" fill="#1f1f1d"/>
+          <circle cx="7025.0" cy="55.0" r="55.0" fill="#a8392b"/>
+        </g>
+      </svg>
+      <span class="tag">自己理解AI</span>
+    </div>
+    <div class="annot reveal">
+      <span class="reg">⊕</span> FIG.01 — 流れ / FLOW<br>
+      ED. 2026 · Seed-locked
+    </div>
+  </header>
+
+  <div class="copy">
+    <div class="eyebrow reveal"><span class="mk">⊕</span><span>Self-structure observatory</span><span class="ln"></span></div>
+    <h1 class="headline">
+      <span class="line reveal">あなたの流れを、</span>
+      <span class="line reveal">静かに読み解く。</span>
+    </h1>
+    <p class="body">
+      <span class="line reveal">ALMANAは、生年月日と日々の記録から、</span>
+      <span class="line reveal">思考・感情・行動のパターンを見つめる</span>
+      <span class="line reveal">自己理解AIです。</span>
+    </p>
+    <div class="cta reveal">
+      <a class="primary" href="#">自分の流れを見つめる <span class="arrow">→</span></a>
+    </div>
+    <div class="pillars reveal">
+      <span>生年月日から読む</span><span class="bar">｜</span>
+      <span>日々の記録から読む</span><span class="bar">｜</span>
+      <span>変化を見つめる</span>
+    </div>
+  </div>
+
+  <div class="footnote reveal">
+    Karesansui · Flow-field × Blue-noise<br>The Modern Zen Archive
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   ALMANA hero — karesansui flow-field background
+   Art-directed stones (void), even-spaced raked streamlines,
+   slow line-by-line draw, deterministic.
+   Keys:  R = re-rake   E = export garden PNG (high-res)
+   ============================================================ */
+const SEED='almana';
+const ACCENT_INK='31,31,29';
+
+// art-directed stones (fractions of W,H ; r as fraction of min dim)
+const STONES_F=[
+  {fx:0.755, fy:0.375, fr:0.090},  // 主石 — focal, right
+  {fx:0.510, fy:0.300, fr:0.052},  // center
+  {fx:0.575, fy:0.355, fr:0.022},  // satellite (石組 hint)
+];
+const FLOW_DEG=2;        // near-horizontal raking
+const SPACING=6;         // rake spacing (px, css)
+const REP=1.7;           // repulsion band factor
+const BAND=[0.10,0.62];  // seed band (fraction of H) -> floating band
+
+// ---- PRNG / noise ----
+function hashStr(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function buildPerlin(rand){
+  const perm=[...Array(256).keys()];
+  for(let i=255;i>0;i--){const j=(rand()*(i+1))|0;[perm[i],perm[j]]=[perm[j],perm[i]];}
+  const p=new Int16Array(512);for(let i=0;i<512;i++)p[i]=perm[i&255];
+  const fade=t=>t*t*t*(t*(t*6-15)+10),lerp=(a,b,t)=>a+t*(b-a),grad=(h,x,y)=>((h&1)?-x:x)+((h&2)?-y:y);
+  return(x,y)=>{const X=Math.floor(x)&255,Y=Math.floor(y)&255;x-=Math.floor(x);y-=Math.floor(y);
+    const u=fade(x),v=fade(y),aa=p[p[X]+Y],ab=p[p[X]+Y+1],ba=p[p[X+1]+Y],bb=p[p[X+1]+Y+1];
+    return lerp(lerp(grad(aa,x,y),grad(ba,x-1,y),u),lerp(grad(ab,x,y-1),grad(bb,x-1,y-1),u),v);};
+}
+const TAU=Math.PI*2, clamp=(v,a,b)=>v<a?a:v>b?b:v, smooth=(e0,e1,x)=>{const t=clamp((x-e0)/(e1-e0),0,1);return t*t*(3-2*t);};
+
+const hero=document.getElementById('hero');
+const cv=document.getElementById('garden');
+const ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1, stones=[], lines=[], noise=null, anim=null;
+
+function buildStones(){
+  const md=Math.min(W,H);
+  return STONES_F.map(s=>({x:s.fx*W, y:s.fy*H, r:s.fr*md}));
+}
+function flowAngle(x,y){
+  const base=FLOW_DEG*Math.PI/180 + noise(x*0.0014,y*0.0014)*0.18;
+  let vx=Math.cos(base), vy=Math.sin(base); const STR=8.0;
+  for(const s of stones){
+    const dx=x-s.x,dy=y-s.y,d=Math.hypot(dx,dy)||1e-4, band=s.r*(1.2+REP);
+    if(d>s.r+band)continue;
+    const w=smooth(s.r+band,s.r,d), tx=-dy/d, ty=dx/d;
+    vx+=tx*w*STR; vy+=ty*w*STR;
+  }
+  return Math.atan2(vy,vx);
+}
+const stoneHit=(x,y)=>{for(const s of stones)if(Math.hypot(x-s.x,y-s.y)<=s.r+0.6)return true;return false;};
+
+function buildLines(rand){
+  const dsep=SPACING, dtest=dsep*0.5, step=clamp(dsep*0.42,1.2,3);
+  const maxSteps=Math.min(2600,Math.ceil((W+H)/step)*2), cell=dsep;
+  const grid=new Map(), key=(x,y)=>((x/cell)|0)+','+((y/cell)|0);
+  const add=(x,y)=>{const k=key(x,y);let a=grid.get(k);if(!a){a=[];grid.set(k,a);}a.push(x,y);};
+  const near=(x,y,md)=>{const gx=(x/cell)|0,gy=(y/cell)|0,m2=md*md;
+    for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){const a=grid.get((gx+i)+','+(gy+j));if(!a)continue;
+      for(let p=0;p<a.length;p+=2){const ddx=x-a[p],ddy=y-a[p+1];if(ddx*ddx+ddy*ddy<m2)return true;}}return false;};
+  const yMin=BAND[0]*H, yMax=BAND[1]*H;
+  function integrate(sx,sy){
+    if(sx<0||sy<0||sx>W||sy>H||stoneHit(sx,sy)||near(sx,sy,dtest))return null;
+    const fwd=[],bwd=[];
+    for(const dir of[1,-1]){let x=sx,y=sy;const arr=(dir===1?fwd:bwd);
+      for(let n=0;n<maxSteps;n++){
+        const a=flowAngle(x,y),mx=x+Math.cos(a)*step*0.5*dir,my=y+Math.sin(a)*step*0.5*dir,a2=flowAngle(mx,my);
+        const nx=x+Math.cos(a2)*step*dir,ny=y+Math.sin(a2)*step*dir;
+        if(nx<0||ny<0||nx>W||ny>H)break;
+        if(ny<yMin-H*0.04||ny>yMax+H*0.04)break;       // keep within band
+        if(stoneHit(nx,ny))break;
+        if(near(nx,ny,dtest))break;
+        if(n>12&&Math.hypot(nx-sx,ny-sy)<step*1.1){arr.push(nx,ny);break;}
+        arr.push(nx,ny); x=nx; y=ny;
+      }}
+    const pts=[];for(let i=bwd.length-2;i>=0;i-=2)pts.push(bwd[i],bwd[i+1]);
+    pts.push(sx,sy);for(let i=0;i<fwd.length;i+=2)pts.push(fwd[i],fwd[i+1]);
+    if(pts.length<6)return null;
+    for(let i=0;i<pts.length;i+=2)add(pts[i],pts[i+1]);
+    return pts;
+  }
+  const out=[],queue=[];
+  queue.push([W*0.5,(yMin+yMax)/2]);
+  for(const s of stones)queue.push([s.x+(s.r+dsep*1.2),s.y]);
+  let guard=0;
+  while(queue.length&&guard++<26000){
+    const[qx,qy]=queue.shift(); const pts=integrate(qx,qy); if(!pts)continue;
+    // band edge fade -> floating band
+    let ay=0;for(let i=1;i<pts.length;i+=2)ay+=pts[i]; ay/=(pts.length/2);
+    const edge=Math.min(smooth(yMin,yMin+H*0.10,ay), 1-smooth(yMax-H*0.10,yMax,ay));
+    const alpha=(0.24+rand()*0.16)*clamp(edge,0.06,1);
+    out.push({pts,alpha,width:0.55+rand()*0.32});
+    for(let i=0;i<pts.length-2;i+=4){
+      const ax=pts[i],ayy=pts[i+1],bx=pts[i+2],by=pts[i+3];
+      let nx=-(by-ayy),ny=(bx-ax);const L=Math.hypot(nx,ny)||1;nx/=L;ny/=L;
+      for(const sg of[1,-1]){const cx=ax+nx*sg*dsep,cy=ayy+ny*sg*dsep;
+        if(cx<0||cy<0||cx>W||cy>H)continue;if(stoneHit(cx,cy))continue;if(near(cx,cy,dsep*0.92))continue;
+        queue.push([cx,cy]);}
+    }
+  }
+  return out;
+}
+
+function compute(){
+  const rand=mulberry32(hashStr(SEED));
+  noise=buildPerlin(mulberry32(hashStr(SEED+'~n')));
+  stones=buildStones();
+  lines=buildLines(rand);
+}
+function paintBg(c,w,h){ c.clearRect(0,0,w,h); }   // washi comes from body; canvas stays transparent
+function strokeLine(c,line,sw){
+  const p=line.pts; c.lineWidth=line.width*sw;
+  c.strokeStyle='rgba('+ACCENT_INK+','+line.alpha+')';
+  c.beginPath(); c.moveTo(p[0],p[1]);
+  for(let i=2;i<p.length;i+=2)c.lineTo(p[i],p[i+1]); c.stroke();
+}
+function renderStatic(){
+  cancelAnim(); ctx.setTransform(DPR,0,0,DPR,0,0); paintBg(ctx,W,H);
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  for(const l of lines)strokeLine(ctx,l,1);
+}
+function cancelAnim(){ if(anim){cancelAnimationFrame(anim);anim=null;} }
+function playRake(){
+  cancelAnim(); ctx.setTransform(DPR,0,0,DPR,0,0); paintBg(ctx,W,H);
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  const total=lines.reduce((s,l)=>s+l.pts.length/2,0);
+  const perFrame=Math.max(55,Math.ceil(total/230)); // ~3.8s
+  let li=0,pi=0;
+  (function frame(){
+    let b=perFrame;
+    while(b>0&&li<lines.length){
+      const line=lines[li],p=line.pts;
+      ctx.lineWidth=line.width; ctx.strokeStyle='rgba('+ACCENT_INK+','+line.alpha+')';
+      const start=Math.max(0,pi-1), end=Math.min(p.length/2,pi+b);
+      if(end-start>=2){ctx.beginPath();ctx.moveTo(p[start*2],p[start*2+1]);
+        for(let k=start+1;k<end;k++)ctx.lineTo(p[k*2],p[k*2+1]);ctx.stroke();}
+      b-=(end-pi); pi=end; if(pi>=p.length/2){li++;pi=0;}
+    }
+    if(li<lines.length)anim=requestAnimationFrame(frame); else anim=null;
+  })();
+}
+function exportPNG(){
+  const longEdge=3600,S=longEdge/Math.max(W,H);
+  const off=document.createElement('canvas');
+  off.width=Math.round(W*S);off.height=Math.round(H*S);
+  const oc=off.getContext('2d'); oc.setTransform(S,0,0,S,0,0);
+  oc.fillStyle='#e8e2d5'; oc.fillRect(0,0,W,H);
+  oc.lineCap='round';oc.lineJoin='round';
+  for(const l of lines)strokeLine(oc,l,1);
+  off.toBlob(b=>{const u=URL.createObjectURL(b),a=document.createElement('a');
+    a.href=u;a.download='almana_karesansui_'+off.width+'x'+off.height+'.png';a.click();
+    setTimeout(()=>URL.revokeObjectURL(u),2000);},'image/png');
+}
+function fit(){
+  const r=hero.getBoundingClientRect();
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  W=Math.round(r.width); H=Math.round(r.height);
+  cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+}
+
+// boot
+const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
+fit(); compute();
+hero.classList.add('ready');
+if(reduced) renderStatic();
+else setTimeout(playRake,300);
+
+let rt=null;
+addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{fit();compute();renderStatic();},180);});
+addEventListener('keydown',e=>{
+  if(e.key==='r'||e.key==='R'){compute();playRake();}
+  if(e.key==='e'||e.key==='E'){exportPNG();}
+});
+</script>
+</body>
+</html>

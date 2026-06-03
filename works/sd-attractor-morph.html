@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SUMI ATTRACTOR — SWIRL MORPH</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+<style>
+  :root{
+    --paper:#F4F2EC; --ink:#1A1815;
+    --hair:rgba(26,24,21,0.22); --hair-soft:rgba(26,24,21,0.10);
+    --grotesque:"Archivo","Neue Haas Grotesk Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);overflow:hidden;}
+  canvas{display:block;}
+  #ui{position:fixed;top:22px;left:22px;z-index:1000;width:228px;padding:16px 16px 14px;
+    background:rgba(244,242,236,0.86);border:1px solid var(--hair);
+    font-family:var(--grotesque);color:var(--ink);backdrop-filter:blur(2px);}
+  #ui .title{font-size:10px;letter-spacing:0.28em;text-transform:uppercase;
+    margin:0 0 14px;opacity:0.85;display:flex;justify-content:space-between;}
+  #ui .row{margin:0 0 13px;}
+  #ui label{display:block;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;
+    opacity:0.55;margin-bottom:6px;}
+  #ui label .val{float:right;opacity:0.85;letter-spacing:0.1em;}
+  select{width:100%;appearance:none;-webkit-appearance:none;background:transparent;border:none;
+    border-bottom:1px solid var(--hair);color:var(--ink);font-family:var(--grotesque);
+    font-size:11px;letter-spacing:0.16em;text-transform:uppercase;padding:3px 0;cursor:pointer;border-radius:0;}
+  select:focus{outline:none;border-bottom-color:var(--ink);}
+  input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:1px;
+    background:var(--hair);outline:none;margin:7px 0 0;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:9px;height:9px;
+    background:var(--ink);cursor:pointer;border-radius:50%;}
+  input[type=range]::-moz-range-thumb{width:9px;height:9px;background:var(--ink);cursor:pointer;border:none;border-radius:50%;}
+  .btns{display:flex;gap:8px;margin-top:4px;}
+  button{flex:1;background:transparent;border:1px solid var(--hair);color:var(--ink);
+    font-family:var(--grotesque);font-size:9px;letter-spacing:0.2em;text-transform:uppercase;
+    padding:8px 0;cursor:pointer;transition:background .15s;}
+  button:hover{background:rgba(26,24,21,0.06);} button:active{background:rgba(26,24,21,0.12);}
+  #annot{position:fixed;bottom:22px;left:22px;z-index:1000;font-family:var(--grotesque);
+    color:var(--ink);opacity:0.5;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;
+    line-height:1.7;pointer-events:none;}
+  .reg{position:fixed;width:14px;height:14px;z-index:999;pointer-events:none;}
+  .reg::before,.reg::after{content:"";position:absolute;background:var(--hair);}
+  .reg.tr{top:18px;right:18px;} .reg.br{bottom:18px;right:18px;}
+  .reg.tr::before,.reg.br::before{width:14px;height:1px;top:6px;left:0;}
+  .reg.tr::after,.reg.br::after{width:1px;height:14px;left:6px;top:0;}
+</style>
+</head>
+<body>
+  <div id="ui">
+    <div class="title"><span>Sumi Attractor</span><span>RC—03</span></div>
+    <div class="row"><label>Mode</label>
+      <select id="modeSel">
+        <option value="AUTO">Auto — 巡回</option>
+        <option value="aizawa">Lock · Aizawa</option>
+        <option value="lorenz">Lock · Lorenz</option>
+        <option value="halvorsen">Lock · Halvorsen</option>
+        <option value="chua">Lock · Chua</option>
+        <option value="newtonLeipnik">Lock · Newton–Leipnik</option>
+      </select></div>
+    <div class="row"><label>Speed <span class="val" id="spdVal">1.00</span></label>
+      <input type="range" id="spd" min="0.25" max="2.0" step="0.05" value="1"></div>
+    <div class="row"><label>Spin <span class="val" id="spinVal">0.06</span></label>
+      <input type="range" id="spin" min="0" max="0.20" step="0.005" value="0.06"></div>
+    <div class="row"><label>Flow <span class="val" id="flowVal">0.50</span></label>
+      <input type="range" id="flow" min="0" max="1" step="0.02" value="0.5"></div>
+    <div class="row"><label>Ink γ <span class="val" id="gammaVal">0.58</span></label>
+      <input type="range" id="gamma" min="0.30" max="1.20" step="0.02" value="0.58"></div>
+    <div class="btns"><button id="png">PNG</button></div>
+  </div>
+  <div id="annot"><div id="line1">AIZAWA · DRIFT</div><div id="line2">2D PROJ · SWIRL</div></div>
+  <div class="reg tr"></div><div class="reg br"></div>
+
+<script>
+const PAPER=[244,242,236], INK=[26,24,21];
+const ORDER=['aizawa','lorenz','halvorsen','chua','newtonLeipnik'];
+const LABEL={aizawa:'AIZAWA',lorenz:'LORENZ',halvorsen:'HALVORSEN',chua:'CHUA',newtonLeipnik:'NEWTON–LEIPNIK'};
+const AXES={aizawa:['x','z'],lorenz:['x','z'],halvorsen:['x','y'],chua:['x','y'],newtonLeipnik:['x','y']};
+const SEED={aizawa:{x:0.1,y:0,z:0},lorenz:{x:0.1,y:0,z:0},halvorsen:{x:-1.48,y:-1.51,z:2.04},
+  chua:{x:0.7,y:0,z:0},newtonLeipnik:{x:0.349,y:0,z:-0.16}};
+
+// value = base + amp*sin(clock*omega + phase)  — wider amps / a touch faster
+const DRIFT={
+  aizawa:{dt:0.01, p:{
+    a:[0.95,0.07,0.075,0.0], b:[0.70,0.07,0.061,1.3], c:[0.60,0.10,0.050,2.1], d:[3.5,0.45,0.068,0.6],
+    e:[0.25,0,0,0], f:[0.10,0,0,0]}},
+  lorenz:{dt:0.008, p:{ sigma:[10,1.5,0.055,0.4], rho:[28,4.0,0.072,1.7], beta:[2.6667,0.30,0.061,2.6]}},
+  halvorsen:{dt:0.005, p:{ a:[1.4,0.09,0.064,0.9] }},
+  chua:{dt:0.008, p:{ alpha:[15.6,1.0,0.057,0.3], gamma:[25.58,1.6,0.067,1.9],
+    beta:[1.0,0,0,0], m0:[-1.143,0,0,0], m1:[-0.714,0,0,0]}},
+  newtonLeipnik:{dt:0.01, p:{ a:[0.4,0.04,0.060,0.5], b:[0.175,0.02,0.073,1.4] }},
+};
+const HOLD=10, FADE=6, SEG=HOLD+FADE;
+
+let W,H,buf,maxHit=0;
+let clockSec=0, theta=0;
+let speed=1, spin=0.06, flow=0.5, gamma=0.58, mode='AUTO';
+let liveFrom=null, liveTo=null;
+const N=55000, MARGIN=0.09;
+
+function setup(){
+  pixelDensity(1); createCanvas(windowWidth,windowHeight);
+  W=width; H=height; buf=new Float32Array(W*H); bindUI();
+}
+function windowResized(){ resizeCanvas(windowWidth,windowHeight);
+  W=width; H=height; buf=new Float32Array(W*H); maxHit=0; }
+
+function paramsFor(key){
+  const d=DRIFT[key], out={dt:d.dt};
+  for(const k in d.p){ const [base,amp,om,ph]=d.p[k]; out[k]=base+amp*Math.sin(clockSec*om+ph); }
+  return out;
+}
+function step(st,key,p){
+  if(key==='aizawa'){
+    const dx=(st.z-p.b)*st.x-p.d*st.y;
+    const dy=p.d*st.x+(st.z-p.b)*st.y;
+    const dz=p.c+p.a*st.z-(st.z**3)/3-(st.x*st.x+st.y*st.y)*(1+p.e*st.z)+p.f*st.z*(st.x**3);
+    st.x+=dx*p.dt; st.y+=dy*p.dt; st.z+=dz*p.dt;
+  }else if(key==='lorenz'){
+    st.x+=p.sigma*(st.y-st.x)*p.dt; const x=st.x;
+    st.y+=(x*(p.rho-st.z)-st.y)*p.dt; st.z+=(x*st.y-p.beta*st.z)*p.dt;
+  }else if(key==='halvorsen'){
+    const dx=-p.a*st.x-4*st.y-4*st.z-st.y*st.y;
+    const dy=-p.a*st.y-4*st.z-4*st.x-st.z*st.z;
+    const dz=-p.a*st.z-4*st.x-4*st.y-st.x*st.x;
+    st.x+=dx*p.dt; st.y+=dy*p.dt; st.z+=dz*p.dt;
+  }else if(key==='chua'){
+    const h=p.m1*st.x+0.5*(p.m0-p.m1)*(Math.abs(st.x+1)-Math.abs(st.x-1));
+    const dx=p.alpha*(st.y-st.x-h); const dy=st.x-st.y+st.z; const dz=-p.beta*st.y-p.gamma*st.z;
+    st.x+=dx*p.dt; st.y+=dy*p.dt; st.z+=dz*p.dt;
+  }else if(key==='newtonLeipnik'){
+    const dx=-p.a*st.x+st.y+10*st.y*st.z; const dy=-st.x-0.4*st.y+5*st.x*st.z; const dz=p.b*st.z-5*st.x*st.y;
+    st.x+=dx*p.dt; st.y+=dy*p.dt; st.z+=dz*p.dt;
+  }
+}
+function proj(st,key){ const a=AXES[key]; return [st[a[0]],st[a[1]]]; }
+function finite(st){ return isFinite(st.x)&&isFinite(st.y)&&isFinite(st.z)&&Math.abs(st.x)<1e5&&Math.abs(st.y)<1e5&&Math.abs(st.z)<1e5; }
+
+// fit to the INSCRIBED CIRCLE so rotation never clips
+function fitFromSpan(spanA,spanB){
+  const half=Math.min(W,H)*(1-2*MARGIN)/2;
+  const r=Math.max(spanA,spanB)/2 || 1;
+  return half/r;
+}
+function seedLive(key){
+  const s={...SEED[key]}, p=paramsFor(key);
+  for(let i=0;i<4000;i++){ step(s,key,p); if(!finite(s)) Object.assign(s,SEED[key]); }
+  const t={...s}; let mnA=Infinity,mxA=-Infinity,mnB=Infinity,mxB=-Infinity;
+  for(let i=0;i<60000;i++){ step(t,key,p); if(!finite(t)){Object.assign(t,SEED[key]);continue;}
+    const [a,b]=proj(t,key); if(a<mnA)mnA=a; if(a>mxA)mxA=a; if(b<mnB)mnB=b; if(b>mxB)mxB=b; }
+  return {key, s, fit:{scale:fitFromSpan(mxA-mnA,mxB-mnB), midA:(mnA+mxA)/2, midB:(mnB+mxB)/2}};
+}
+
+function accumulate(live,n){
+  if(n<=0) return;
+  const key=live.key, p=paramsFor(key), f=live.fit, st=live.s;
+  const c=Math.cos(theta), sn=Math.sin(theta), cx=W/2, cy=H/2;
+  let mnA=Infinity,mxA=-Infinity,mnB=Infinity,mxB=-Infinity;
+  for(let i=0;i<n;i++){
+    step(st,key,p);
+    if(!finite(st)){ Object.assign(st,SEED[key]); continue; }
+    const [a,b]=proj(st,key);
+    if(a<mnA)mnA=a; if(a>mxA)mxA=a; if(b<mnB)mnB=b; if(b>mxB)mxB=b;
+    const dx=(a-f.midA)*f.scale, dy=-(b-f.midB)*f.scale;
+    const px=(cx+dx*c-dy*sn)|0, py=(cy+dx*sn+dy*c)|0;
+    if(px>=0&&px<W&&py>=0&&py<H){ const idx=py*W+px; const v=++buf[idx]; if(v>maxHit)maxHit=v; }
+  }
+  if(mxA>mnA){
+    const tScale=fitFromSpan(mxA-mnA,mxB-mnB), k=0.03;
+    f.scale+=(tScale-f.scale)*k; f.midA+=((mnA+mxA)/2-f.midA)*k; f.midB+=((mnB+mxB)/2-f.midB)*k;
+  }
+}
+
+function render(){
+  loadPixels();
+  const denom=Math.log(1+maxHit)||1;
+  const dR=INK[0]-PAPER[0], dG=INK[1]-PAPER[1], dB=INK[2]-PAPER[2];
+  for(let i=0;i<buf.length;i++){
+    const d=buf[i]; let r,g,b;
+    if(d<0.5){ r=PAPER[0]; g=PAPER[1]; b=PAPER[2]; }
+    else{ const t=Math.pow(Math.log(1+d)/denom,gamma); r=PAPER[0]+dR*t; g=PAPER[1]+dG*t; b=PAPER[2]+dB*t; }
+    const q=i*4; pixels[q]=r; pixels[q+1]=g; pixels[q+2]=b; pixels[q+3]=255;
+  }
+  updatePixels();
+}
+
+function draw(){
+  const dtS=deltaTime/1000;
+  clockSec += dtS*speed;
+  theta += dtS*spin;                 // rotation is its own gentle rate, independent of morph speed
+  const decay = 0.985 - flow*0.075;  // higher Flow -> shorter ink memory -> visible streaming
+
+  let fromKey,toKey,w;
+  if(mode!=='AUTO'){ fromKey=mode; toKey=mode; w=0; }
+  else{
+    const seg=Math.floor(clockSec/SEG), local=clockSec-seg*SEG, n=ORDER.length;
+    fromKey=ORDER[((seg%n)+n)%n]; toKey=ORDER[(((seg+1)%n)+n)%n];
+    w = local<HOLD ? 0 : (local-HOLD)/FADE;
+  }
+  if(!liveFrom || liveFrom.key!==fromKey){
+    if(liveTo && liveTo.key===fromKey){ liveFrom=liveTo; liveTo=null; } else liveFrom=seedLive(fromKey);
+  }
+  if(w>0 && (!liveTo || liveTo.key!==toKey)) liveTo=seedLive(toKey);
+
+  for(let i=0;i<buf.length;i++) buf[i]*=decay;
+  maxHit*=decay;
+
+  const nB=Math.round(N*w), nA=N-nB;
+  accumulate(liveFrom,nA);
+  if(w>0 && liveTo) accumulate(liveTo,nB);
+  render();
+
+  let l1;
+  if(mode!=='AUTO') l1=LABEL[mode]+' · LOCK · DRIFT';
+  else if(w<=0) l1=LABEL[fromKey]+' · DRIFT';
+  else l1=LABEL[fromKey]+' → '+LABEL[toKey]+'  '+Math.round(w*100)+'%';
+  document.getElementById('line1').textContent=l1;
+}
+
+function bindUI(){
+  const $=id=>document.getElementById(id);
+  $('modeSel').addEventListener('change',e=>{ mode=e.target.value; });
+  $('spd').addEventListener('input',e=>{ speed=parseFloat(e.target.value); $('spdVal').textContent=speed.toFixed(2); });
+  $('spin').addEventListener('input',e=>{ spin=parseFloat(e.target.value); $('spinVal').textContent=spin.toFixed(3); });
+  $('flow').addEventListener('input',e=>{ flow=parseFloat(e.target.value); $('flowVal').textContent=flow.toFixed(2); });
+  $('gamma').addEventListener('input',e=>{ gamma=parseFloat(e.target.value); $('gammaVal').textContent=gamma.toFixed(2); });
+  $('png').addEventListener('click',()=>{ saveCanvas('sumi_'+(liveFrom?liveFrom.key:'x'),'png'); });
+}
+</script>
+</body>
+</html>

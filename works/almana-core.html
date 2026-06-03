@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALMANA — 構造の断面 / Core Specimen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@300;400;500&family=Shippori+Mincho:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{ --washi:#e8e2d5; --ink:#1f1f1d; --shu:#a8392b;
+    --grot:"Archivo","Helvetica Neue",sans-serif; --jp:"Zen Kaku Gothic New",sans-serif; --mincho:"Shippori Mincho",serif; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{ background:var(--washi); color:var(--ink); font-family:var(--jp); -webkit-font-smoothing:antialiased; min-height:100vh;
+    background-image:radial-gradient(125% 120% at 50% 36%, rgba(255,253,247,0.30) 0%, rgba(150,138,118,0.14) 100%); }
+  .wrap{ max-width:1180px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; padding:clamp(20px,3vw,40px) clamp(24px,5vw,64px); }
+  header{ display:flex; align-items:flex-start; justify-content:space-between; border-bottom:1px solid rgba(31,31,29,0.22); padding-bottom:12px; }
+  .brand{ display:flex; align-items:baseline; gap:12px; }
+  .brand svg{ height:clamp(15px,1.7vw,18px); width:auto; display:block; }
+  .brand .tag{ font-family:var(--mincho); font-size:11px; letter-spacing:0.22em; color:rgba(31,31,29,0.6); }
+  .annot{ font-family:var(--grot); font-size:10px; letter-spacing:0.18em; text-transform:uppercase; text-align:right; line-height:1.7; color:rgba(31,31,29,0.5); }
+  .annot .reg{ color:var(--shu); }
+
+  main{ flex:1; display:grid; grid-template-columns:minmax(280px,1fr) minmax(240px,360px); gap:clamp(28px,5vw,64px); align-items:center; padding:clamp(18px,3vh,32px) 0 0; }
+  @media (max-width:860px){ main{ grid-template-columns:1fr; gap:30px; } }
+  .col-left{ max-width:440px; }
+  .lede h1{ font-weight:300; font-size:clamp(23px,3vw,34px); line-height:1.45; letter-spacing:0.04em; }
+  .lede p{ margin-top:14px; font-family:var(--mincho); font-size:13px; line-height:1.95; color:rgba(31,31,29,0.72); }
+
+  .form{ margin-top:clamp(24px,3vw,36px); }
+  .fields{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px 20px; }
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  .field label{ font-family:var(--grot); font-size:9.5px; letter-spacing:0.16em; text-transform:uppercase; color:rgba(31,31,29,0.5); }
+  .field .row{ display:flex; align-items:baseline; gap:6px; }
+  .field input{ width:var(--w,50px); background:transparent; border:none; border-bottom:1px solid rgba(31,31,29,0.42); font-family:var(--grot); font-size:18px; color:var(--ink); padding:3px 0; text-align:center; outline:none; }
+  .field input:focus{ border-color:var(--ink); }
+  .field .unit{ font-family:var(--mincho); font-size:12px; color:rgba(31,31,29,0.55); }
+  .field .opt{ font-family:var(--mincho); font-size:10px; color:rgba(31,31,29,0.45); }
+  .submit{ margin-top:24px; display:inline-flex; align-items:center; gap:14px; font-family:var(--jp); font-weight:500; font-size:14px; letter-spacing:0.16em; color:var(--ink); border:1px solid var(--ink); padding:13px 26px; background:transparent; cursor:pointer; transition:background .35s,color .35s,gap .35s; }
+  .submit .arrow{ color:var(--shu); transition:transform .35s,color .35s; }
+  .submit:hover{ background:var(--ink); color:var(--washi); gap:19px; }
+  .submit:hover .arrow{ color:var(--washi); transform:translateX(3px); }
+  .err{ margin-top:12px; font-size:12px; color:var(--shu); min-height:15px; }
+
+  .readout{ display:none; }
+  .readout.show{ display:block; }
+  .readout .no{ font-family:var(--grot); font-size:11px; letter-spacing:0.26em; text-transform:uppercase; color:var(--shu); }
+  .readout .date{ font-family:var(--grot); font-size:12px; letter-spacing:0.1em; color:rgba(31,31,29,0.7); margin-top:6px; }
+  .legend{ margin-top:20px; display:flex; flex-direction:column; gap:2px; }
+  .lrow{ display:flex; align-items:center; gap:12px; padding:8px 8px; cursor:pointer; border:1px solid transparent; transition:all .2s; }
+  .lrow:hover{ border-color:rgba(31,31,29,0.18); }
+  .lrow.sel{ border-color:var(--shu); }
+  .lrow .sw{ width:13px; height:13px; flex:none; border:1px solid rgba(31,31,29,0.25); }
+  .lrow .el{ font-family:var(--mincho); font-size:15px; width:20px; }
+  .lrow .bar{ flex:1; height:1px; background:rgba(31,31,29,0.18); position:relative; }
+  .lrow .bar i{ position:absolute; left:0; top:-1px; height:3px; background:rgba(31,31,29,0.45); }
+  .lrow .pc{ font-family:var(--grot); font-size:12px; letter-spacing:0.06em; color:rgba(31,31,29,0.8); width:42px; text-align:right; }
+  .desc{ margin-top:20px; font-family:var(--mincho); font-size:13.5px; line-height:2.0; color:rgba(31,31,29,0.82); min-height:54px; }
+  .ro-actions{ margin-top:24px; display:flex; gap:14px; align-items:center; }
+  .mini{ font-family:var(--grot); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(31,31,29,0.55); cursor:pointer; background:none; border:none; }
+  .mini:hover{ color:var(--ink); }
+  .note{ margin-top:18px; font-family:var(--mincho); font-size:11px; line-height:1.9; color:rgba(31,31,29,0.5); border-left:1px solid rgba(31,31,29,0.3); padding-left:12px; }
+
+  .stage-wrap{ display:flex; justify-content:center; }
+  .stage{ position:relative; width:100%; max-width:340px; aspect-ratio:0.6/1; }
+  canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; cursor:pointer; }
+
+  footer{ font-family:var(--grot); font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(31,31,29,0.35); text-align:center; padding:18px 0 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="9.0 -689.0 7095.0 718.0" aria-label="ALMANA"><g transform="scale(1,-1)">
+        <path d="M33 0V16L97 49L353 665H398L650 52L717 16V0H469V16L557 50L482 235H239L165 50L249 16V0ZM262 290H460L361 536Z" fill="#1f1f1d"/>
+        <path d="M1195 0V16L1275 56V604L1195 644V660H1455V644L1365 604V55H1608L1676 222H1692V0Z" fill="#1f1f1d"/>
+        <path d="M2202 0V16L2281 56L2302 603L2216 644V660H2401L2632 128L2862 660H3038V644L2954 604L2971 56L3041 16V0H2811V16L2885 55L2875 548L2636 -5H2591L2356 541L2343 55L2424 16V0Z" fill="#1f1f1d"/>
+        <path d="M3514 0V16L3578 49L3834 665H3879L4131 52L4198 16V0H3950V16L4038 50L3963 235H3720L3646 50L3730 16V0ZM3743 290H3941L3842 536Z" fill="#1f1f1d"/>
+        <path d="M4671 0V16L4751 56V602L4672 644V660H4819L5201 180V606L5101 644V660H5350V644L5271 605V-5H5234L4821 516V55L4921 16V0Z" fill="#1f1f1d"/>
+        <path d="M5823 0V16L5887 49L6143 665H6188L6440 52L6507 16V0H6259V16L6347 50L6272 235H6029L5955 50L6039 16V0ZM6052 290H6250L6151 536Z" fill="#1f1f1d"/>
+        <circle cx="7025.0" cy="55.0" r="55.0" fill="#a8392b"/>
+      </g></svg>
+      <span class="tag">自己理解AI</span>
+    </div>
+    <div class="annot"><span class="reg">⊕</span> 構造の断面 / Core Specimen<br>Five-element strata · Deterministic</div>
+  </header>
+
+  <main>
+    <div class="col-left">
+      <div id="inputState">
+        <div class="lede">
+          <h1>あなたの構造を、<br>縦に抜き取る。</h1>
+          <p>円としての紋とは別の読み方。<br>生まれ持った組成を、地層コアのように一本の標本として見ます。</p>
+        </div>
+        <div class="form">
+          <div class="fields">
+            <div class="field"><label>Year 生年</label><div class="row"><input id="y" inputmode="numeric" placeholder="1990" style="--w:70px"><span class="unit">年</span></div></div>
+            <div class="field"><label>Month 月</label><div class="row"><input id="m" inputmode="numeric" placeholder="05"><span class="unit">月</span></div></div>
+            <div class="field"><label>Day 日</label><div class="row"><input id="d" inputmode="numeric" placeholder="22"><span class="unit">日</span></div></div>
+            <div class="field"><label>Time 時刻 <span class="opt">任意</span></label><div class="row"><input id="hh" inputmode="numeric" placeholder="--" style="--w:40px"><span class="unit">:</span><input id="mi" inputmode="numeric" placeholder="--" style="--w:40px"></div></div>
+          </div>
+          <button class="submit" id="bind">標本を抜く <span class="arrow">→</span></button>
+          <div class="err" id="err"></div>
+        </div>
+      </div>
+
+      <div class="readout" id="readout">
+        <div class="no" id="ro-no">ALM-0000-00</div>
+        <div class="date" id="ro-date">1990.05.22</div>
+        <div class="legend" id="legend"></div>
+        <div class="desc" id="ro-desc"></div>
+        <div class="ro-actions">
+          <button class="mini" id="exportBtn">PNG 標本書き出し ↓</button>
+          <button class="mini" id="resetBtn">別の生年月日</button>
+        </div>
+        <div class="note">層の厚みは生まれ持った構成。これは構造の記述であり、運勢の予言ではありません。</div>
+      </div>
+    </div>
+
+    <div class="stage-wrap"><div class="stage" id="stage"><canvas id="core"></canvas></div></div>
+  </main>
+
+  <footer>Core specimen · Five-element strata · The Modern Zen Archive</footer>
+</div>
+
+<script>
+const INK='31,31,29';
+function hashStr(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const clamp=(v,a,b)=>v<a?a:v>b?b:v, smooth=(e0,e1,x)=>{const t=clamp((x-e0)/(e1-e0),0,1);return t*t*(3-2*t);}, pad=n=>String(n).padStart(2,'0');
+
+// five elements in 相生 order, bottom -> top: 木 火 土 金 水
+const ELS=[
+  {k:'木', t:[111,125,99]},
+  {k:'火', t:[154,90,74]},
+  {k:'土', t:[176,148,103]},
+  {k:'金', t:[154,155,151]},
+  {k:'水', t:[109,125,136]},
+];
+function mixWashi(t,amt){ const r=Math.round(0xe8+(t[0]-0xe8)*amt),g=Math.round(0xe2+(t[1]-0xe2)*amt),b=Math.round(0xd5+(t[2]-0xd5)*amt); return `rgb(${r},${g},${b})`; }
+
+const cvs=document.getElementById('core'), ctx=cvs.getContext('2d'), stageEl=document.getElementById('stage');
+let W=0,H=0,DPR=1, P=null, bands=[], sel=-1, depositLevel=0, anim=null;
+
+function fit(){ const r=stageEl.getBoundingClientRect(); DPR=Math.min(window.devicePixelRatio||1,2);
+  W=Math.round(r.width); H=Math.round(r.height); cvs.width=Math.round(W*DPR); cvs.height=Math.round(H*DPR); }
+
+function geom(){ return { x0:W*0.30, x1:W*0.64, y0:H*0.075, y1:H*0.925 }; }
+
+function derive(y,m,d,hasTime,hh,mi){
+  const key=`${y}-${pad(m)}-${pad(d)}`+(hasTime?`T${pad(hh)}:${pad(mi)}`:'');
+  const raw=ELS.map((e,i)=> Math.pow(mulberry32(hashStr(key+'~el'+i))(),1.7)+0.05 );
+  const s=raw.reduce((a,b)=>a+b,0); const props=raw.map(v=>v/s);
+  const id='ALM-'+hashStr(key).toString(16).toUpperCase().padStart(8,'0').slice(0,4)+'-'+hashStr(key+'~x').toString(16).toUpperCase().padStart(2,'0').slice(0,2);
+  // ranking
+  const order=[...props.keys()].sort((a,b)=>props[b]-props[a]);
+  return {key,y,m,d,hasTime,hh,mi,id,props,order,
+    lam: ELS.map((e,i)=>({ gap:5+mulberry32(hashStr(key+'~lam'+i))()*4, jit:mulberry32(hashStr(key+'~jit'+i)) })) };
+}
+function buildBands(){
+  const g=geom(), colH=g.y1-g.y0; bands=[]; let yb=g.y1; // bottom-up
+  for(let i=0;i<5;i++){ const h=P.props[i]*colH, yt=yb-h; bands.push({i, el:ELS[i].k, p:P.props[i], yTop:yt, yBot:yb}); yb=yt; }
+}
+
+/* render: clip deposited region [level, y1]; level rises (decreases) bottom->top */
+function render(){
+  const g=geom(); ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
+  // barrel outline + depth scale + 朱 tick (apparatus, always)
+  ctx.strokeStyle='rgba('+INK+',0.4)'; ctx.lineWidth=1;
+  ctx.strokeRect(g.x0,g.y0,g.x1-g.x0,g.y1-g.y0);
+  ctx.font='10px Archivo, sans-serif'; ctx.textAlign='right'; ctx.fillStyle='rgba('+INK+',0.45)';
+  for(let p=0;p<=100;p+=25){ const yy=g.y0+(p/100)*(g.y1-g.y0);
+    ctx.beginPath(); ctx.moveTo(g.x0-6,yy); ctx.lineTo(g.x0,yy); ctx.lineWidth=0.8; ctx.strokeStyle='rgba('+INK+',0.3)'; ctx.stroke();
+    ctx.fillText(p+'', g.x0-10, yy+3); }
+  // 朱 registration tick
+  ctx.beginPath(); ctx.moveTo((g.x0+g.x1)/2,g.y0-3); ctx.lineTo((g.x0+g.x1)/2,g.y0-12); ctx.lineWidth=1.3; ctx.strokeStyle='#a8392b'; ctx.stroke();
+  ctx.beginPath(); ctx.arc((g.x0+g.x1)/2,g.y0-15,2.1,0,Math.PI*2); ctx.fillStyle='#a8392b'; ctx.fill();
+
+  // deposited material, clipped to [level, y1]
+  ctx.save(); ctx.beginPath(); ctx.rect(g.x0,Math.max(depositLevel,g.y0),g.x1-g.x0,g.y1-Math.max(depositLevel,g.y0)); ctx.clip();
+  for(const b of bands){
+    ctx.fillStyle=mixWashi(ELS[b.i].t,0.16); ctx.fillRect(g.x0,b.yTop,g.x1-g.x0,b.yBot-b.yTop);
+    // laminae
+    const lam=P.lam[b.i]; let yy=b.yBot;
+    ctx.lineWidth=0.6; let n=0;
+    while(yy>b.yTop){ const a=0.08+lam.jit()*0.08; ctx.strokeStyle='rgba('+INK+','+a.toFixed(3)+')';
+      ctx.beginPath(); ctx.moveTo(g.x0,yy); ctx.lineTo(g.x1,yy); ctx.stroke(); yy-=lam.gap*(0.85+lam.jit()*0.4); n++; if(n>400)break; }
+    // contact boundary (top of band)
+    ctx.beginPath(); ctx.moveTo(g.x0,b.yTop); ctx.lineTo(g.x1,b.yTop); ctx.lineWidth=0.9; ctx.strokeStyle='rgba('+INK+',0.4)'; ctx.stroke();
+  }
+  ctx.restore();
+
+  // labels for revealed bands
+  ctx.textAlign='left'; ctx.font='400 13px "Shippori Mincho", serif';
+  for(const b of bands){ if(b.yTop<depositLevel-2) continue; const my=(b.yTop+b.yBot)/2;
+    // contact tick out to right
+    ctx.beginPath(); ctx.moveTo(g.x1,b.yTop); ctx.lineTo(g.x1+8,b.yTop); ctx.lineWidth=0.7; ctx.strokeStyle='rgba('+INK+',0.3)'; ctx.stroke();
+    ctx.fillStyle='rgba('+INK+',0.85)'; ctx.fillText(b.el, g.x1+14, my+2);
+    ctx.font='400 11px Archivo, sans-serif'; ctx.fillStyle='rgba('+INK+',0.6)';
+    ctx.fillText(Math.round(b.p*100)+'%', g.x1+34, my+2);
+    ctx.font='400 13px "Shippori Mincho", serif';
+  }
+  // selection brackets
+  if(sel>=0){ const b=bands[sel]; if(b.yTop>=depositLevel-2){ const L=10; ctx.strokeStyle='#a8392b'; ctx.lineWidth=1.4;
+    const xs=[g.x0,g.x1], ys=[b.yTop,b.yBot];
+    for(const X of xs)for(const Y of ys){ const dx=(X===g.x0?1:-1), dy=(Y===b.yTop?1:-1);
+      ctx.beginPath(); ctx.moveTo(X,Y+dy*L); ctx.lineTo(X,Y); ctx.lineTo(X+dx*L,Y); ctx.stroke(); } } }
+}
+
+function buildDeposit(onDone){
+  if(anim)cancelAnimationFrame(anim);
+  const g=geom(); const t0=performance.now(), dur=2600;
+  (function step(now){ const p=smooth(0,1,clamp((now-t0)/dur,0,1)); depositLevel=g.y1-(g.y1-g.y0)*p; render();
+    if(p<1) anim=requestAnimationFrame(step); else { depositLevel=g.y0; render(); anim=null; if(onDone)onDone(); } })(performance.now());
+}
+
+/* descriptors (structural, observational) */
+const ROLE=['最も厚い基層','二番目に厚い層','中ほどの層','薄い層','最も薄い層'];
+function roleOf(i){ return ROLE[P.order.indexOf(i)]; }
+function overallDesc(){
+  const dom=ELS[P.order[0]].k, sec=ELS[P.order[1]].k, thin=ELS[P.order[4]].k;
+  return `${dom}が最も厚い層をなし、${sec}がそれに次ぐ。${thin}は薄く、構造の余白として残っている。`;
+}
+function bandDesc(i){ return `${ELS[i].k} — 構成比 ${Math.round(P.props[i]*100)}%。${roleOf(i)}として、この標本に積もっている。`; }
+function setDesc(){ document.getElementById('ro-desc').textContent = sel>=0 ? bandDesc(sel) : overallDesc(); }
+function buildLegend(){
+  const L=document.getElementById('legend'); L.innerHTML='';
+  P.order.forEach(()=>{}); // keep declaration order top->bottom = 水..木 visually; legend in 厚い順
+  P.order.forEach(idx=>{ const b=bands[idx];
+    const row=document.createElement('div'); row.className='lrow'; row.dataset.i=idx;
+    row.innerHTML=`<span class="sw" style="background:${mixWashi(ELS[idx].t,0.16)}"></span>`+
+      `<span class="el">${ELS[idx].k}</span><span class="bar"><i style="width:${Math.round(P.props[idx]*100)}%"></i></span>`+
+      `<span class="pc">${Math.round(P.props[idx]*100)}%</span>`;
+    row.addEventListener('click',()=>select(idx));
+    L.appendChild(row);
+  });
+}
+function select(i){ sel=(sel===i?-1:i);
+  document.querySelectorAll('.lrow').forEach(r=>r.classList.toggle('sel',+r.dataset.i===sel));
+  render(); setDesc();
+}
+
+/* generate */
+function generate(y,m,d,hasTime,hh,mi){
+  P=derive(y,m,d,hasTime,hh,mi); buildBands(); sel=-1;
+  document.getElementById('inputState').style.display='none';
+  document.getElementById('readout').classList.add('show');
+  document.getElementById('ro-no').textContent=P.id;
+  document.getElementById('ro-date').textContent=`${P.y}.${pad(P.m)}.${pad(P.d)}`+(P.hasTime?`  ${pad(P.hh)}:${pad(P.mi)}`:'');
+  buildLegend(); setDesc();
+  depositLevel=geom().y1; render(); buildDeposit();
+}
+
+/* export */
+function exportPNG(){
+  const w=1200,h=2000, off=document.createElement('canvas'); off.width=w; off.height=h; const c=off.getContext('2d');
+  c.fillStyle='#e8e2d5'; c.fillRect(0,0,w,h);
+  const x0=w*0.34,x1=w*0.62,y0=h*0.10,y1=h*0.74, colH=y1-y0;
+  c.strokeStyle='rgba('+INK+',0.4)'; c.lineWidth=1.4; c.strokeRect(x0,y0,x1-x0,colH);
+  let yb=y1;
+  for(let i=0;i<5;i++){ const hh=P.props[i]*colH, yt=yb-hh;
+    c.fillStyle=mixWashi(ELS[i].t,0.16); c.fillRect(x0,yt,x1-x0,hh);
+    let yy=yb,n=0; const lam=P.lam[i]; c.lineWidth=0.8;
+    while(yy>yt){ const a=0.08+lam.jit()*0.08; c.strokeStyle='rgba('+INK+','+a.toFixed(3)+')'; c.beginPath(); c.moveTo(x0,yy); c.lineTo(x1,yy); c.stroke(); yy-=lam.gap*2*(0.85+lam.jit()*0.4); if(++n>500)break; }
+    c.beginPath(); c.moveTo(x0,yt); c.lineTo(x1,yt); c.lineWidth=1; c.strokeStyle='rgba('+INK+',0.4)'; c.stroke();
+    c.textAlign='left'; c.font='400 30px "Shippori Mincho", serif'; c.fillStyle='rgba('+INK+',0.85)'; c.fillText(ELS[i].k, x1+22, (yt+yb)/2+10);
+    c.font='400 24px Archivo, sans-serif'; c.fillStyle='rgba('+INK+',0.6)'; c.fillText(Math.round(P.props[i]*100)+'%', x1+62, (yt+yb)/2+10);
+    yb=yt;
+  }
+  c.beginPath(); c.moveTo((x0+x1)/2,y0-6); c.lineTo((x0+x1)/2,y0-22); c.lineWidth=2; c.strokeStyle='#a8392b'; c.stroke();
+  c.beginPath(); c.arc((x0+x1)/2,y0-30,4,0,Math.PI*2); c.fillStyle='#a8392b'; c.fill();
+  c.textAlign='center'; c.fillStyle='#1f1f1d'; c.font='600 60px Archivo, sans-serif'; c.fillText('ALMANA', w/2-16, h*0.84);
+  const tw=c.measureText('ALMANA').width; c.beginPath(); c.arc(w/2-16+tw/2+28,h*0.84-6,8,0,Math.PI*2); c.fillStyle='#a8392b'; c.fill();
+  c.fillStyle='rgba(31,31,29,0.85)'; c.font='500 28px Archivo, sans-serif'; c.fillText(P.id, w/2, h*0.875);
+  c.fillStyle='rgba(31,31,29,0.7)'; c.font='400 28px Archivo, sans-serif'; c.fillText(`${P.y}.${pad(P.m)}.${pad(P.d)}`+(P.hasTime?`  ${pad(P.hh)}:${pad(P.mi)}`:''), w/2, h*0.905);
+  c.fillStyle='rgba(31,31,29,0.45)'; c.font='400 20px Archivo, sans-serif'; c.fillText('構造の断面 · CORE SPECIMEN · ONE OF ONE', w/2, h*0.94);
+  off.toBlob(b=>{const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='almana_core_'+P.id+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(u),2000);},'image/png');
+}
+
+/* wiring */
+function readInputs(){
+  const y=+document.getElementById('y').value,m=+document.getElementById('m').value,d=+document.getElementById('d').value;
+  const hhv=document.getElementById('hh').value.trim(),miv=document.getElementById('mi').value.trim(),err=document.getElementById('err');
+  if(!y||y<1900||y>2100){err.textContent='生年を正しく（1900–2100）。';return null;}
+  if(!m||m<1||m>12){err.textContent='月を正しく（1–12）。';return null;}
+  if(!d||d<1||d>31){err.textContent='日を正しく（1–31）。';return null;}
+  let hasTime=false,hh=0,mi=0; if(hhv!==''||miv!==''){hh=+hhv;mi=+miv; if(isNaN(hh)||hh<0||hh>23||isNaN(mi)||mi<0||mi>59){err.textContent='時刻は 0–23 / 0–59。';return null;} hasTime=true;}
+  err.textContent=''; return {y,m,d,hasTime,hh,mi};
+}
+document.getElementById('bind').addEventListener('click',()=>{const v=readInputs();if(v)generate(v.y,v.m,v.d,v.hasTime,v.hh,v.mi);});
+['y','m','d','hh','mi'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter'){const v=readInputs();if(v)generate(v.y,v.m,v.d,v.hasTime,v.hh,v.mi);}}));
+document.getElementById('exportBtn').addEventListener('click',exportPNG);
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  document.getElementById('readout').classList.remove('show'); document.getElementById('inputState').style.display='block'; P=null;
+  ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
+});
+cvs.addEventListener('click',e=>{ if(!P)return; const r=cvs.getBoundingClientRect(); const yy=(e.clientY-r.top);
+  for(const b of bands){ if(yy>=b.yTop&&yy<=b.yBot){ select(b.i); return; } } select(sel); });
+let rt=null; addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{fit(); if(P){buildBands(); depositLevel=geom().y0; render();}},160);});
+
+fit();
+</script>
+</body>
+</html>

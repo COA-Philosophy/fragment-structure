@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALMANA — 五観の収束 / Convergence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@300;400;500&family=Shippori+Mincho:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{ --washi:#e8e2d5; --ink:#1f1f1d; --shu:#a8392b;
+    --grot:"Archivo","Helvetica Neue",sans-serif; --jp:"Zen Kaku Gothic New",sans-serif; --mincho:"Shippori Mincho",serif; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{ background:var(--washi); color:var(--ink); font-family:var(--jp); -webkit-font-smoothing:antialiased; min-height:100vh;
+    background-image:radial-gradient(125% 120% at 50% 36%, rgba(255,253,247,0.30) 0%, rgba(150,138,118,0.14) 100%); }
+  .wrap{ max-width:1180px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; padding:clamp(20px,3vw,40px) clamp(24px,5vw,64px); }
+  header{ display:flex; align-items:flex-start; justify-content:space-between; border-bottom:1px solid rgba(31,31,29,0.22); padding-bottom:12px; }
+  .brand{ display:flex; align-items:baseline; gap:12px; }
+  .brand svg{ height:clamp(15px,1.7vw,18px); width:auto; display:block; }
+  .brand .tag{ font-family:var(--mincho); font-size:11px; letter-spacing:0.22em; color:rgba(31,31,29,0.6); }
+  .annot{ font-family:var(--grot); font-size:10px; letter-spacing:0.18em; text-transform:uppercase; text-align:right; line-height:1.7; color:rgba(31,31,29,0.5); }
+  .annot .reg{ color:var(--shu); }
+
+  main{ flex:1; display:grid; grid-template-columns:minmax(280px,1fr) minmax(300px,500px); gap:clamp(28px,5vw,64px); align-items:center; padding:clamp(18px,3vh,32px) 0 0; }
+  @media (max-width:860px){ main{ grid-template-columns:1fr; gap:30px; } }
+  .col-left{ max-width:440px; }
+  .lede h1{ font-weight:300; font-size:clamp(23px,3vw,34px); line-height:1.45; letter-spacing:0.04em; }
+  .lede p{ margin-top:14px; font-family:var(--mincho); font-size:13px; line-height:1.95; color:rgba(31,31,29,0.72); }
+
+  .form{ margin-top:clamp(24px,3vw,36px); }
+  .fields{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px 20px; }
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  .field label{ font-family:var(--grot); font-size:9.5px; letter-spacing:0.16em; text-transform:uppercase; color:rgba(31,31,29,0.5); }
+  .field .row{ display:flex; align-items:baseline; gap:6px; }
+  .field input{ width:var(--w,50px); background:transparent; border:none; border-bottom:1px solid rgba(31,31,29,0.42); font-family:var(--grot); font-size:18px; color:var(--ink); padding:3px 0; text-align:center; outline:none; }
+  .field input:focus{ border-color:var(--ink); }
+  .field .unit{ font-family:var(--mincho); font-size:12px; color:rgba(31,31,29,0.55); }
+  .field .opt{ font-family:var(--mincho); font-size:10px; color:rgba(31,31,29,0.45); }
+  .submit{ margin-top:24px; display:inline-flex; align-items:center; gap:14px; font-family:var(--jp); font-weight:500; font-size:14px; letter-spacing:0.16em; color:var(--ink); border:1px solid var(--ink); padding:13px 26px; background:transparent; cursor:pointer; transition:background .35s,color .35s,gap .35s; }
+  .submit .arrow{ color:var(--shu); transition:transform .35s,color .35s; }
+  .submit:hover{ background:var(--ink); color:var(--washi); gap:19px; }
+  .submit:hover .arrow{ color:var(--washi); transform:translateX(3px); }
+  .err{ margin-top:12px; font-size:12px; color:var(--shu); min-height:15px; }
+
+  .readout{ display:none; } .readout.show{ display:block; }
+  .readout .no{ font-family:var(--grot); font-size:11px; letter-spacing:0.26em; text-transform:uppercase; color:var(--shu); }
+  .readout .head{ margin-top:14px; font-family:var(--mincho); font-size:clamp(18px,2vw,23px); font-weight:400; line-height:1.5; color:var(--ink); }
+  .lenses{ margin-top:18px; }
+  .lenses .lab{ font-family:var(--grot); font-size:9.5px; letter-spacing:0.16em; text-transform:uppercase; color:rgba(31,31,29,0.5); }
+  .lenses .list{ margin-top:8px; font-family:var(--mincho); font-size:13.5px; line-height:1.9; color:rgba(31,31,29,0.8); }
+  .specs{ margin-top:16px; font-family:var(--grot); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:rgba(31,31,29,0.6); }
+  .specs b{ font-weight:500; color:var(--ink); margin:0 4px; }
+  .note{ margin-top:20px; font-family:var(--mincho); font-size:12px; line-height:1.95; color:rgba(31,31,29,0.55); border-left:1px solid rgba(31,31,29,0.3); padding-left:14px; }
+  .ro-actions{ margin-top:24px; display:flex; gap:14px; align-items:center; }
+  .mini{ font-family:var(--grot); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(31,31,29,0.55); cursor:pointer; background:none; border:none; }
+  .mini:hover{ color:var(--ink); }
+
+  .stage-wrap{ display:flex; justify-content:center; }
+  .stage{ position:relative; width:100%; max-width:500px; aspect-ratio:1/1; }
+  canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .cross{ position:absolute; width:12px; height:12px; opacity:0.4; }
+  .cross::before,.cross::after{ content:""; position:absolute; background:rgba(31,31,29,0.55); }
+  .cross::before{ left:5px; top:0; width:1px; height:12px; } .cross::after{ left:0; top:5px; width:12px; height:1px; }
+  .c-tl{top:2px;left:2px}.c-tr{top:2px;right:2px}.c-bl{bottom:2px;left:2px}.c-br{bottom:2px;right:2px}
+  .ov{ position:absolute; font-family:var(--grot); font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(31,31,29,0.4); pointer-events:none; }
+  .ov-tl{ top:12px; left:14px; line-height:1.6; } .ov-tl .reg{ color:var(--shu); }
+  .ov-br{ bottom:12px; right:14px; text-align:right; }
+
+  footer{ font-family:var(--grot); font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(31,31,29,0.35); text-align:center; padding:18px 0 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="9.0 -689.0 7095.0 718.0" aria-label="ALMANA"><g transform="scale(1,-1)">
+        <path d="M33 0V16L97 49L353 665H398L650 52L717 16V0H469V16L557 50L482 235H239L165 50L249 16V0ZM262 290H460L361 536Z" fill="#1f1f1d"/>
+        <path d="M1195 0V16L1275 56V604L1195 644V660H1455V644L1365 604V55H1608L1676 222H1692V0Z" fill="#1f1f1d"/>
+        <path d="M2202 0V16L2281 56L2302 603L2216 644V660H2401L2632 128L2862 660H3038V644L2954 604L2971 56L3041 16V0H2811V16L2885 55L2875 548L2636 -5H2591L2356 541L2343 55L2424 16V0Z" fill="#1f1f1d"/>
+        <path d="M3514 0V16L3578 49L3834 665H3879L4131 52L4198 16V0H3950V16L4038 50L3963 235H3720L3646 50L3730 16V0ZM3743 290H3941L3842 536Z" fill="#1f1f1d"/>
+        <path d="M4671 0V16L4751 56V602L4672 644V660H4819L5201 180V606L5101 644V660H5350V644L5271 605V-5H5234L4821 516V55L4921 16V0Z" fill="#1f1f1d"/>
+        <path d="M5823 0V16L5887 49L6143 665H6188L6440 52L6507 16V0H6259V16L6347 50L6272 235H6029L5955 50L6039 16V0ZM6052 290H6250L6151 536Z" fill="#1f1f1d"/>
+        <circle cx="7025.0" cy="55.0" r="55.0" fill="#a8392b"/>
+      </g></svg>
+      <span class="tag">自己理解AI</span>
+    </div>
+    <div class="annot"><span class="reg">⊕</span> 五観の収束 / Convergence<br>Five lenses · One structure</div>
+  </header>
+
+  <main>
+    <div class="col-left">
+      <div id="inputState">
+        <div class="lede">
+          <h1>ひとつでは、<br>見えない。</h1>
+          <p>ひとつの視点では捉えきれない構造を、複数の観測レンズを重ねて、ひとつの多面体として読み解きます。</p>
+        </div>
+        <div class="form">
+          <div class="fields">
+            <div class="field"><label>Year 生年</label><div class="row"><input id="y" inputmode="numeric" placeholder="1990" style="--w:70px"><span class="unit">年</span></div></div>
+            <div class="field"><label>Month 月</label><div class="row"><input id="m" inputmode="numeric" placeholder="05"><span class="unit">月</span></div></div>
+            <div class="field"><label>Day 日</label><div class="row"><input id="d" inputmode="numeric" placeholder="22"><span class="unit">日</span></div></div>
+            <div class="field"><label>Time 時刻 <span class="opt">任意</span></label><div class="row"><input id="hh" inputmode="numeric" placeholder="--" style="--w:40px"><span class="unit">:</span><input id="mi" inputmode="numeric" placeholder="--" style="--w:40px"></div></div>
+          </div>
+          <button class="submit" id="bind">レンズを重ねる <span class="arrow">→</span></button>
+          <div class="err" id="err"></div>
+        </div>
+      </div>
+
+      <div class="readout" id="readout">
+        <div class="no" id="ro-no">ALM-0000-00</div>
+        <div class="head">言い当てるためではなく、<br>読むために。</div>
+        <div class="lenses">
+          <div class="lab">観測レンズ ×5 / Observation lenses</div>
+          <div class="list">四柱推命　西洋占星術　算命学<br>九星気学　数秘術</div>
+        </div>
+        <div class="specs">構造 <b id="sv">—</b>頂点 · <b id="se">—</b>稜 · <b id="sf">—</b>面</div>
+        <div class="note">複数の体系を、占うためではなく、構造を読むための観測レンズとして重ねています。未来を当てる装置ではなく、ひとつでは見えない奥行きを多面的に読むための道具です。</div>
+        <div class="ro-actions">
+          <button class="mini" id="exportBtn">PNG 書き出し ↓</button>
+          <button class="mini" id="resetBtn">別の生年月日</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-wrap"><div class="stage" id="stage">
+      <canvas id="cv"></canvas>
+      <span class="cross c-tl"></span><span class="cross c-tr"></span><span class="cross c-bl"></span><span class="cross c-br"></span>
+      <div class="ov ov-tl" id="ovTL"><span class="reg">⊕</span> FIG.04</div>
+      <div class="ov ov-br" id="ovBR">五観 / 5 LENSES</div>
+    </div></div>
+  </main>
+
+  <footer>Deterministic polyhedron · Five lenses, one structure · The Modern Zen Archive</footer>
+</div>
+
+<script>
+const INK='31,31,29';
+function hashStr(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const TAU=Math.PI*2, clamp=(v,a,b)=>v<a?a:v>b?b:v, smooth=(e0,e1,x)=>{const t=clamp((x-e0)/(e1-e0),0,1);return t*t*(3-2*t);}, pad=n=>String(n).padStart(2,'0');
+const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
+
+const cvs=document.getElementById('cv'), ctx=cvs.getContext('2d'), stageEl=document.getElementById('stage');
+let W=0,H=0,DPR=1,cx=0,cy=0,R3=0,F=0;
+let P=null, ax=0.42, ay=0, raf=null, t0=null, lastT=0;
+
+function fit(){ const r=stageEl.getBoundingClientRect(); DPR=Math.min(window.devicePixelRatio||1,2);
+  W=Math.round(r.width); H=Math.round(r.height); cvs.width=Math.round(W*DPR); cvs.height=Math.round(H*DPR);
+  cx=W/2; cy=H/2; R3=Math.min(W,H)*0.33; F=R3*3.2; }
+
+/* base triangular-faced solids */
+function baseSolid(kind){
+  let v;
+  if(kind===0) v=[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]];                 // tetra (4)
+  else if(kind===1) v=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]; // octa (6)
+  else { const p=(1+Math.sqrt(5))/2; v=[[0,1,p],[0,1,-p],[0,-1,p],[0,-1,-p],[1,p,0],[1,-p,0],[-1,p,0],[-1,-p,0],[p,0,1],[p,0,-1],[-p,0,1],[-p,0,-1]]; } // icosa (12)
+  v=v.map(p=>{const L=Math.hypot(p[0],p[1],p[2]);return [p[0]/L,p[1]/L,p[2]/L];});
+  let minD=Infinity; for(let i=0;i<v.length;i++)for(let j=i+1;j<v.length;j++){const d=dist(v[i],v[j]);if(d<minD)minD=d;}
+  const th=minD*1.18, edges=[]; for(let i=0;i<v.length;i++)for(let j=i+1;j<v.length;j++) if(dist(v[i],v[j])<th) edges.push([i,j]);
+  const adj=v.map(()=>new Set()); edges.forEach(([a,b])=>{adj[a].add(b);adj[b].add(a);});
+  const faces=[]; for(let i=0;i<v.length;i++)for(let j=i+1;j<v.length;j++){ if(!adj[i].has(j))continue;
+    for(let k=j+1;k<v.length;k++) if(adj[i].has(k)&&adj[j].has(k)) faces.push([i,j,k]); }
+  return {v,edges,faces};
+}
+function buildSolid(){
+  const rand=mulberry32(hashStr(P.key)); const kind=Math.floor(rand()*3); const base=baseSolid(kind);
+  const sx=0.78+rand()*0.5, sy=0.78+rand()*0.5, sz=0.78+rand()*0.5, oa=rand()*TAU, ob=rand()*TAU;
+  const verts=base.v.map((p,i)=>{
+    const jr=0.85+rand()*0.30; let x=p[0]*sx*jr, y=p[1]*sy*jr, z=p[2]*sz*jr;
+    let x2=x*Math.cos(oa)-z*Math.sin(oa), z2=x*Math.sin(oa)+z*Math.cos(oa);
+    let y2=y*Math.cos(ob)-z2*Math.sin(ob), z3=y*Math.sin(ob)+z2*Math.cos(ob);
+    return {hx:x2,hy:y2,hz:z3};
+  });
+  const G=Math.min(5,verts.length);
+  verts.forEach((vt,i)=>{ vt.g=i%G;
+    const r2=mulberry32(hashStr(P.key+'~s'+i));
+    const dx=r2()*2-1, dy=r2()*2-1, dz=r2()*2-1, L=Math.hypot(dx,dy,dz)||1, ex=2.2+r2()*1.4;
+    vt.sx=vt.hx+dx/L*ex; vt.sy=vt.hy+dy/L*ex; vt.sz=vt.hz+dz/L*ex;
+  });
+  P.kind=kind; P.G=G; P.verts=verts; P.edges=base.edges; P.faces=base.faces;
+  P.counts={v:verts.length,e:base.edges.length,f:base.faces.length};
+}
+
+function rot(x,y,z){
+  const ca=Math.cos(ax),sa=Math.sin(ax), cb=Math.cos(ay),sb=Math.sin(ay);
+  let y1=y*ca - z*sa, z1=y*sa + z*ca, x1=x;
+  let x2=x1*cb + z1*sb, z2=-x1*sb + z1*cb;
+  return [x2,y1,z2];
+}
+function updatePositions(t,forceAssembled){
+  const dur=1.5, delay=0.45;
+  for(const vt of P.verts){
+    const cp = forceAssembled?1: smooth(0,1, clamp((t - vt.g*delay)/dur,0,1));
+    const X=vt.sx+(vt.hx-vt.sx)*cp, Y=vt.sy+(vt.hy-vt.sy)*cp, Z=vt.sz+(vt.hz-vt.sz)*cp;
+    const r=rot(X,Y,Z); vt.rx=r[0]; vt.ry=r[1]; vt.rz=r[2];
+  }
+}
+function drawScene(c,CX,CY,r3,f,sw){
+  // project
+  const pj=P.verts.map(vt=>{ const fac=f/(f-vt.rz*r3); return {x:CX+vt.rx*r3*fac, y:CY-vt.ry*r3*fac, z:vt.rz}; });
+  // faint front faces (sorted back->front)
+  const fs=P.faces.map(fc=>{ const z=(P.verts[fc[0]].rz+P.verts[fc[1]].rz+P.verts[fc[2]].rz)/3;
+    // normal toward viewer?
+    const a=P.verts[fc[0]],b=P.verts[fc[1]],cc=P.verts[fc[2]];
+    const ux=b.rx-a.rx,uy=b.ry-a.ry,uz=b.rz-a.rz, vx=cc.rx-a.rx,vy=cc.ry-a.ry,vz=cc.rz-a.rz;
+    const nz=ux*vy-uy*vx; return {fc,z,front:nz>0}; }).sort((p,q)=>p.z-q.z);
+  for(const fo of fs){ if(!fo.front)continue; const [i,j,k]=fo.fc;
+    c.beginPath(); c.moveTo(pj[i].x,pj[i].y); c.lineTo(pj[j].x,pj[j].y); c.lineTo(pj[k].x,pj[k].y); c.closePath();
+    c.fillStyle='rgba('+INK+',0.045)'; c.fill(); }
+  // edges, depth-shaded
+  for(const [i,j] of P.edges){ const za=(pj[i].z+pj[j].z)/2, zN=clamp((za+1)/2,0,1), a=0.16+zN*0.36;
+    c.beginPath(); c.moveTo(pj[i].x,pj[i].y); c.lineTo(pj[j].x,pj[j].y);
+    c.lineWidth=(0.55+zN*0.5)*sw; c.strokeStyle='rgba('+INK+','+a.toFixed(3)+')'; c.stroke(); }
+  // vertices
+  P.verts.forEach((vt,idx)=>{ const zN=clamp((vt.rz+1)/2,0,1); const p=pj[idx];
+    c.beginPath(); c.arc(p.x,p.y,(1.3+zN*1.1)*sw,0,TAU);
+    c.fillStyle = idx===0 ? '#a8392b' : 'rgba('+INK+','+(0.3+zN*0.5).toFixed(3)+')'; c.fill(); });
+}
+
+function loop(now){
+  if(t0===null){t0=now;lastT=now;}
+  const t=(now-t0)/1000, dt=Math.min(0.05,(now-lastT)/1000); lastT=now;
+  const G=P.G, convEnd=0.45*(G-1)+1.5, rotF=smooth(convEnd-0.4,convEnd+1.2,t);
+  ay += dt*0.5*rotF; ax=0.42+0.08*Math.sin(t*0.3);
+  updatePositions(t,false);
+  ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
+  drawScene(ctx,cx,cy,R3,F,1);
+  raf=requestAnimationFrame(loop);
+}
+function stop(){ if(raf){cancelAnimationFrame(raf);raf=null;} }
+
+function derive(y,m,d,hasTime,hh,mi){
+  const key=`${y}-${pad(m)}-${pad(d)}`+(hasTime?`T${pad(hh)}:${pad(mi)}`:'');
+  const id='ALM-'+hashStr(key).toString(16).toUpperCase().padStart(8,'0').slice(0,4)+'-'+hashStr(key+'~x').toString(16).toUpperCase().padStart(2,'0').slice(0,2);
+  return {key,y,m,d,hasTime,hh,mi,id};
+}
+function generate(y,m,d,hasTime,hh,mi){
+  stop(); P=derive(y,m,d,hasTime,hh,mi); buildSolid(); t0=null; ax=0.42; ay=0;
+  document.getElementById('inputState').style.display='none';
+  document.getElementById('readout').classList.add('show');
+  document.getElementById('ro-no').textContent=P.id;
+  document.getElementById('sv').textContent=P.counts.v;
+  document.getElementById('se').textContent=P.counts.e;
+  document.getElementById('sf').textContent=P.counts.f;
+  document.getElementById('ovTL').innerHTML='<span class="reg">⊕</span> FIG.04 '+P.id;
+  raf=requestAnimationFrame(loop);
+}
+
+function exportPNG(){
+  const w=1200,h=1600, off=document.createElement('canvas'); off.width=w; off.height=h; const c=off.getContext('2d');
+  c.fillStyle='#e8e2d5'; c.fillRect(0,0,w,h);
+  const g=c.createRadialGradient(w/2,h*0.38,120,w/2,h*0.40,h*0.6); g.addColorStop(0,'rgba(255,253,247,0.25)'); g.addColorStop(1,'rgba(150,138,118,0.12)');
+  c.fillStyle=g; c.fillRect(0,0,w,h);
+  updatePositions(999,true); drawScene(c, w/2, h*0.38, 360, 360*3.2, 1.6);
+  c.textAlign='center'; c.fillStyle='#1f1f1d'; c.font='600 60px Archivo, sans-serif'; c.fillText('ALMANA', w/2-16, h*0.78);
+  const tw=c.measureText('ALMANA').width; c.beginPath(); c.arc(w/2-16+tw/2+28,h*0.78-6,8,0,TAU); c.fillStyle='#a8392b'; c.fill();
+  c.fillStyle='rgba(31,31,29,0.85)'; c.font='500 28px Archivo, sans-serif'; c.fillText(P.id, w/2, h*0.82);
+  c.fillStyle='rgba(31,31,29,0.7)'; c.font='400 28px Archivo, sans-serif'; c.fillText(`${P.y}.${pad(P.m)}.${pad(P.d)}`+(P.hasTime?`  ${pad(P.hh)}:${pad(P.mi)}`:''), w/2, h*0.85);
+  c.fillStyle='rgba(31,31,29,0.45)'; c.font='400 20px Archivo, sans-serif'; c.fillText('五観の収束 · CONVERGENCE · ONE OF ONE', w/2, h*0.885);
+  updatePositions((performance.now()-(t0||performance.now()))/1000,false); // restore live frame state
+  off.toBlob(b=>{const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='almana_convergence_'+P.id+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(u),2000);},'image/png');
+}
+
+function readInputs(){
+  const y=+document.getElementById('y').value,m=+document.getElementById('m').value,d=+document.getElementById('d').value;
+  const hhv=document.getElementById('hh').value.trim(),miv=document.getElementById('mi').value.trim(),err=document.getElementById('err');
+  if(!y||y<1900||y>2100){err.textContent='生年を正しく（1900–2100）。';return null;}
+  if(!m||m<1||m>12){err.textContent='月を正しく（1–12）。';return null;}
+  if(!d||d<1||d>31){err.textContent='日を正しく（1–31）。';return null;}
+  let hasTime=false,hh=0,mi=0; if(hhv!==''||miv!==''){hh=+hhv;mi=+miv; if(isNaN(hh)||hh<0||hh>23||isNaN(mi)||mi<0||mi>59){err.textContent='時刻は 0–23 / 0–59。';return null;} hasTime=true;}
+  err.textContent=''; return {y,m,d,hasTime,hh,mi};
+}
+document.getElementById('bind').addEventListener('click',()=>{const v=readInputs();if(v)generate(v.y,v.m,v.d,v.hasTime,v.hh,v.mi);});
+['y','m','d','hh','mi'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter'){const v=readInputs();if(v)generate(v.y,v.m,v.d,v.hasTime,v.hh,v.mi);}}));
+document.getElementById('exportBtn').addEventListener('click',exportPNG);
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  stop(); document.getElementById('readout').classList.remove('show'); document.getElementById('inputState').style.display='block'; P=null;
+  ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
+});
+let rt=null; addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{fit();},160);});
+fit();
+</script>
+</body>
+</html>

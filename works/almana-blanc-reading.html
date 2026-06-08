@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALMANA — blanc / crystal reading</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@200;300;400;500&family=Lora:ital,wght@0,400;0,500;1,400;1,500&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;1,400&display=swap');
+
+:root{
+  --ground:#e8e8e5;--paper:#f7f7f5;--sumi:#222120;--sumi-soft:#3a3733;--sumi-mid:#6f6b64;
+  --sumi-faint:#8d887f;--sumi-pale:#cbc6bc;--hair:#e0ddd6;--hair-soft:#eae7e0;--shu:#a8392b;
+  --sans:'Satoshi',ui-sans-serif,-apple-system,system-ui,sans-serif;
+  --serifjp:'Noto Serif JP',serif;--serif:'Lora',Georgia,'Times New Roman',serif;
+  --logo:'Spectral',Georgia,'Times New Roman',serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--ground);color:var(--sumi);font-family:var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;min-height:100vh;}
+
+.page-head{text-align:center;padding:60px 24px 14px;}
+.page-head .wordmark{font-family:var(--logo);font-weight:400;font-size:15px;letter-spacing:.4em;color:var(--sumi);}
+.page-head .wordmark::after{content:"";display:inline-block;width:.2em;height:.2em;border-radius:50%;background:var(--shu);margin-left:.32em;vertical-align:.08em;}
+.page-head .kicker{font-family:var(--sans);font-weight:300;font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--sumi-mid);margin-top:16px;}
+.page-head .sub{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--sumi-faint);margin-top:10px;}
+
+.stage{display:flex;justify-content:center;align-items:flex-start;padding:36px 24px 30px;}
+.frame-wrap{display:flex;flex-direction:column;align-items:center;}
+.caption{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--sumi-mid);margin-top:20px;text-align:center;max-width:300px;}
+.caption .ax{display:block;font-family:var(--sans);font-style:normal;font-weight:300;font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:var(--sumi-faint);margin-top:6px;}
+
+.phone{width:320px;background:var(--paper);border:1px solid var(--hair);border-radius:30px;
+  box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 30px 60px -30px rgba(30,28,24,.34),0 8px 22px -16px rgba(30,28,24,.2);
+  overflow:hidden;display:flex;flex-direction:column;min-height:680px;position:relative;}
+.screen{flex:1;padding:28px 24px 0;display:flex;flex-direction:column;position:relative;z-index:1;}
+
+.cropmarks{position:absolute;inset:0;pointer-events:none;z-index:5;}
+.cropmarks i{position:absolute;width:9px;height:9px;}
+.cropmarks i::before,.cropmarks i::after{content:"";position:absolute;background:var(--sumi-pale);}
+.cropmarks i::before{width:9px;height:1px;top:0;}
+.cropmarks i::after{width:1px;height:9px;left:0;}
+.cropmarks .tl{top:15px;left:15px;}
+.cropmarks .tr{top:15px;right:15px;transform:scaleX(-1);}
+.cropmarks .bl{bottom:84px;left:15px;transform:scaleY(-1);}
+.cropmarks .br{bottom:84px;right:15px;transform:scale(-1);}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
+.back{display:flex;align-items:center;gap:8px;font-family:var(--serifjp);font-weight:300;font-size:12px;letter-spacing:.1em;color:var(--sumi-mid);}
+.back svg{width:14px;height:14px;stroke:var(--sumi-mid);fill:none;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;}
+.share{width:15px;height:15px;stroke:var(--sumi-faint);fill:none;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;}
+
+.cat{font-family:var(--logo);font-weight:400;font-size:25px;letter-spacing:.03em;color:var(--sumi);}
+.whisper{font-family:var(--serifjp);font-weight:300;font-size:13px;letter-spacing:.12em;color:var(--sumi-mid);margin-top:9px;}
+
+/* poetic summary — read first */
+.poem{text-align:center;margin:26px 0 4px;}
+.poem .en{display:inline-block;font-family:var(--sans);font-weight:400;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--sumi-mid);border:1px solid var(--sumi-pale);border-radius:999px;padding:5px 14px;}
+.poem .quote{font-family:var(--serifjp);font-weight:400;font-size:19px;line-height:1.6;letter-spacing:.02em;color:var(--sumi);margin:16px 0 0;}
+
+/* crystal */
+.cstage{position:relative;width:100%;height:300px;margin:34px 0 2px;}
+.cstage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
+.cross{position:absolute;width:10px;height:10px;opacity:.4;}
+.cross::before,.cross::after{content:"";position:absolute;background:var(--sumi-pale);}
+.cross::before{left:4.5px;top:0;width:1px;height:10px;}
+.cross::after{left:0;top:4.5px;width:10px;height:1px;}
+.c-tl{top:0;left:0}.c-tr{top:0;right:0}.c-bl{bottom:0;left:0}.c-br{bottom:0;right:0}
+.fig{position:absolute;top:2px;left:2px;font-family:var(--sans);font-weight:400;font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--sumi-faint);pointer-events:none;}
+.fig .reg{color:var(--shu);}
+
+/* section selector — 3×2 grid */
+.slist{display:grid;grid-template-columns:repeat(3,1fr);gap:7px 6px;margin-top:20px;}
+.slist span{font-family:var(--serif);font-size:13px;letter-spacing:.02em;color:var(--sumi-mid);cursor:pointer;text-align:center;
+  padding:8px 4px;border-radius:9px;transition:color .25s,background .25s;}
+.slist span:hover{color:var(--sumi);background:rgba(34,33,31,.04);}
+.slist span.act{color:var(--shu);background:rgba(168,57,43,.06);}
+.slist span.dim{color:var(--sumi-faint);}
+.guide{font-family:var(--serifjp);font-weight:300;font-size:11px;letter-spacing:.08em;color:var(--sumi-faint);text-align:center;margin-top:16px;}
+
+hr.rule{height:1px;background:var(--hair-soft);border:0;}
+
+/* reading — full text per face */
+.reading{margin-top:22px;min-height:200px;}
+.rcard{opacity:0;transform:translateY(8px);animation:rise .55s cubic-bezier(.2,.7,.2,1) forwards;}
+@keyframes rise{to{opacity:1;transform:translateY(0);}}
+.block-label{font-family:var(--sans);font-weight:400;font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--sumi-faint);margin-bottom:16px;display:flex;align-items:baseline;gap:9px;}
+.block-label .jp{font-family:var(--serifjp);letter-spacing:.1em;text-transform:none;color:var(--sumi-mid);font-size:11px;}
+
+.essence .body{font-family:var(--serifjp);font-weight:300;font-size:12.5px;line-height:2.1;color:var(--sumi-soft);margin-bottom:14px;}
+.essence .body:last-of-type{margin-bottom:0;}
+.essence .body .k{color:var(--shu);}
+
+.entry{margin-bottom:18px;}
+.entry:last-child{margin-bottom:0;}
+.entry .lead{position:relative;padding-left:16px;font-family:var(--serifjp);font-weight:500;font-size:12.5px;line-height:1.75;letter-spacing:.02em;color:var(--sumi);}
+.entry .lead::before{content:"";position:absolute;left:0;top:11px;width:6px;height:1px;background:var(--sumi-pale);}
+.entry.caution .lead::before{width:6px;height:6px;top:7px;background:none;border:1px solid var(--sumi-faint);border-radius:50%;}
+.entry.trap .lead::before{width:6px;height:6px;top:7px;background:none;border:1px solid var(--sumi-pale);transform:rotate(45deg);}
+.entry.num .lead{padding-left:26px;}
+.entry.num .lead::before{display:none;}
+.entry.num .no{position:absolute;left:1px;top:0;font-family:var(--serif);font-style:italic;font-size:13px;color:var(--sumi-faint);}
+.entry .exp{padding-left:16px;margin-top:7px;font-family:var(--serifjp);font-weight:300;font-size:11.5px;line-height:2.05;color:var(--sumi-soft);}
+.entry.num .exp{padding-left:26px;}
+
+.energy .eb{margin-bottom:16px;}
+.energy .eb:last-child{margin-bottom:0;}
+.energy .et{font-family:var(--sans);font-weight:400;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--sumi-mid);}
+.energy .et .j{font-family:var(--serifjp);letter-spacing:.06em;text-transform:none;color:var(--sumi-faint);margin-left:8px;font-size:11px;}
+.energy .ed{font-family:var(--serifjp);font-weight:300;font-size:11.5px;line-height:2.05;color:var(--sumi-soft);margin-top:7px;}
+
+/* Not You — auxiliary specimen */
+.notyou{margin-top:8px;}
+.specimen-cap{font-family:var(--serifjp);font-weight:300;font-size:11.5px;line-height:1.95;color:var(--sumi-mid);margin-bottom:16px;}
+.notyou .n{position:relative;padding-left:22px;font-family:var(--serifjp);font-weight:300;font-size:11.5px;line-height:2.05;color:var(--sumi-soft);margin-bottom:14px;}
+.notyou .n:last-child{margin-bottom:0;}
+.notyou .n::before{content:"";position:absolute;left:2px;top:10px;width:9px;height:9px;
+  background:linear-gradient(45deg,transparent 44%,var(--sumi-faint) 44%,var(--sumi-faint) 56%,transparent 56%),
+             linear-gradient(-45deg,transparent 44%,var(--sumi-faint) 44%,var(--sumi-faint) 56%,transparent 56%);}
+
+/* folded evidence */
+.fold .foldbtn{width:100%;display:flex;align-items:center;justify-content:space-between;background:none;border:0;cursor:pointer;padding:6px 0;}
+.fold .foldbtn .ft{font-family:var(--sans);font-weight:400;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--sumi-mid);text-align:left;}
+.fold .foldbtn .ft em{display:block;font-family:var(--serif);font-style:italic;font-size:11.5px;letter-spacing:0;text-transform:none;color:var(--sumi-faint);margin-top:5px;}
+.fold .foldbtn .chev{font-family:var(--serif);font-size:14px;color:var(--sumi-pale);transition:transform .3s;}
+.fold.open .foldbtn .chev{transform:rotate(180deg);}
+.fold .foldbody{max-height:0;overflow:hidden;opacity:0;transition:max-height .5s ease,opacity .4s;}
+.fold.open .foldbody{max-height:640px;opacity:1;}
+.reason{font-family:var(--serifjp);font-weight:300;font-size:11.5px;line-height:2.05;color:var(--sumi-mid);margin:16px 0 18px;}
+.source{display:flex;flex-direction:column;gap:10px;}
+.source .ln{display:flex;align-items:baseline;gap:12px;}
+.source .ln .sys{flex:0 0 64px;font-family:var(--sans);font-weight:400;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--sumi-faint);}
+.source .ln .val{font-family:var(--serifjp);font-weight:300;font-size:11.5px;line-height:1.7;color:var(--sumi-soft);letter-spacing:.02em;}
+
+.acts{display:flex;flex-direction:column;gap:0;margin-top:6px;}
+.acts .act{display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--hair-soft);
+  font-family:var(--serifjp);font-weight:400;font-size:13.5px;letter-spacing:.04em;color:var(--sumi);cursor:pointer;}
+.acts .act:last-child{border-bottom:0;}
+.acts .act .arr{font-family:var(--serif);font-style:normal;font-size:13px;color:var(--sumi-faint);}
+.acts .act.primary .arr{color:var(--shu);}
+.acts .act.quiet{color:var(--sumi-mid);font-weight:300;font-size:12.5px;}
+.spacer{flex:1;min-height:18px;}
+
+.nav{display:flex;justify-content:space-between;align-items:flex-end;padding:15px 22px 22px;border-top:1px solid var(--hair-soft);margin-top:16px;}
+.nav .item{display:flex;flex-direction:column;align-items:center;gap:7px;flex:1;}
+.nav .item svg{width:19px;height:19px;display:block;stroke:var(--sumi-faint);fill:none;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;}
+.nav .item span{font-family:var(--sans);font-weight:300;font-size:8.5px;letter-spacing:.12em;color:var(--sumi-faint);}
+.nav .item.active svg{stroke:var(--sumi);}
+.nav .item.active span{color:var(--sumi);font-weight:400;}
+
+.frame-wrap{opacity:0;transform:translateY(14px);animation:rise .9s cubic-bezier(.2,.7,.2,1) forwards .1s;}
+.page-head{opacity:0;animation:rise .9s ease forwards;}
+
+.page-foot{text-align:center;padding:14px 24px 64px;}
+.page-foot .seal{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:3px;background:var(--shu);box-shadow:inset 0 0 0 1.5px rgba(244,235,225,.32);margin-bottom:14px;}
+.page-foot .seal i{display:block;width:7px;height:7px;border:1.2px solid #f4ebe1;border-radius:1px;}
+.page-foot .line{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--sumi-faint);}
+</style>
+</head>
+<body>
+
+<header class="page-head">
+  <div class="wordmark">ALMANA</div>
+  <div class="kicker">blanc — read by turning the crystal</div>
+  <div class="sub">six lenses converge into one core — turn it, the core opens in facets.</div>
+</header>
+
+<main class="stage">
+  <div class="frame-wrap">
+    <div class="phone">
+      <div class="cropmarks"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
+      <div class="screen" id="screen">
+        <div class="topbar">
+          <div class="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>診断結果に戻る</div>
+          <svg class="share" viewBox="0 0 24 24"><path d="M12 16V4M8 8l4-4 4 4M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/></svg>
+        </div>
+
+        <div class="cat">Structure</div>
+        <div class="whisper">あなたの構造</div>
+
+        <div class="poem">
+          <div class="en">Artist</div>
+          <div class="quote">「完璧な形を求めながら、<br>次々と新しい線を<br>繋がずにはいられない人」</div>
+        </div>
+
+        <div class="cstage" id="stage">
+          <canvas id="cv"></canvas>
+          <span class="cross c-tl"></span><span class="cross c-tr"></span><span class="cross c-bl"></span><span class="cross c-br"></span>
+          <div class="fig"><span class="reg">⊕</span> FIG.05 · 構造 / SIX FACETS</div>
+        </div>
+        <div class="slist" id="slist"></div>
+        <div class="guide">面を選ぶと、その構造がひらきます。</div>
+
+        <hr class="rule" style="margin:22px 0 0">
+        <div class="reading" id="reading"></div>
+
+        <hr class="rule" style="margin:24px 0 16px">
+        <div class="fold" id="nyfold">
+          <button class="foldbtn" id="nybtn"><span class="ft">Not you<em>あなたに当てはまらないもの — 構造の輪郭</em></span><span class="chev">▾</span></button>
+          <div class="foldbody">
+            <div class="notyou" style="margin-top:16px">
+              <div class="specimen-cap">これは、構造の輪郭をはっきりさせるための補助標本です。当てはまらない形を置くことで、あなたの形が際立ちます。</div>
+              <div class="n">「一つの場所にとどまり、同じ作業を永遠に繰り返すだけの職人」ではありません。あなたの頭脳は常に新しい刺激を求め、一つの分野を掘り下げる最中にも、別の領域へ線を繋いで新しい文脈を発見せずにはいられないからです。</div>
+              <div class="n">「他人の感情に寄り添い、ただ共感して終わるだけのカウンセラー」ではありません。他者の感情の動きを鋭く察知しますが、そのまま受け入れるのではなく「なぜそうなるのか」を即座に分析し、構造的な解決策を探ろうとするからです。</div>
+              <div class="n">「その場のノリと勢いだけで全てを突破する楽天家」ではありません。軽やかに動いて見えても内側では精密な批判精神が働いており、自分が納得できる確固たる形を残さなければ決して満足できないからです。</div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="rule" style="margin:24px 0 16px">
+        <div class="fold" id="evfold">
+          <button class="foldbtn" id="evbtn"><span class="ft">読みの根拠を見る<em>How this reading was woven.</em></span><span class="chev">▾</span></button>
+          <div class="foldbody">
+            <div class="block-label" style="margin-top:18px">Reasoning<span class="jp">占術での読み方</span></div>
+            <p class="reason">この読みは中央星「調舒星」、丙火＋火 優勢、双子座集中（太陽・水星・火星）、月乙女座、太陽×月 square、月×火星 square、水星×木星 opposition、大運甲寅、子丑天中殺、数秘8、八白土星 等を統合しています。Artist の選定は調舒星 × 火 優勢（午月）の交差に依拠。双子座の多動性と月乙女座の分析力の葛藤、調舒星の完璧主義と火優勢の衝動のぶつかり合いをコアに抽出し、木・金の欠落は境界線の曖昧さと抱え込みやすさとして翻訳しました。</p>
+            <div class="block-label">Source<span class="jp">分析ソース</span></div>
+            <div class="source">
+              <div class="ln"><span class="sys">西洋</span><span class="val">双子座（太陽・水星・火星集中 / 月 乙女座）</span></div>
+              <div class="ln"><span class="sys">四柱</span><span class="val">年 癸亥 ・ 月 戊午 ・ 日 丙子 ・ 時 戊戌</span></div>
+              <div class="ln"><span class="sys">九星</span><span class="val">八白土星</span></div>
+              <div class="ln"><span class="sys">数秘</span><span class="val">8</span></div>
+              <div class="ln"><span class="sys">五行</span><span class="val">木0 ・ 火4 ・ 土3 ・ 金0 ・ 水3</span></div>
+              <div class="ln"><span class="sys">Aspect</span><span class="val">太陽×月 square / 月×火星 square / 太陽×土星 trine / 水星×木星 opposition</span></div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="rule" style="margin:22px 0 6px">
+        <div class="acts">
+          <div class="act primary">この構造を、対話で深める<span class="arr">→</span></div>
+          <div class="act">記録に、構造を重ねて見る<span class="arr">→</span></div>
+          <div class="act quiet">自己マップをシェア<span class="arr">↗</span></div>
+          <div class="act quiet">構造を読み直す<span class="arr">↻</span></div>
+        </div>
+        <div class="spacer"></div>
+      </div>
+      <nav class="nav">
+        <div class="item"><svg viewBox="0 0 24 24"><path d="M2 19h20"/><path d="M5 19l5-9 3.5 5 2.5-4 6 8"/></svg><span>今</span></div>
+        <div class="item"><svg viewBox="0 0 24 24"><path d="M5 11v2M8.5 8.5v7M12 6v12M15.5 8.5v7M19 11v2"/></svg><span>対話</span></div>
+        <div class="item"><svg viewBox="0 0 24 24"><path d="M4 8c4-2.2 12-2.2 16 0M4 13c4-2.2 12-2.2 16 0M4 18c4-2.2 12-2.2 16 0"/></svg><span>記録</span></div>
+        <div class="item"><svg viewBox="0 0 24 24"><circle cx="9" cy="12" r="5"/><circle cx="15" cy="12" r="5"/></svg><span>関係</span></div>
+        <div class="item active"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg><span>プロフィール</span></div>
+      </nav>
+    </div>
+    <div class="caption">You — turned, not told<span class="ax">核 → 六面に読む</span></div>
+  </div>
+</main>
+
+<footer class="page-foot">
+  <div class="seal"><i></i></div>
+  <div class="line">You are not the reading. You are the one reading.</div>
+</footer>
+
+<script>
+'use strict';
+/* ===== six facets of the one core (reading content) ===== */
+const SECTIONS=[
+  { key:'essence', en:'Essence', jp:'核となる構造', lab:'核',
+    essence:[
+      'あなたは、内側に極めて精密で繊細なセンサーを持ちながら、外側では常に複数の情報や可能性に向かって動き続けている構造を持っています。一つの物事を見ているようで、頭の中では同時に三つも四つも別の領域へと線を繋ぎ、まだ誰も気づいていない新しいパターンの断片を拾い集めているでしょう。しかし、その軽やかで多動的な思考の裏側には、「自分の中の理想の形に届かないと苦しい」という強い美意識と、完璧を求める切実な欲求が横たわっています。火がついた瞬間、考えるより先に手が動いてしまうほどの圧倒的な衝動を持ちながら、感情が動いた直後には「なぜそう感じたのか」を冷静に分析しようとする。<span class="k">この「熱い推進力」と「冷たい分析力」の同居</span>が、あなたの複雑で魅力的なエンジンとなっています。',
+      '日常の場面では、この構造は「周囲の雑な説明や、みんなが流している小さな違和感をそのまま受け取れない」という形で現れます。他の人が「これでいいだろう」と見過ごす論理の隙間や、言葉の裏にある不協和音に気づいてしまい、一人で思考を深めることが多くなります。一方で、興味を惹かれる新しい刺激に出会うと瞬時にそちらへ意識が向き、複数のプロジェクトを同時に走らせる器用さも持っています。ただ、他者のペースに巻き込まれると自分と他者の境界線が曖昧になりやすく、手放すべきものを抱え込んでしまう傾向があります。',
+      '見落とされがちなのは、「自然体で楽しみたい」という純粋な欲求と、「社会的な見え方や品格を保ちたい」というプライドが、常に内側で綱引きをしている点です。楽しめないと続かないのに、ただ遊んでいるだけでは満たされない。その葛藤こそが、あなたにしか生み出せない質の高い成果の源泉です。今は、与えられた正解ではなく自分で見つけた構造を築き上げる流れの中にいます。まずは一番熱量の高い「火種」を一つ選び、それを形にすることにエネルギーを注いでみてください。'
+    ]
+  },
+  { key:'strength', en:'Strength', jp:'強み', lab:'強み', kind:'',
+    items:[
+      {lead:'無数の点から瞬時に独自の線を繋ぐ力',exp:'異なる分野の情報や、一見無関係に思える事象を同時に処理し、結びつけて新しい文脈を生み出す場面で圧倒的な力を発揮します。混沌とした状況でも、頭の中で素早く全体像をマッピングし、次に打つべき最適な手を見つけ出せます。'},
+      {lead:'違和感を放置せず、理想の形まで磨き上げる力',exp:'他者が「このくらいで十分」と妥協するラインを越え、自分の中の精密な基準に達するまで追求します。雑な論理や美しくない構造を見逃さず修正を繰り返すため、生み出される成果物は純度が高く、強固な骨組みを持ちます。'},
+      {lead:'衝動を確かな現実に落とし込む構築力',exp:'突発的なアイデアや情熱だけで終わらせず、最後まで形にして社会に提示する責任感と実行力があります。ゼロからイチを生む瞬発力と、それを現実のシステムに適合させる粘り強さを併せ持つ、確かな結果を残す実践者です。'}
+    ]
+  },
+  { key:'caution', en:'Caution', jp:'注意点', lab:'注意', kind:'caution',
+    items:[
+      {lead:'情報と興味を広げすぎて中心を見失う',exp:'次々と新しい可能性にアクセスできるため、あれもこれもと手を出した結果、本当にエネルギーを注ぐべき核が分からなくなる瞬間があります。興味が拡散し、着地点が見えずプロジェクトが空中分解するリスクを抱えています。'},
+      {lead:'焦燥感に駆られ、休むことを自分に許せない',exp:'常に背中に見えない焦りが張り付いており、じっとしていると罪悪感を覚えます。心身が休息を求めるサインを見落とし、限界を超えてから突然システムダウンを起こすパターンに陥りやすいです。'},
+      {lead:'他者の課題まで抱え込み、手放せなくなる',exp:'自分の領域を守る壁が薄くなりがちで、他者の期待に応えようとするうちに、本来負うべきではない責任まで背負い込みます。切り捨てる前にとりあえず保留し、気づけば両手が塞がって動けなくなることがあります。'}
+    ]
+  },
+  { key:'practice', en:'Practice', jp:'活かし方', lab:'活かし方', kind:'num',
+    items:[
+      {lead:'思考が飽和したら、まず外部の「枠」に吐き出す',exp:'線が絡み合い処理が追いつかなくなったら、考えるのをやめて手を動かす。文章なら1段落、ノートなら1ページと、物理的に制限のある枠へ書き出すことで脳内メモリを解放し、次へ進む余白を作れます。'},
+      {lead:'「楽しむための時間」を強制的にブロックする',exp:'責任感が強すぎて余白はすぐ作業で埋まります。「何の役にも立たないが純粋に楽しめること」を仕事と同じようにカレンダーに書き込み死守する。その無駄な時間が、枯渇したエネルギーを最も早く回復させます。'},
+      {lead:'違和感を感じたら「これは誰の課題か」を自問する',exp:'他者の問題や不協和音に気づいても、すぐ解決に動かず一呼吸置く。自分の責任範囲かを確認し、違えば「気づいたけれど手は出さない」と選ぶ練習が、あなたのキャパシティを守る盾になります。'},
+      {lead:'「完成度70%」で一度、他者の目に触れさせる',exp:'完璧主義が発動したときこそ、未完成のまま信頼できる人に共有してみる。自分が「まだ足りない」と思う部分が、他者にはすでに十分な価値を持っていると気づき、無駄な調整作業を減らせます。'},
+      {lead:'物理的な環境を変えて、衝動のスイッチを切り替える',exp:'焦りから同じ作業に固執したら、思考を制御しようとせず身体の居場所を移す。カフェや散歩、別の部屋へ移るだけで視覚情報が変わり、脳のモードが切り替わって執着から解放されます。'}
+    ]
+  },
+  { key:'pitfall', en:'Pitfall', jp:'陥りやすい罠', lab:'罠', kind:'trap',
+    items:[
+      {lead:'「考えたい」と「動きたい」の板挟みでフリーズする',exp:'完璧な計画を立ててから動きたい欲求と、今すぐ行動しなければという衝動が同時に発火する。アクセルとブレーキを同時に踏み込み、莫大なエネルギーを使うのに現実が1ミリも進まない罠に陥ります。'},
+      {lead:'「品格」を気にして、本音の表現を抑え込む',exp:'本当は型破りなアプローチを楽しみたいのに「どう見られるか」が介入し、無難な選択に落ち着く。本来の鋭い感性や熱量が薄められ、誰にでも作れる退屈な成果物になって、後から激しく後悔します。'},
+      {lead:'「見えない完璧」を追い求め、永遠に完成しない',exp:'頭の中の理想が鮮明すぎて現実の出力が追いつかず、いつまでも修正を繰り返す。他者には十分な出来でも自分が納得できず、最後の「完了ボタン」を押せずに機会を逃してしまいます。'}
+    ]
+  },
+  { key:'energy', en:'Energy', jp:'エネルギー構造', lab:'エネルギー', kind:'energy',
+    items:[
+      {t:'Base',j:'土台',d:'何層にも積み重なった堅牢な「岩盤」の上に広がる、静かで澄み切った「湖」。動じない重みを持ちながら、その表面は周囲のわずかな光の変化を精密に映し出します。あらゆるものを吸収し蓄積する、底知れぬ容量を持っています。'},
+      {t:'Drive',j:'駆動力',d:'地殻の奥で燃え盛り、亀裂を見つけて噴出する「マグマ」の熱量と、野原を吹き抜ける「突風」の好奇心。まだ見ぬ可能性を察知した瞬間、熱と風が合わさって爆発的な推進力を生み、既存の風景を一瞬で塗り替えます。'},
+      {t:'Paradox',j:'葛藤',d:'「完璧な静寂の中で思考を深めたい」願いと、「混沌に飛び込んで無数の線を繋ぎたい」衝動が激しく衝突しています。この矛盾こそが、思いつきを強固なシステムへ鍛え、冷たい論理に熱い命を吹き込む、あなた独自の創造の源泉です。'}
+    ]
+  }
+];
+
+/* ===== reading render (full text, no accordion) ===== */
+const reading=document.getElementById('reading');
+function sectionHTML(s){
+  let inner='';
+  if(s.key==='essence'){
+    inner=`<div class="essence">${s.essence.map(p=>`<p class="body">${p}</p>`).join('')}</div>`;
+  } else if(s.key==='energy'){
+    inner=`<div class="energy">`+s.items.map(it=>
+      `<div class="eb"><div class="et">${it.t}<span class="j">${it.j}</span></div><div class="ed">${it.d}</div></div>`).join('')+`</div>`;
+  } else {
+    inner=`<div class="list">`+s.items.map((it,n)=>
+      `<div class="entry ${s.kind}"><div class="lead">${s.kind==='num'?`<span class="no">${n+1}</span>`:''}${it.lead}</div><div class="exp">${it.exp}</div></div>`).join('')+`</div>`;
+  }
+  return `<div class="block-label">${s.en}<span class="jp">${s.jp}</span></div>${inner}`;
+}
+function renderReading(fi){
+  const s=SECTIONS[fi];
+  reading.innerHTML=`<div class="rcard">${sectionHTML(s)}</div>`;
+}
+
+/* ===== section selector list ===== */
+const slist=document.getElementById('slist');
+SECTIONS.forEach((s,i)=>{
+  const sp=document.createElement('span');
+  sp.textContent=s.en; sp.dataset.fi=i;
+  sp.addEventListener('click',()=>setSel(i));
+  slist.appendChild(sp);
+});
+const slistSpans=[...slist.children];
+
+/* ===== crystal (triangular bipyramid — ported from convergence) ===== */
+const INK='34,33,31', SHU='168,57,43';
+function hashStr(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const TAU=Math.PI*2, clamp=(v,a,b)=>v<a?a:v>b?b:v, smooth=(e0,e1,x)=>{const t=clamp((x-e0)/(e1-e0),0,1);return t*t*(3-2*t);};
+function rotAxis(v,k,ang){ const c=Math.cos(ang),s=Math.sin(ang),d=k[0]*v[0]+k[1]*v[1]+k[2]*v[2];
+  const cx2=k[1]*v[2]-k[2]*v[1], cy2=k[2]*v[0]-k[0]*v[2], cz2=k[0]*v[1]-k[1]*v[0];
+  return [ v[0]*c+cx2*s+k[0]*d*(1-c), v[1]*c+cy2*s+k[1]*d*(1-c), v[2]*c+cz2*s+k[2]*d*(1-c) ]; }
+function ptInTri(px,py,a,b,c){ const d=(b.y-c.y)*(a.x-c.x)+(c.x-b.x)*(a.y-c.y); if(Math.abs(d)<1e-6)return false;
+  const u=((b.y-c.y)*(px-c.x)+(c.x-b.x)*(py-c.y))/d, v=((c.y-a.y)*(px-c.x)+(a.x-c.x)*(py-c.y))/d; return u>=0&&v>=0&&u+v<=1; }
+
+const cvs=document.getElementById('cv'), ctx=cvs.getContext('2d'), stageEl=document.getElementById('stage');
+let W=0,H=0,DPR=1,cx=0,cy=0,R3=0,FOC=0;
+let P=null, ax=0.42, ay=0, axBase=0.42, ayBase=0, axT=0.42, ayT=0, lastFrameTime=0, raf=null, t0=null, lastT=0, flightSeed=1, lastProj=[];
+let sel=0, lastActive='init';
+let lastInteract=-1e9, idleAmp=0, gActBoost=0.075, gDotScale=1; const IDLE_DELAY=5000;
+
+function fit(){ const r=stageEl.getBoundingClientRect(); DPR=Math.min(window.devicePixelRatio||1,2);
+  W=Math.round(r.width); H=Math.round(r.height); cvs.width=Math.round(W*DPR); cvs.height=Math.round(H*DPR);
+  cx=W/2; cy=H/2; R3=Math.min(W,H)*0.34; FOC=R3*4.4; }
+
+function buildLP(){
+  const T=[0,1.28,0], B=[0,-1.28,0], rho=0.96;
+  const e=[90,210,330].map(a=>{const r=a*Math.PI/180;return [rho*Math.cos(r),0,rho*Math.sin(r)];});
+  const verts=[T,B,e[0],e[1],e[2]];
+  const fdef=[
+    {idx:[0,2,3],up:true}, {idx:[0,3,4],up:true}, {idx:[0,4,2],up:true},
+    {idx:[1,3,2],up:false},{idx:[1,4,3],up:false},{idx:[1,2,4],up:false},
+  ];
+  const faces=fdef.map((d,fi)=>{ const hp=d.idx.map(i=>verts[i]);
+    const c=[(hp[0][0]+hp[1][0]+hp[2][0])/3,(hp[0][1]+hp[1][1]+hp[2][1])/3,(hp[0][2]+hp[1][2]+hp[2][2])/3];
+    return {hp,c,up:d.up,fi,sec:SECTIONS[fi]}; });
+  P={verts,faces,G:6};
+  seedFlight(flightSeed);
+}
+function seedFlight(seed){
+  P.faces.forEach((f,fi)=>{ const r=mulberry32(hashStr('almana-self~'+seed+'~'+fi));
+    let dx=r()*2-1,dy=r()*2-1,dz=r()*2-1; let L=Math.hypot(dx,dy,dz)||1; dx/=L;dy/=L;dz/=L;
+    let kx=r()*2-1,ky=r()*2-1,kz=r()*2-1; let L2=Math.hypot(kx,ky,kz)||1; kx/=L2;ky/=L2;kz/=L2;
+    f.dir=[dx,dy,dz]; f.dist=1.25+r()*1.0; f.axis=[kx,ky,kz]; f.amt=TAU*(0.5+r()*0.8); f.g=fi; });
+}
+function rot(p){
+  const ca=Math.cos(ax),sa=Math.sin(ax), cb=Math.cos(ay),sb=Math.sin(ay);
+  let y1=p[1]*ca - p[2]*sa, z1=p[1]*sa + p[2]*ca, x1=p[0];
+  return [ x1*cb + z1*sb, y1, -x1*sb + z1*cb ];
+}
+function facePoints(f,t,forced){
+  const dur=1.0, delay=0.42;
+  const pp = forced?1: smooth(0,1, clamp((t - f.g*delay)/dur,0,1));
+  const k=1-pp, off=[f.dir[0]*f.dist*k, f.dir[1]*f.dist*k, f.dir[2]*f.dist*k];
+  const s=0.55+0.45*pp, ang=f.amt*k;
+  return f.hp.map(Hp=>{ const rel=[(Hp[0]-f.c[0])*s,(Hp[1]-f.c[1])*s,(Hp[2]-f.c[2])*s];
+    const rr=rotAxis(rel,f.axis,ang);
+    return rot([f.c[0]+off[0]+rr[0], f.c[1]+off[1]+rr[1], f.c[2]+off[2]+rr[2]]); });
+}
+function projPt(p,CX,CY,r3,f){ const denom=Math.max(r3*0.5, f - p[2]*r3); const fac=f/denom; return {x:CX+p[0]*r3*fac, y:CY-p[1]*r3*fac}; }
+
+function drawScene(c,CX,CY,r3,f,sw,t,forced,labelAmt,activeFi){
+  const anyAct = activeFi!==null && activeFi!==undefined;
+  const pls=P.faces.map(fa=>{ const pts=facePoints(fa,t,forced); const az=(pts[0][2]+pts[1][2]+pts[2][2])/3;
+    const cc=[(pts[0][0]+pts[1][0]+pts[2][0])/3,(pts[0][1]+pts[1][1]+pts[2][1])/3,(pts[0][2]+pts[1][2]+pts[2][2])/3];
+    let onx=(pts[1][1]-pts[0][1])*(pts[2][2]-pts[0][2])-(pts[1][2]-pts[0][2])*(pts[2][1]-pts[0][1]);
+    let ony=(pts[1][2]-pts[0][2])*(pts[2][0]-pts[0][0])-(pts[1][0]-pts[0][0])*(pts[2][2]-pts[0][2]);
+    let onz=(pts[1][0]-pts[0][0])*(pts[2][1]-pts[0][1])-(pts[1][1]-pts[0][1])*(pts[2][0]-pts[0][0]);
+    const onl=Math.hypot(onx,ony,onz)||1; onx/=onl;ony/=onl;onz/=onl;
+    if(onx*cc[0]+ony*cc[1]+onz*cc[2]<0){ onz=-onz; }
+    const front = onz>0, frontness=clamp(onz,0,1);
+    const proj=pts.map(p=>projPt(p,CX,CY,r3,f));
+    const ccp=projPt(cc,CX,CY,r3,f);
+    return {proj, az, front, frontness, fi:fa.fi, up:fa.up, sec:fa.sec, ccp}; }).sort((a,b)=>a.az-b.az);
+  lastProj = pls;
+
+  for(const pl of pls){ const zN=clamp((pl.az+1)/2,0,1); const isAct=(pl.fi===activeFi);
+    const dimF = anyAct ? (isAct?1:0.55) : 1;
+    c.beginPath(); c.moveTo(pl.proj[0].x,pl.proj[0].y); c.lineTo(pl.proj[1].x,pl.proj[1].y); c.lineTo(pl.proj[2].x,pl.proj[2].y); c.closePath();
+    let fillA = (pl.front ? (0.045+zN*0.020) : (0.022+zN*0.012)) * dimF;
+    if(isAct) fillA += gActBoost;
+    c.fillStyle='rgba('+INK+','+fillA.toFixed(3)+')'; c.fill();
+    if(isAct){ c.lineWidth=(0.7+zN*0.6)*sw*1.6; c.strokeStyle='rgba('+SHU+',0.62)'; }
+    else { c.lineWidth=(0.5+zN*0.55)*sw; c.strokeStyle='rgba('+INK+','+((0.105+zN*0.420)*dimF).toFixed(3)+')'; }
+    c.stroke();
+    pl.proj.forEach((p,k)=>{ const isShu=(pl.up&&k===0);
+      c.beginPath(); c.arc(p.x,p.y,(1.1+zN*1.0)*sw*gDotScale,0,TAU);
+      c.fillStyle=isShu?'#a8392b':'rgba('+INK+','+((0.26+zN*0.46)*dimF).toFixed(3)+')'; c.fill(); });
+  }
+
+  const coreA = anyAct ? 0.5 : 0.15;
+  if(anyAct){ const af=pls.find(p=>p.fi===activeFi);
+    if(af){ c.beginPath(); c.moveTo(af.ccp.x,af.ccp.y); c.lineTo(CX,CY);
+      c.lineWidth=1.25*sw; c.strokeStyle='rgba('+SHU+',0.60)'; c.stroke(); } }
+  c.beginPath(); c.arc(CX,CY,(anyAct?3.0:2.2)*sw,0,TAU);
+  c.fillStyle=anyAct?('rgba('+SHU+','+coreA.toFixed(3)+')'):('rgba('+INK+','+coreA.toFixed(3)+')'); c.fill();
+  if(anyAct){ c.beginPath(); c.arc(CX,CY,6.6*sw,0,TAU); c.lineWidth=0.8*sw; c.strokeStyle='rgba('+SHU+','+(coreA*0.55).toFixed(3)+')'; c.stroke(); }
+
+  // label — active face only · short refined annotation, clamped inside the stage
+  const la=labelAmt||0;
+  if(la>0.01 && anyAct){
+    const pl=pls.find(p=>p.fi===activeFi);
+    if(pl){ const aa=Math.max(la,0.92);
+      let vx=pl.ccp.x-CX, vy=pl.ccp.y-CY; const vl=Math.hypot(vx,vy)||1; vx/=vl; vy/=vl;
+      const right = vx>=0; const pad=12*sw;
+      let lx=pl.ccp.x+vx*(18*sw), ly=pl.ccp.y+vy*(18*sw);
+      lx=clamp(lx, pad, W-pad); ly=clamp(ly, pad+10, H-pad-6);
+      c.beginPath(); c.moveTo(pl.ccp.x+vx*(4*sw), pl.ccp.y+vy*(4*sw)); c.lineTo(lx,ly);
+      c.lineWidth=0.8*sw; c.strokeStyle='rgba('+SHU+','+(aa*0.85).toFixed(3)+')'; c.stroke();
+      c.beginPath(); c.arc(lx,ly,1.4*sw,0,TAU); c.fillStyle='rgba('+SHU+','+aa.toFixed(3)+')'; c.fill();
+      c.textAlign=right?'left':'right'; const tx=lx+(right?6:-6)*sw; c.textBaseline='alphabetic';
+      c.fillStyle='rgba('+SHU+','+aa.toFixed(3)+')';
+      c.font='400 '+(11*sw)+'px Satoshi, sans-serif';
+      c.fillText(pl.sec.en, tx, ly-1*sw);
+      c.fillStyle='rgba('+INK+','+(aa*0.5).toFixed(3)+')';
+      c.font='300 '+(9*sw)+'px "Noto Serif JP", serif';
+      c.fillText(pl.sec.lab, tx, ly+10*sw);
+    }
+  }
+}
+
+/* shortest signed angle */
+function wrapAngle(a){ while(a>Math.PI)a-=TAU; while(a<-Math.PI)a+=TAU; return a; }
+/* outward unit normal of face `fi` (object space) */
+function faceNormal(fi){
+  const hp=P.faces[fi].hp;
+  let ux=hp[1][0]-hp[0][0], uy=hp[1][1]-hp[0][1], uz=hp[1][2]-hp[0][2];
+  let vx=hp[2][0]-hp[0][0], vy=hp[2][1]-hp[0][1], vz=hp[2][2]-hp[0][2];
+  let nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx;
+  const L=Math.hypot(nx,ny,nz)||1; nx/=L; ny/=L; nz/=L;
+  const c=P.faces[fi].c; if(nx*c[0]+ny*c[1]+nz*c[2]<0){ nx=-nx; ny=-ny; nz=-nz; }
+  return [nx,ny,nz];
+}
+/* hero gaze: the selected face's normal aims here — front, but NOT flush, so the crystal
+   stays 3D (seen obliquely from above-front). dz dominant = facing; dx/dy = the oblique tilt. */
+const HERO=(()=>{ let v=[0.30,0.52,0.80]; const L=Math.hypot(v[0],v[1],v[2]); return [v[0]/L,v[1]/L,v[2]/L]; })();
+/* orientation (ax,ay) that turns face `fi` to the hero gaze */
+function faceTarget(fi, axCur, ayCur){
+  const n=faceNormal(fi), nx=n[0], ny=n[1], nz=n[2];
+  const dx=HERO[0], dy=HERO[1], dz=HERO[2];
+  const A=Math.hypot(ny,nz), psi=Math.atan2(nz,ny);
+  const s=clamp(A<1e-5?0:dy/A,-1,1), ac=Math.acos(s);
+  const cand=[ac-psi,-ac-psi].map(axc=>{
+    const mz=ny*Math.sin(axc)+nz*Math.cos(axc), mx=nx;
+    return {axT:axc, ayT:Math.atan2(mz*dx-mx*dz, mx*dx+mz*dz)};
+  });
+  const cost=o=>Math.abs(wrapAngle(o.axT-axCur))+Math.abs(wrapAngle(o.ayT-ayCur));
+  return cost(cand[0])<=cost(cand[1])?cand[0]:cand[1];
+}
+
+function loop(now){
+  if(t0===null){t0=now;lastT=now;}
+  lastFrameTime=now;
+  const t=(now-t0)/1000, dt=Math.min(0.05,(now-lastT)/1000); lastT=now;
+  const G=P.G, convEnd=0.42*(G-1)+1.0;
+  const labelAmt=smooth(convEnd,convEnd+0.7,t);
+  const afterConv = t>convEnd;
+  const activeFi = afterConv ? sel : null;
+  if(activeFi!==lastActive){ syncList(activeFi); lastActive=activeFi; }
+  // ease the crystal so the selected face turns to the front (shortest path)
+  const k = 1 - Math.exp(-dt/0.16);
+  axBase += (axT - axBase)*k;
+  ayBase += wrapAngle(ayT - ayBase)*k;
+  // idle envelope: breathe when left alone, calm the instant it's touched
+  const idleTarget = (performance.now()-lastInteract > IDLE_DELAY) ? 1 : 0;
+  const kIdle = idleTarget>idleAmp ? (1-Math.exp(-dt/1.4)) : (1-Math.exp(-dt/0.12));
+  idleAmp += (idleTarget-idleAmp)*kIdle;
+  const live = idleAmp*(afterConv?1:0);
+  ax = axBase + live*0.105*Math.sin(t*0.70);          // ±~6° drift
+  ay = ayBase + live*0.140*Math.sin(t*0.50+1.2);      // ±~8° drift
+  gActBoost = 0.075 + live*0.09*(0.5+0.5*Math.sin(t*1.05));  // selected face pulses
+  gDotScale = 1 + live*0.20*Math.sin(t*0.85+0.5);           // vertices breathe
+  ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
+  drawScene(ctx,cx,cy,R3,FOC,1,t,false,labelAmt,activeFi);
+  raf=requestAnimationFrame(loop);
+}
+function stop(){ if(raf){cancelAnimationFrame(raf);raf=null;} }
+function start(){ stop(); t0=null; lastT=0; lastActive='init'; raf=requestAnimationFrame(loop); }
+
+function syncList(fi){
+  slistSpans.forEach((s,i)=>{ s.classList.toggle('act', fi!==null&&i===fi); s.classList.toggle('dim', fi!==null&&i!==fi); });
+}
+/* settled poster — guarantees a visible, highlighted crystal even if rAF is throttled/paused */
+function drawStatic(){ if(!P||!W) return; ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H); drawScene(ctx,cx,cy,R3,FOC,1,999,true,1,sel); }
+function setSel(fi){
+  sel=fi;
+  const tg=faceTarget(fi, axBase, ayBase); axT=tg.axT; ayT=tg.ayT;
+  // if the animation loop isn't ticking (paused/throttled tab), snap so the face still fronts
+  if(performance.now()-lastFrameTime>200){ axBase=axT; ayBase=ayT; ax=axBase; ay=ayBase; }
+  lastInteract=performance.now();   // touching it calms the idle breathing
+  renderReading(fi); syncList(fi); drawStatic();
+}
+
+/* pick face by point */
+function pickFace(mx,my){ let best=null, bestZ=-Infinity;
+  for(const pl of lastProj){ if(!pl.front) continue;
+    if(ptInTri(mx,my,pl.proj[0],pl.proj[1],pl.proj[2])){ if(pl.az>bestZ){bestZ=pl.az;best=pl.fi;} } }
+  return best; }
+function handlePick(clientX,clientY){ const r=cvs.getBoundingClientRect(); const fi=pickFace(clientX-r.left, clientY-r.top); if(fi!==null) setSel(fi); }
+stageEl.addEventListener('click',e=>handlePick(e.clientX,e.clientY));
+stageEl.addEventListener('touchstart',e=>{ const tch=e.touches[0]; handlePick(tch.clientX,tch.clientY); },{passive:true});
+/* hover / drag / touch over the crystal pauses the idle breathing (resumes ~5s after) */
+function markInteract(){ lastInteract=performance.now(); }
+stageEl.addEventListener('pointermove',markInteract);
+stageEl.addEventListener('pointerdown',markInteract);
+
+let rt=null; addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{fit();},160);});
+
+/* folds — Not you + evidence, both collapsed by default */
+const nyfold=document.getElementById('nyfold');
+document.getElementById('nybtn').addEventListener('click',()=>nyfold.classList.toggle('open'));
+const evfold=document.getElementById('evfold');
+document.getElementById('evbtn').addEventListener('click',()=>evfold.classList.toggle('open'));
+
+/* init */
+renderReading(0); syncList(0);
+fit(); buildLP();
+{ const tg=faceTarget(0, 0.42, 0); axT=tg.axT; ayT=tg.ayT; axBase=axT; ayBase=ayT; ax=axBase; ay=ayBase; }
+drawStatic(); start();
+</script>
+
+</body>
+</html>

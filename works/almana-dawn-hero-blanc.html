@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>ALMANA — 雲海の夜明け × 連峰 / dawn (blanc)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500&family=Noto+Serif+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* blanc を参考にした中立トーン。地・UI のみ。dawn のアートは据え置き */
+    --sumi:#222120; --washi:#f7f7f5; --ground:#e8e8e5; --shu:#A8392B;
+    --sumi-mid:#6f6b64; --hair:#e0ddd6; --hair-soft:#eae7e0;
+    --spectral:'Spectral','Noto Serif JP',Georgia,serif;
+    --serifjp:'Noto Serif JP',serif;
+    --satoshi:'Satoshi',ui-sans-serif,system-ui,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;background:var(--ground);}        /* blanc の地（端・hero 下に覗く） */
+  .hero{position:relative;width:100%;height:clamp(580px,96vh,940px);overflow:hidden;background:#efe7d7;} /* canvas のロード地＝dawn */
+  #sky{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity 1.0s ease;}
+  #sky.in{opacity:1;}
+
+  .nav{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;justify-content:space-between;
+    padding:26px clamp(26px,5vw,64px);}
+  .wordmark{font-family:var(--spectral);font-weight:500;font-size:21px;letter-spacing:.4em;color:var(--sumi);
+    line-height:1;display:flex;align-items:center;padding-left:.4em;}
+  .shu-dot{display:inline-block;width:.13em;height:.13em;border-radius:50%;background:var(--shu);margin-left:.36em;}
+  .navlinks{display:flex;align-items:center;gap:clamp(16px,2.3vw,38px);}
+  .navlinks a{font-family:var(--satoshi);font-weight:500;font-size:12.5px;letter-spacing:.08em;color:rgba(34,33,32,.72);text-decoration:none;}
+  .navlinks a:hover{color:var(--sumi);}
+  .navcta{font-family:var(--satoshi);font-weight:500;font-size:12.5px;letter-spacing:.1em;color:var(--sumi);
+    border:1px solid rgba(34,33,32,.35);border-radius:2px;padding:10px 18px;}
+  .navcta:hover{background:var(--sumi);color:var(--washi);}
+
+  /* ハンバーガー（モバイル） */
+  .hamburger{display:none;flex-direction:column;justify-content:center;gap:5px;
+    width:36px;height:36px;padding:7px;background:none;border:none;cursor:pointer;}
+  .hamburger span{display:block;width:22px;height:1.4px;background:var(--sumi);transition:transform .25s ease,opacity .2s ease;}
+  .hamburger.open span:nth-child(1){transform:translateY(6.4px) rotate(45deg);}
+  .hamburger.open span:nth-child(2){opacity:0;}
+  .hamburger.open span:nth-child(3){transform:translateY(-6.4px) rotate(-45deg);}
+
+  .navpanel{position:absolute;top:68px;left:0;right:0;z-index:6;
+    display:flex;flex-direction:column;padding:4px clamp(26px,5vw,64px) 16px;
+    background:rgba(247,247,245,.96);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);
+    transform:translateY(-8px);opacity:0;pointer-events:none;transition:.25s ease;}
+  .navpanel.open{transform:translateY(0);opacity:1;pointer-events:auto;}
+  .navpanel a{font-family:var(--satoshi);font-weight:500;font-size:14px;letter-spacing:.06em;
+    color:var(--sumi-mid);text-decoration:none;padding:14px 0;border-bottom:1px solid var(--hair-soft);}
+  .navpanel a:last-child{border-bottom:none;}
+  .navpanel .panelcta{color:var(--sumi);margin-top:6px;}
+
+  .copy{position:absolute;top:24%;left:clamp(26px,5vw,64px);z-index:5;max-width:600px;}
+  .copy h1{font-family:var(--serifjp);font-weight:400;font-size:clamp(36px,6vw,70px);line-height:1.3;
+    letter-spacing:.05em;color:var(--sumi);}
+  .copy p{font-family:var(--serifjp);font-weight:300;font-size:clamp(13px,1.4vw,17px);line-height:2.0;
+    letter-spacing:.06em;color:rgba(34,33,32,.66);margin-top:28px;}
+  .cta{display:flex;gap:14px;margin-top:34px;flex-wrap:wrap;}
+  .btn{font-family:var(--satoshi);font-weight:500;font-size:13.5px;letter-spacing:.07em;border-radius:3px;
+    padding:15px 26px;display:inline-flex;align-items:center;gap:16px;cursor:pointer;transition:.2s;}
+  .btn.solid{background:var(--sumi);color:var(--washi);border:1px solid var(--sumi);}
+  .btn.solid:hover{background:#000;}
+  .btn.ghost{background:transparent;color:var(--sumi);border:1px solid rgba(34,33,32,.32);}
+  .btn.ghost:hover{border-color:var(--sumi);}
+
+  .anno{position:absolute;z-index:4;font-family:var(--satoshi);font-weight:500;font-size:9.5px;
+    letter-spacing:.22em;text-transform:uppercase;color:rgba(34,33,32,.42);pointer-events:none;}
+  #bl{bottom:18px;left:clamp(26px,5vw,64px);}
+  #br{bottom:18px;right:clamp(26px,5vw,64px);text-align:right;line-height:1.7;}
+  .reg{display:inline-block;width:8px;height:8px;position:relative;margin-right:8px;vertical-align:middle;}
+  .reg:before,.reg:after{content:"";position:absolute;background:rgba(34,33,32,.42);}
+  .reg:before{left:3.5px;top:0;width:1px;height:8px;}
+  .reg:after{top:3.5px;left:0;height:1px;width:8px;}
+
+  /* ---- mobile ---- */
+  @media(max-width:860px){
+    .navlinks{display:none;}
+    .hamburger{display:flex;}
+  }
+  @media(min-width:861px){
+    .navpanel{display:none;}
+  }
+  @media(max-width:560px){
+    .copy{top:15%;}
+    .copy p{margin-top:20px;line-height:1.9;}
+    .cta{margin-top:26px;gap:10px;}
+    .btn{padding:13px 20px;font-size:13px;}
+    .anno{font-size:8.5px;letter-spacing:.18em;}
+    #bl,#br{bottom:12px;}
+  }
+</style>
+</head>
+<body>
+
+<section class="hero" id="hero">
+  <canvas id="sky"></canvas>
+
+  <!-- ALMANA mark (Aizawa attractor) is drawn on the canvas -->
+
+  <header class="nav">
+    <div class="wordmark">ALMANA<span class="shu-dot"></span></div>
+    <nav class="navlinks">
+      <a href="#">Concept</a><a href="#">Reading</a><a href="#">Almanac</a>
+      <a href="#">Log</a><a href="#">FAQ</a>
+      <a class="navcta" href="#">はじめる</a>
+    </nav>
+    <button class="hamburger" id="hb" aria-label="メニュー" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </header>
+
+  <nav class="navpanel" id="navpanel">
+    <a href="#">Concept</a><a href="#">Reading</a><a href="#">Almanac</a>
+    <a href="#">Log</a><a href="#">FAQ</a>
+    <a class="panelcta" href="#">はじめる ⟶</a>
+  </nav>
+
+  <div class="copy">
+    <h1>自己の暦を、<br>ひらく。</h1>
+    <p>ALMANAは、生年月日と日々の記録から、<br>あなたという地形を静かに見晴らす自己理解の暦です。</p>
+    <div class="cta">
+      <button class="btn solid">暦をひらく<span>⟶</span></button>
+      <button class="btn ghost">概念を読む<span>⟶</span></button>
+    </div>
+  </div>
+
+  <div class="anno" id="bl"><span class="reg"></span>NOISE No.<span id="seed">000</span> / コードアート</div>
+  <div class="anno" id="br">雲海 × 連峰 — dawn<br>TAP TO RE-SEED</div>
+</section>
+
+<script>
+(function(){
+  const cv = document.getElementById('sky');
+  const ctx = cv.getContext('2d', {alpha:true});
+  const hero = document.getElementById('hero');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let S = 0x5a17;                      // 種 — 診断値に差し替え可能
+  function isMobile(){ return W < 700; }
+
+  // ---------- noise ----------
+  function ihash(ix,iy,seed){
+    let h=(Math.imul(ix|0,374761393)^Math.imul(iy|0,668265263)^Math.imul(seed|0,1274126177))|0;
+    h=Math.imul(h^(h>>>13),1274126177); h^=h>>>16; return (h>>>0)/4294967296;
+  }
+  const sm=t=>t*t*(3-2*t), lerp=(a,b,t)=>a+(b-a)*t, clamp=(v,a,b)=>v<a?a:v>b?b:v;
+  function vnoise(x,y,per,seed){
+    const ix=Math.floor(x),iy=Math.floor(y),ux=sm(x-ix),uy=sm(y-iy);
+    const x0=((ix%per)+per)%per,x1=(x0+1)%per;
+    const v00=ihash(x0,iy,seed),v10=ihash(x1,iy,seed),v01=ihash(x0,iy+1,seed),v11=ihash(x1,iy+1,seed);
+    const a=v00+(v10-v00)*ux,b=v01+(v11-v01)*ux; return a+(b-a)*uy;
+  }
+  function fbm(x,y,per,seed,oct){let s=0,a=0.5,fr=1,n=0;for(let o=0;o<oct;o++){s+=a*vnoise(x*fr,y*fr,per*fr,seed+o*131);n+=a;a*=0.5;fr*=2;}return s/n;}
+  function rfbm(x,y,per,seed,oct){let s=0,a=0.5,fr=1,n=0;for(let o=0;o<oct;o++){let v=vnoise(x*fr,y*fr,per*fr,seed+o*131);v=1-Math.abs(2*v-1);s+=a*v;n+=a;a*=0.5;fr*=2;}return s/n;}
+  function clouds(x,y,per,seed){
+    const q=fbm(x,y,per,seed,3);
+    const w=fbm(x+1.6*q+1.7,y+1.6*q+9.2,per,seed+555,3);
+    return fbm(x+1.7*w,y+1.7*w,per,seed+999,3);
+  }
+
+  // ---------- warm cloud-sea tile (dawn / 据え置き) ----------
+  function bakeCloud(per,cellPx,Ht,seed,alpha,thLo,thHi){
+    const W=per*cellPx,H=Ht,off=document.createElement('canvas');off.width=W;off.height=H;
+    const c=off.getContext('2d'),img=c.createImageData(W,H),d=img.data;
+    const xcr=1/cellPx,eY=0.16,eX=0.16,Pm=3,mS=Pm/per;
+    const LO=[200,190,175],HI=[253,249,242],HZ=[247,240,229];
+    let ay=5.0;
+    for(let py=0;py<H;py++){
+      const t=py/(H-1),ratio=3.0-1.7*t; ay+=xcr*ratio;
+      const ayM=ay*0.5,haze=1-sm(clamp(t/0.5,0,1)),topFade=sm(clamp(t/0.22,0,1)),solid=sm(clamp((t-0.25)/0.7,0,1))*0.82;
+      for(let px=0;px<W;px++){
+        const ax=px*xcr,dc=clouds(ax,ay,per,seed),du=clouds(ax,ay-eY,per,seed),dr=clouds(ax+eX,ay,per,seed);
+        const tone=clamp(0.42+3.0*(dc-du)+1.2*(dr-dc),0,1),occ=sm(clamp((dc-0.30)/0.34,0,1));
+        const macro=fbm(ax*mS,ayM,Pm,seed+321,2),mass=sm(clamp((macro-0.32)/0.46,0,1));
+        let lum=clamp((0.40+0.60*occ)*(0.52+0.58*tone),0,1); lum=clamp(lum*(0.92+0.16*mass),0,1);
+        let cover=sm(clamp((dc-thLo)/(thHi-thLo),0,1)); cover=cover+(1-cover)*solid; cover*=(0.55+0.55*mass);
+        let r=lerp(LO[0],HI[0],lum),g=lerp(LO[1],HI[1],lum),b=lerp(LO[2],HI[2],lum);
+        r=lerp(r,HZ[0],haze*0.82);g=lerp(g,HZ[1],haze*0.82);b=lerp(b,HZ[2],haze*0.82);
+        const a=clamp(cover*alpha*topFade,0,1),i=(py*W+px)*4;
+        d[i]=r|0;d[i+1]=g|0;d[i+2]=b|0;d[i+3]=(a*255)|0;
+      }
+    }
+    c.putImageData(img,0,0); return off;
+  }
+
+  // ---------- distant ranges (dawn / 据え置き) ----------
+  function distantTop(x,cfg){
+    const env=Math.pow(fbm(x*cfg.ef+cfg.eo,2.0,96,cfg.es,2),cfg.ex);
+    const det=rfbm(x*cfg.df+cfg.do,4.0,96,cfg.ds,3);
+    return cfg.baseY - (cfg.low*env + cfg.peak*env*det);
+  }
+  function drawRange(c,cfg){
+    const dx=Math.max(2,W/520),pts=[];
+    for(let x=-dx;x<=W+dx;x+=dx) pts.push([x,distantTop(x,cfg)]);
+    const topY=cfg.baseY-cfg.low-cfg.peak;
+    const g=c.createLinearGradient(0,topY,0,cfg.baseY+H*0.10);
+    g.addColorStop(0,'rgba('+cfg.col+','+cfg.aTop+')');
+    g.addColorStop(1,'rgba(247,240,229,0.0)');
+    c.fillStyle=g; c.beginPath(); c.moveTo(-dx,H+2);
+    for(const p of pts) c.lineTo(p[0],p[1]); c.lineTo(W+dx,H+2); c.closePath(); c.fill();
+    c.lineWidth=1; c.strokeStyle='rgba('+cfg.col+','+(cfg.aTop*0.5).toFixed(3)+')';
+    c.beginPath(); pts.forEach((p,k)=>k?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1])); c.stroke();
+  }
+  function bakeDistant(){
+    const g=document.createElement('canvas');g.width=W;g.height=H;const c=g.getContext('2d');
+    drawRange(c,{baseY:H*0.50, low:H*0.05, peak:H*0.15, ex:2.4, ef:0.0016, eo:11+S*0.001, es:S+5, df:0.010, do:5, ds:S+9, col:'156,148,137', aTop:0.55});
+    drawRange(c,{baseY:H*0.555, low:H*0.04, peak:H*0.30, ex:3.2, ef:0.0012, eo:40+S*0.001, es:S+21, df:0.008, do:30, ds:S+27, col:'112,104,93', aTop:0.78});
+    return g;
+  }
+
+  // ---------- foreground craggy peak (dawn / 据え置き・現状は非描画) ----------
+  function frontTop(x,sX,sY,left){
+    let env;
+    if(x<sX){ const tt=clamp((sX-x)/(sX-left),0,1); env=sY+sm(tt)*(H*1.10-sY); }
+    else    { const tt=clamp((x-sX)/(W-sX),0,1);    env=sY+(0.12+0.88*tt)*(H*0.96-sY); }
+    const n =rfbm(x*0.0045+40,3.0,96,S+777,3);
+    const n2=rfbm(x*0.013+90,7.0,96,S+131,2);
+    const m =(x>sX)?(0.5+0.5*(x-sX)/(W-sX)):0.5;
+    return env - (0.6*n+0.4*n2)*H*0.105*m;
+  }
+  function bakeFront(){
+    const g=document.createElement('canvas');g.width=W;g.height=H;const c=g.getContext('2d');
+    const sX=W*0.605, sY=H*0.385, left=W*0.46, dx=Math.max(2,W/560);
+    const pts=[]; for(let x=left;x<=W+dx;x+=dx) pts.push([x,frontTop(x,sX,sY,left)]);
+    const grad=c.createLinearGradient(0,sY,0,H);
+    grad.addColorStop(0,'rgb(38,33,26)'); grad.addColorStop(0.65,'rgb(30,26,21)'); grad.addColorStop(1,'rgb(50,43,34)');
+    c.fillStyle=grad; c.beginPath(); c.moveTo(left,H+2);
+    for(const p of pts) c.lineTo(p[0],p[1]); c.lineTo(W+dx,H+2); c.closePath(); c.fill();
+    c.save(); c.beginPath(); c.moveTo(left,H+2);
+    for(const p of pts) c.lineTo(p[0],p[1]); c.lineTo(W+dx,H+2); c.closePath(); c.clip();
+    for(let k=0;k<2600;k++){
+      const x=left+Math.random()*(W-left);
+      const idx=clamp(Math.round((x-left)/dx),0,pts.length-1), ty=pts[idx][1];
+      const y=ty+Math.pow(Math.random(),1.4)*(H-ty);
+      const right=clamp((x-sX)/(W-sX),0,1);
+      if(Math.random()<0.62){ c.fillStyle='rgba(96,84,66,'+(0.05+0.10*right*Math.random()).toFixed(3)+')'; }
+      else { c.fillStyle='rgba(12,10,8,'+(0.06+0.07*Math.random()).toFixed(3)+')'; }
+      c.fillRect(x,y,Math.random()<0.5?1:1.5,1);
+    }
+    c.restore();
+    for(let j=1;j<pts.length;j++){
+      const x=pts[j][0], right=clamp((x-left)/(W-left),0,1);
+      const up=clamp((pts[j-1][1]-pts[j][1])*0.4+0.5,0,1);
+      const a=0.40*Math.pow(right,1.3)*(0.4+0.6*up);
+      if(a<0.02) continue;
+      c.strokeStyle='rgba(236,223,202,'+a.toFixed(3)+')'; c.lineWidth=1.6; c.lineCap='round';
+      c.beginPath(); c.moveTo(pts[j-1][0],pts[j-1][1]); c.lineTo(pts[j][0],pts[j][1]); c.stroke();
+    }
+    c.fillStyle='rgb(22,20,16)';
+    c.beginPath(); c.ellipse(sX,sY-15,3.6,4.3,0,0,Math.PI*2); c.fill();
+    c.beginPath(); c.moveTo(sX-3.0,sY-10); c.lineTo(sX-2.4,sY+9); c.lineTo(sX-0.5,sY+9);
+    c.lineTo(sX,sY-1); c.lineTo(sX+0.5,sY+9); c.lineTo(sX+2.4,sY+9); c.lineTo(sX+3.0,sY-10); c.closePath(); c.fill();
+    c.fillStyle='rgba(168,57,43,0.16)'; c.beginPath(); c.arc(sX,sY-15,9,0,Math.PI*2); c.fill();
+    c.fillStyle='rgba(168,57,43,0.95)'; c.beginPath(); c.arc(sX,sY-15,2.4,0,Math.PI*2); c.fill();
+    return g;
+  }
+
+  function bakeGrain(){
+    const g=document.createElement('canvas');g.width=W;g.height=H;const c=g.getContext('2d');
+    const n=(W*H)/300;
+    for(let k=0;k<n;k++){
+      if(Math.random()<0.84) c.fillStyle='rgba(31,31,29,'+(Math.random()*0.025+0.008).toFixed(3)+')';
+      else c.fillStyle='rgba(255,255,252,'+(Math.random()*0.03+0.01).toFixed(3)+')';
+      c.fillRect(Math.random()*W,Math.random()*H,Math.random()<0.5?1:1.4,1);
+    }
+    return g;
+  }
+
+  // ---------- ALMANA mark: Aizawa attractor — meditative one-stroke trail ----------
+  let markCv=null, mctx=null, MN=0, mxs=null, mys=null, mzs=null;
+  let mcx=0, mcy=0, mcz=0, mR=1, mHead=0, mTheta=0, markSize=0, markStatic=false;
+  let markAccum=0, lastMarkT=0;
+  const MTILT=0.42, MBANDS=12, MSPEED=13, MROT=0.0015;
+  let MTRAIL=2600;                                          // モバイルで間引き
+
+  function aizawaPoints(N){
+    const a=0.95,b=0.7,gm=0.6,d=3.5,e=0.25,zt=0.1, dt=0.01;
+    let x=0.1,y=0,z=0;
+    const step=()=>{ const dx=(z-b)*x-d*y, dy=d*x+(z-b)*y,
+      dz=gm+a*z-z*z*z/3-(x*x+y*y)*(1+e*z)+zt*z*x*x*x; x+=dx*dt; y+=dy*dt; z+=dz*dt; };
+    for(let i=0;i<3000;i++) step();
+    mxs=new Float64Array(N); mys=new Float64Array(N); mzs=new Float64Array(N);
+    let sx=0,sy=0,sz=0;
+    for(let i=0;i<N;i++){ step(); mxs[i]=x; mys[i]=y; mzs[i]=z; sx+=x; sy+=y; sz+=z; }
+    mcx=sx/N; mcy=sy/N; mcz=sz/N;
+    let R=0; for(let i=0;i<N;i++){ const ddx=mxs[i]-mcx,ddy=mys[i]-mcy,ddz=mzs[i]-mcz,r=ddx*ddx+ddy*ddy+ddz*ddz; if(r>R)R=r; }
+    mR=Math.sqrt(R)||1;
+  }
+  function proj(i,ct,st,tct,tst,sc,mid){
+    const X=mxs[i]-mcx, Y=mys[i]-mcy, Z=mzs[i]-mcz;
+    const rx=X*ct+Z*st, rz=-X*st+Z*ct, ry=Y*tct-rz*tst;
+    return [mid+rx*sc, mid-ry*sc];
+  }
+  function initMark(size){
+    markSize=size; markCv=document.createElement('canvas'); markCv.width=size; markCv.height=size; mctx=markCv.getContext('2d');
+    MN = isMobile()?8000:14000; MTRAIL = isMobile()?1600:2600;     // 性能：モバイルは軽量化
+    aizawaPoints(MN); mHead=0; mTheta=0; markStatic=reduce;
+    if(markStatic){                                                // reduced motion → 静的曲線（少し濃く）
+      const mid=size/2, sc=(size*0.5*0.84)/mR, tct=Math.cos(MTILT), tst=Math.sin(MTILT);
+      mctx.clearRect(0,0,size,size);
+      mctx.strokeStyle='rgba(34,33,32,0.05)'; mctx.lineWidth=0.6; mctx.lineJoin='round';
+      mctx.beginPath();
+      for(let i=0;i<MN;i++){ const p=proj(i,1,0,tct,tst,sc,mid); i?mctx.lineTo(p[0],p[1]):mctx.moveTo(p[0],p[1]); }
+      mctx.stroke();
+    }
+  }
+  function drawMark(){
+    const mid=markSize/2, sc=(markSize*0.5*0.84)/mR;
+    mTheta+=MROT; const ct=Math.cos(mTheta), st=Math.sin(mTheta), tct=Math.cos(MTILT), tst=Math.sin(MTILT);
+    mctx.clearRect(0,0,markSize,markSize);
+    const band=Math.floor(MTRAIL/MBANDS);
+    mctx.lineCap='round'; mctx.lineJoin='round'; mctx.lineWidth=0.65;   // 濃色化：太さ微増
+    for(let bnd=0;bnd<MBANDS;bnd++){                                    // tail(淡) → head(濃)
+      const a=0.02+0.16*(bnd/(MBANDS-1));                              // 上限 ~0.18
+      mctx.strokeStyle='rgba(34,33,32,'+a.toFixed(3)+')';
+      mctx.beginPath();
+      for(let k=0;k<=band;k++){
+        const t=bnd*band+k, idx=(((mHead-(MTRAIL-1)+t)%MN)+MN)%MN, p=proj(idx,ct,st,tct,tst,sc,mid);
+        k?mctx.lineTo(p[0],p[1]):mctx.moveTo(p[0],p[1]);
+      }
+      mctx.stroke();
+    }
+    mHead=(mHead+MSPEED)%MN;
+  }
+
+  let layers=null, backCv=null, frontCv=null, grainCv=null, ready=false;
+  function build(){
+    layers=[
+      {cv:bakeCloud(12,40,212,S+11,0.96,0.30,0.62), zoom:0.86, speed:5.0},
+      {cv:bakeCloud(12,40,200,S+97,0.50,0.34,0.66), zoom:0.60, speed:2.6}
+    ];
+    backCv=bakeDistant(); frontCv=bakeFront(); grainCv=bakeGrain();
+    initMark(Math.round(isMobile()?Math.min(230,W*0.54):Math.min(560,W*0.5)));
+    ready=true; cv.classList.add('in');
+    if(document.getElementById('seed')) document.getElementById('seed').textContent=('00'+(S%1000)).slice(-3);
+  }
+
+  let W=0,H=0;
+  function resize(){
+    const r=hero.getBoundingClientRect(); W=r.width; H=r.height;
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+    cv.style.width=W+'px'; cv.style.height=H+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+  }
+
+  let fade=255, fadeTarget=0, resetting=false;
+  function drawScene(time){
+    if(!ready) return;
+    const seaTop=H*0.30, lightX=W*0.32, lightY=H*0.42;   // 光源を文字の背後（左）へ
+    ctx.clearRect(0,0,W,H);
+
+    // sky backdrop — blanc 中立に差し替え（雲・山・グローは据え置き）
+    const sky=ctx.createLinearGradient(0,0,0,H);
+    sky.addColorStop(0,'#d4d1ca'); sky.addColorStop(0.30,'#e4e1da'); sky.addColorStop(0.46,'#f2f0eb');
+    sky.addColorStop(0.74,'#f0eee8'); sky.addColorStop(1,'#e8e6df');
+    ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+    const bloom=ctx.createRadialGradient(lightX,lightY,0,lightX,lightY,Math.max(W,H)*0.7);
+    bloom.addColorStop(0,'rgba(252,247,238,0.75)'); bloom.addColorStop(0.5,'rgba(250,243,231,0.30)'); bloom.addColorStop(1,'rgba(250,243,231,0)');
+    ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle=bloom; ctx.fillRect(0,0,W,H*0.72); ctx.restore();
+
+    // 朝日 — sun halo + core（blanc の空に昇る光源。雲海の上に淡い輪郭が出る）
+    const sunX=lightX, sunY=H*0.32, sunR=Math.min(W,H)*0.055;
+    const halo=ctx.createRadialGradient(sunX,sunY,0,sunX,sunY,sunR*8.5);
+    halo.addColorStop(0,'rgba(255,241,220,0.62)'); halo.addColorStop(0.16,'rgba(255,239,216,0.34)');
+    halo.addColorStop(0.5,'rgba(255,241,222,0.13)'); halo.addColorStop(1,'rgba(255,241,222,0)');
+    ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle=halo; ctx.fillRect(0,0,W,H*0.78); ctx.restore();
+    const core=ctx.createRadialGradient(sunX,sunY,0,sunX,sunY,sunR);
+    core.addColorStop(0,'rgba(255,251,244,0.96)'); core.addColorStop(0.6,'rgba(255,246,231,0.86)');
+    core.addColorStop(0.9,'rgba(255,240,219,0.42)'); core.addColorStop(1,'rgba(255,240,219,0)');
+    ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle=core;
+    ctx.fillRect(sunX-sunR*1.6,sunY-sunR*1.6,sunR*3.2,sunR*3.2); ctx.restore();
+
+    ctx.drawImage(backCv,0,0,backCv.width,backCv.height,0,0,W,H);
+
+    const regionH=H-seaTop;
+    for(const L of layers){
+      const destW=W*L.zoom, off=-(((reduce?0:time*0.001*L.speed))%destW);
+      for(let x=off-destW;x<W+destW;x+=destW) ctx.drawImage(L.cv,0,0,L.cv.width,L.cv.height,x,seaTop,destW,regionH);
+    }
+
+    const cool=ctx.createLinearGradient(0,0,W,0);
+    cool.addColorStop(0,'rgba(116,126,140,0.15)'); cool.addColorStop(clamp(lightX/W,0.01,0.99),'rgba(116,126,140,0)'); cool.addColorStop(1,'rgba(116,126,140,0.05)');
+    ctx.save(); ctx.globalCompositeOperation='soft-light'; ctx.fillStyle=cool; ctx.fillRect(0,H*0.30,W,H); ctx.restore();
+    const glow=ctx.createRadialGradient(lightX,lightY,0,lightX,lightY,Math.max(W,H)*0.62);
+    glow.addColorStop(0,'rgba(255,246,228,0.52)'); glow.addColorStop(0.6,'rgba(255,248,234,0.12)'); glow.addColorStop(1,'rgba(255,248,234,0)');
+    ctx.save(); ctx.globalCompositeOperation='screen'; ctx.fillStyle=glow; ctx.fillRect(0,H*0.30,W,H); ctx.restore();
+
+    // foreground craggy peak — removed for this trial
+    // ctx.drawImage(frontCv,0,0,frontCv.width,frontCv.height,0,0,W,H);
+
+    ctx.globalAlpha=0.9; ctx.drawImage(grainCv,0,0,grainCv.width,grainCv.height,0,0,W,H); ctx.globalAlpha=1;
+
+    // ALMANA mark — Aizawa attractor（モバイルでサイズ・位置調整）
+    markAccum += time-lastMarkT; lastMarkT=time;
+    if(!markStatic && markAccum>1000/30){ drawMark(); markAccum=0; }
+    if(markCv){
+      const ms=markCv.width, mob=isMobile();
+      const mX = W-ms-(mob?W*0.015:W*0.03), mY = mob?H*0.085:H*0.04;
+      ctx.drawImage(markCv,0,0,ms,ms, mX, mY, ms, ms);
+    }
+
+    if(resetting){ fade+=(fadeTarget-fade)*0.06; if(fade>=250){ doReseed(); fadeTarget=0; resetting=false; } }
+    else if(fade>0.5){ fade+=(0-fade)*0.05; }
+    if(fade>0.5){ ctx.fillStyle='rgba(239,231,215,'+(fade/255).toFixed(3)+')'; ctx.fillRect(0,0,W,H); }
+  }
+
+  function doReseed(){ S=Math.floor(Math.random()*1e6); build(); fade=255; }
+  function triggerReset(){ if(!resetting){ resetting=true; fadeTarget=255; } }
+  cv.addEventListener('click',triggerReset);
+  cv.addEventListener('touchstart',e=>{triggerReset();},{passive:true});
+
+  // hamburger（モバイルナビ）
+  const hb=document.getElementById('hb'), np=document.getElementById('navpanel');
+  if(hb&&np){
+    const close=()=>{hb.classList.remove('open');np.classList.remove('open');hb.setAttribute('aria-expanded','false');};
+    hb.addEventListener('click',()=>{
+      const o=!hb.classList.contains('open');
+      hb.classList.toggle('open',o); np.classList.toggle('open',o);
+      hb.setAttribute('aria-expanded',String(o));
+    });
+    np.querySelectorAll('a').forEach(a=>a.addEventListener('click',close));
+  }
+
+  let start=performance.now(),visible=true;
+  function loop(now){ if(visible) drawScene(now-start); requestAnimationFrame(loop); }
+  document.addEventListener('visibilitychange',()=>{visible=!document.hidden;});
+
+  resize(); build(); fade=255; requestAnimationFrame(loop);
+  let rt; window.addEventListener('resize',()=>{clearTimeout(rt); rt=setTimeout(()=>{resize();build();},140);});
+})();
+</script>
+</body>
+</html>

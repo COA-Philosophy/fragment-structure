@@ -433,6 +433,7 @@ function drawScene(c,CX,CY,r3,f,sw,t,forced,labelAmt,activeFi){
       let vx=pl.ccp.x-CX, vy=pl.ccp.y-CY; const vl=Math.hypot(vx,vy)||1; vx/=vl; vy/=vl;
       const right = vx>=0; const pad=12*sw;
       let lx=pl.ccp.x+vx*(18*sw), ly=pl.ccp.y+vy*(18*sw);
+      // keep the annotation off the bottom/edges so it never falls outside the figure
       lx=clamp(lx, pad, W-pad); ly=clamp(ly, pad+10, H-pad-6);
       c.beginPath(); c.moveTo(pl.ccp.x+vx*(4*sw), pl.ccp.y+vy*(4*sw)); c.lineTo(lx,ly);
       c.lineWidth=0.8*sw; c.strokeStyle='rgba('+SHU+','+(aa*0.85).toFixed(3)+')'; c.stroke();

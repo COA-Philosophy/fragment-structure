@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>見方を分ける — 認知の分岐ワーク</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --washi:#E9E1D2; --washi-2:#E2D9C7; --fold:#D2C6B0; --line:#C8BBA2;
+    --sumi:#221D18; --sumi-2:#4A423A; --usuzumi:#7B7064;
+    --shu:#A8392B; --shu-soft:rgba(168,57,43,.10); --shu-line:rgba(168,57,43,.45);
+    --serif:"Shippori Mincho",serif; --gothic:"Zen Kaku Gothic New",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:var(--gothic);color:var(--sumi);background:var(--washi);
+    background-image:radial-gradient(rgba(120,105,80,.035) 1px,transparent 1px);
+    background-size:4px 4px;-webkit-font-smoothing:antialiased;line-height:1.7;
+    overflow-x:hidden;
+  }
+  .stage{max-width:560px;margin:0 auto;min-height:100vh;padding:0 22px 130px;position:relative;}
+
+  .orihon{position:sticky;top:0;z-index:30;background:linear-gradient(var(--washi) 72%,rgba(233,225,210,0));padding:22px 0 12px;}
+  .orihon-row{display:flex;gap:6px;}
+  .leaf{flex:1;height:3px;background:var(--line);border-radius:2px;position:relative;transition:background .5s;}
+  .leaf.done{background:var(--sumi-2);}
+  .leaf.active{background:var(--sumi);}
+  .leaf.active::after{content:"";position:absolute;right:-1px;top:-2.5px;width:7px;height:7px;border-radius:50%;background:var(--shu);}
+  .step-meta{display:flex;justify-content:space-between;align-items:baseline;margin-top:13px;}
+  .step-idx{font-family:var(--serif);font-size:13px;color:var(--usuzumi);letter-spacing:.18em;}
+  .step-idx b{color:var(--sumi);font-weight:600;}
+  .quote{font-family:var(--serif);font-size:12px;color:var(--usuzumi);font-style:italic;}
+  .ex-toggle{display:flex;align-items:center;gap:8px;margin-top:11px;font-size:11.5px;color:var(--usuzumi);cursor:pointer;user-select:none;width:fit-content;letter-spacing:.06em;}
+  .ex-toggle .sw{width:30px;height:16px;border:1px solid var(--line);border-radius:9px;position:relative;transition:.2s;background:var(--washi-2);flex:none;}
+  .ex-toggle .sw::after{content:"";position:absolute;width:12px;height:12px;border-radius:50%;background:var(--usuzumi);top:1px;left:1px;transition:.2s;}
+  .ex-toggle.on .sw{background:var(--sumi);border-color:var(--sumi);}
+  .ex-toggle.on .sw::after{left:15px;background:var(--washi);}
+  .ex-toggle.on{color:var(--sumi-2);}
+
+  .situbar{margin-top:16px;background:var(--sumi);color:var(--washi);padding:13px 16px;position:relative;}
+  .situbar .tag{font-family:var(--serif);font-size:10.5px;letter-spacing:.28em;color:var(--fold);}
+  .situbar .txt{font-size:15px;margin-top:5px;line-height:1.55;}
+  .situbar .lock{position:absolute;right:14px;top:13px;font-size:10px;color:var(--usuzumi);letter-spacing:.1em;}
+
+  .panel{display:none;animation:rise .5s cubic-bezier(.2,.7,.2,1);}
+  .panel.show{display:block;}
+  @keyframes rise{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+
+  h1{font-family:var(--serif);font-weight:600;font-size:26px;letter-spacing:.04em;line-height:1.45;margin-top:28px;}
+  h1 .en{display:block;font-size:11px;letter-spacing:.34em;color:var(--shu);font-weight:500;margin-bottom:10px;}
+  .lead{color:var(--sumi-2);font-size:14.5px;margin-top:15px;max-width:46ch;}
+  .hint{font-size:12.5px;color:var(--usuzumi);margin-top:18px;border-left:2px solid var(--line);padding:3px 0 3px 12px;}
+  .hint.shu{border-color:var(--shu-line);}
+
+  textarea,input[type=text]{
+    width:100%;font-family:var(--gothic);font-size:15px;color:var(--sumi);
+    background:var(--washi-2);border:1px solid var(--line);padding:12px 13px;
+    outline:none;resize:vertical;line-height:1.6;
+  }
+  textarea:focus,input:focus{border-color:var(--sumi-2);}
+  .field{margin-top:18px;}
+  .field-q{font-size:13px;color:var(--sumi-2);margin-bottom:7px;display:flex;align-items:baseline;gap:8px;}
+  .field-q .el{font-family:var(--serif);font-size:11px;color:var(--usuzumi);letter-spacing:.1em;}
+
+  .btn{font-family:var(--gothic);font-size:14px;border:none;cursor:pointer;background:var(--sumi);color:var(--washi);padding:13px 24px;letter-spacing:.06em;transition:opacity .2s;}
+  .btn:hover{opacity:.82;}
+  .btn:disabled{opacity:.3;cursor:default;}
+  .ghost{background:transparent;color:var(--usuzumi);border:1px solid var(--line);padding:11px 16px;font-size:13px;letter-spacing:.04em;}
+  .ghost:hover{color:var(--sumi);border-color:var(--sumi-2);opacity:1;}
+  .preset-row{margin-top:22px;}
+
+  .chain{margin-top:24px;}
+  .chain-node{background:var(--washi-2);border:1px solid var(--line);padding:13px 14px;position:relative;}
+  .chain-node .el{font-family:var(--serif);font-size:11px;color:var(--usuzumi);letter-spacing:.12em;}
+  .chain-node .q{font-size:12.5px;color:var(--sumi-2);margin:3px 0 9px;}
+  .chain-node.cog{border-left:3px solid var(--sumi);}
+  .chain-node.out{border-left:3px solid var(--shu);}
+  .chain-arrow{height:22px;display:flex;justify-content:center;align-items:center;}
+  .chain-arrow svg{width:14px;height:22px;}
+
+  .branch{border:1px solid var(--line);background:var(--washi-2);padding:0;margin-top:14px;}
+  .branch-head{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line);}
+  .branch-head .lbl{font-family:var(--serif);font-size:13px;color:var(--sumi);}
+  .branch-head .del{font-size:11.5px;color:var(--usuzumi);cursor:pointer;}
+  .branch-head .del:hover{color:var(--shu);}
+  .branch-body{padding:14px;}
+  .branch-body .field:first-child{margin-top:0;}
+  .add-branch{margin-top:16px;width:100%;border:1px dashed var(--line);background:transparent;color:var(--sumi-2);padding:14px;font-size:13.5px;cursor:pointer;font-family:var(--gothic);letter-spacing:.04em;transition:.2s;}
+  .add-branch:hover{border-color:var(--sumi-2);color:var(--sumi);}
+  .cur-recall{background:var(--washi-2);border:1px solid var(--line);border-left:3px solid var(--sumi);padding:11px 13px;margin-top:22px;}
+  .cur-recall .el{font-family:var(--serif);font-size:10.5px;color:var(--usuzumi);letter-spacing:.18em;}
+  .cur-recall .t{font-size:14px;color:var(--sumi);margin-top:4px;}
+
+  .compare{margin-top:24px;}
+  .fork{display:flex;justify-content:center;margin:4px 0 2px;}
+  .fork svg{width:80%;height:30px;}
+  .vcard{border:1px solid var(--line);background:var(--washi-2);margin-bottom:12px;cursor:pointer;transition:.2s;position:relative;overflow:hidden;}
+  .vcard.chosen{border-color:var(--shu);box-shadow:0 0 0 1px var(--shu);}
+  .vcard .vc-cog{padding:13px 15px 11px;font-size:15px;color:var(--sumi);border-bottom:1px dashed var(--line);}
+  .vcard .vc-cog .el{display:block;font-family:var(--serif);font-size:10px;color:var(--usuzumi);letter-spacing:.2em;margin-bottom:5px;}
+  .vc-flow{display:flex;flex-wrap:wrap;gap:6px 14px;padding:11px 15px;font-size:12.5px;color:var(--usuzumi);}
+  .vc-flow span b{color:var(--sumi-2);font-weight:500;}
+  .vc-out{padding:12px 15px;background:var(--shu-soft);border-top:1px solid var(--shu-line);}
+  .vc-out .el{font-family:var(--serif);font-size:10px;color:var(--shu);letter-spacing:.2em;}
+  .vc-out .t{font-size:14px;color:var(--sumi);margin-top:4px;line-height:1.55;}
+  .vc-pick{position:absolute;right:0;top:0;background:var(--shu);color:var(--washi);font-size:10px;padding:4px 9px;letter-spacing:.1em;display:none;}
+  .vcard.chosen .vc-pick{display:block;}
+  .closer{margin-top:28px;border-top:1px solid var(--line);padding-top:22px;}
+  .closer .q{font-family:var(--serif);font-size:16px;line-height:1.6;}
+  .closer .sub{font-size:12.5px;color:var(--usuzumi);margin-top:10px;}
+  .scaffold-note{margin-top:30px;font-family:var(--serif);font-size:12.5px;color:var(--usuzumi);font-style:italic;text-align:center;}
+
+  .nav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:linear-gradient(rgba(233,225,210,0),var(--washi) 38%);padding:26px 22px 24px;}
+  .nav-inner{max-width:560px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+  .step-count{font-size:11.5px;color:var(--usuzumi);letter-spacing:.12em;}
+
+  @media (prefers-reduced-motion:reduce){.panel{animation:none;}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="orihon">
+    <div class="orihon-row" id="leaves"></div>
+    <div class="step-meta"><span class="step-idx" id="stepIdx"></span><span class="quote" id="quote"></span></div>
+    <div class="ex-toggle on" id="exToggle"><span class="sw"></span><span>例を表示</span></div>
+  </div>
+
+  <div class="situbar" id="situbar" style="display:none">
+    <span class="lock">動かせない</span>
+    <div class="tag">状況</div>
+    <div class="txt" id="situbarTxt"></div>
+  </div>
+
+  <section class="panel" data-step="0">
+    <h1><span class="en">ONE THING</span>今日あったことを、一つ</h1>
+    <p class="lead">今日、心に残った出来事を一つだけ書いてください。短くていい。うまく言葉にできなくても大丈夫です。</p>
+    <div class="field" style="margin-top:24px">
+      <textarea id="situ" rows="2" placeholder="例：朝、挨拶したのに上司が返事をしなかった"></textarea>
+    </div>
+    <div class="preset-row"><button class="ghost" id="loadPreset">例で試す</button></div>
+    <p class="hint">「無視された」のような見方が混じっても、いまは気にしないで。後の段で、事実と解釈を見分けます。</p>
+  </section>
+
+  <section class="panel" data-step="1">
+    <h1><span class="en">YOUR LENS</span>いま、その事実をどう見ているか</h1>
+    <p class="lead">同じ事実でも、頭に浮かんだ最初の一言が、その後の気持ち・体・行動・結末まで連れていきます。あなたが今かけているレンズを、最後までたどってみます。</p>
+    <div class="chain" id="chain"></div>
+    <p class="hint shu">この連鎖は、事実そのものではなく「あなたが足した解釈」が引き起こしています。唯一の真実ではありません。</p>
+  </section>
+
+  <section class="panel" data-step="2">
+    <h1><span class="en">OTHER LENSES</span>同じ事実に、別のレンズを当てる</h1>
+    <p class="lead">事実は一ミリも変えません。変えるのは解釈だけ。その事実に等しくあり得る、別の見方を探してみてください。</p>
+    <div class="cur-recall" id="curRecall"></div>
+    <div id="branches"></div>
+    <button class="add-branch" id="addBranch">＋ 別の見方を足す</button>
+    <p class="hint shu">「良い方に考え直す」必要はありません。前向きさは目的ではない。事実に合っていれば、淡々とした見方でも、誰かの事情を想像した見方でも構いません。</p>
+  </section>
+
+  <section class="panel" data-step="3">
+    <h1><span class="en">THE FORK</span>結末が、分かれている</h1>
+    <p class="lead">事実は一つ。けれど解釈の数だけ、結末は枝分かれします。どれが「正しい」かを決める場ではありません。どの結末に向かう見方を取るか、それだけが自分に残された選択です。</p>
+    <div class="compare" id="compare"></div>
+    <div class="closer">
+      <div class="q">どの見方で、この事実を生きる？</div>
+      <div class="sub">カードをタップして選ぶ。選び直しは何度でも。状況は変わらないまま、結末だけが動きます。</div>
+    </div>
+    <p class="scaffold-note">例は、上の「例を表示」からいつでも自分で外せます。</p>
+  </section>
+</div>
+
+<div class="nav"><div class="nav-inner">
+  <button class="ghost" id="back">戻る</button>
+  <span class="step-count" id="count"></span>
+  <button class="btn" id="next">次へ</button>
+</div></div>
+
+<script>
+(function(){
+  const STEPS=[
+    {idx:"其ノ一",name:"事実",quote:""},
+    {idx:"其ノ二",name:"今の見方",quote:""},
+    {idx:"其ノ三",name:"別の解釈",quote:""},
+    {idx:"其ノ四",name:"分岐",quote:"状況は一つ、解釈は複数"}
+  ];
+  const CUR=[
+    {key:"cognition",el:"認知",q:"その瞬間、頭に浮かんだ一言は？",ph:"例：わざと無視された。嫌われている。",cls:"cog"},
+    {key:"emotion",el:"感情",q:"すると、どんな気持ちが湧いた？",ph:"例：不安、怒り、悲しみ"},
+    {key:"body",el:"身体",q:"体はどう反応した？",ph:"例：胸がざわつく、胃が重い"},
+    {key:"behavior",el:"行動",q:"何をした／したくなった？",ph:"例：上司を避けた、不機嫌になった"},
+    {key:"outcome",el:"結末",q:"この見方のまま進むと、最後どうなる？",ph:"例：関係が冷え、やはり嫌われていると確信する",cls:"out"}
+  ];
+  const ALT=[
+    {key:"cognition",el:"認知",q:"同じ事実を、どう解釈する？",ph:"例：考え事をしていて聞こえなかっただけ"},
+    {key:"emotion",el:"感情",q:"だとすると、気持ちは？",ph:"例：フラット、少し気がかり"},
+    {key:"behavior",el:"行動",q:"どう振る舞う？",ph:"例：普段どおり接し、後でもう一度声をかける"},
+    {key:"outcome",el:"結末",q:"この見方なら、結末は？",ph:"例：関係はそのまま、特に問題は起きない"}
+  ];
+  const PRESET={
+    situ:"朝、挨拶したのに上司が返事をしなかった",
+    cur:{cognition:"わざと無視された。嫌われているに違いない。",emotion:"不安、怒り、少しの悲しみ",body:"心拍が上がり、胃が重くなった",behavior:"その日は上司を避け、態度がそっけなくなった",outcome:"上司との空気が悪くなり、「やっぱり嫌われている」と確信が強まる"}
+  };
+
+  let uid=1;
+  const state={step:0,situation:"",current:{},alts:[],chosen:null,showExamples:true};
+  const $=s=>document.querySelector(s);
+  const panels=document.querySelectorAll('.panel');
+  const leaves=$('#leaves');
+  STEPS.forEach(()=>{const d=document.createElement('div');d.className='leaf';leaves.appendChild(d);});
+
+  function arrowSVG(){return '<svg viewBox="0 0 14 22"><line x1="7" y1="0" x2="7" y2="15" stroke="#A8392B" stroke-width="1.4"/><path d="M3,13 L7,20 L11,13" fill="none" stroke="#A8392B" stroke-width="1.4"/></svg>';}
+
+  function renderHeader(){
+    [...leaves.children].forEach((l,i)=>{l.className='leaf'+(i<state.step?' done':'')+(i===state.step?' active':'');});
+    $('#stepIdx').innerHTML=STEPS[state.step].idx+'　<b>'+STEPS[state.step].name+'</b>';
+    $('#quote').textContent=STEPS[state.step].quote;
+    $('#count').textContent=(state.step+1)+' / '+STEPS.length;
+    $('#back').style.visibility=state.step===0?'hidden':'visible';
+    $('#next').textContent=state.step===STEPS.length-1?'閉じる':'次へ';
+    const sb=$('#situbar');
+    if(state.step>=1&&state.situation.trim()){sb.style.display='block';$('#situbarTxt').textContent=state.situation;}
+    else sb.style.display='none';
+    $('#exToggle').classList.toggle('on',state.showExamples);
+    $('#situ').placeholder=state.showExamples?'例：朝、挨拶したのに上司が返事をしなかった':'';
+    $('#loadPreset').style.display=state.showExamples?'inline-block':'none';
+  }
+
+  function show(noScroll){
+    panels.forEach(p=>p.classList.toggle('show',+p.dataset.step===state.step));
+    renderHeader();
+    if(state.step===1)renderChain();
+    if(state.step===2)renderBranches();
+    if(state.step===3)renderCompare();
+    if(!noScroll)window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  $('#situ').addEventListener('input',e=>state.situation=e.target.value);
+  $('#loadPreset').onclick=()=>{
+    state.situation=PRESET.situ;$('#situ').value=PRESET.situ;
+    state.current=Object.assign({},PRESET.cur);
+  };
+
+  function renderChain(){
+    const c=$('#chain');c.innerHTML='';
+    CUR.forEach((f,i)=>{
+      const n=document.createElement('div');n.className='chain-node'+(f.cls?' '+f.cls:'');
+      n.innerHTML='<span class="el">'+f.el+'</span><div class="q">'+f.q+'</div>';
+      const ta=document.createElement('textarea');ta.rows=2;ta.placeholder=state.showExamples?f.ph:'';ta.value=state.current[f.key]||'';
+      ta.addEventListener('input',e=>state.current[f.key]=e.target.value);
+      n.appendChild(ta);c.appendChild(n);
+      if(i<CUR.length-1){const a=document.createElement('div');a.className='chain-arrow';a.innerHTML=arrowSVG();c.appendChild(a);}
+    });
+  }
+
+  function renderBranches(){
+    const cr=$('#curRecall');
+    cr.innerHTML='<span class="el">いまの見方</span><div class="t">'+(state.current.cognition?escapeHtml(state.current.cognition):'（其ノ二で書いた見方がここに出ます）')+'</div>';
+    const wrap=$('#branches');wrap.innerHTML='';
+    state.alts.forEach((alt,bi)=>{
+      const b=document.createElement('div');b.className='branch';
+      const head=document.createElement('div');head.className='branch-head';
+      head.innerHTML='<span class="lbl">別の見方 '+(bi+1)+'</span><span class="del">消す</span>';
+      head.querySelector('.del').onclick=()=>{state.alts=state.alts.filter(a=>a.id!==alt.id);renderBranches();};
+      b.appendChild(head);
+      const body=document.createElement('div');body.className='branch-body';
+      ALT.forEach(f=>{
+        const fl=document.createElement('div');fl.className='field';
+        fl.innerHTML='<div class="field-q"><span class="el">'+f.el+'</span>'+f.q+'</div>';
+        const ta=document.createElement('textarea');ta.rows=2;ta.placeholder=state.showExamples?f.ph:'';ta.value=alt[f.key]||'';
+        ta.addEventListener('input',e=>alt[f.key]=e.target.value);
+        fl.appendChild(ta);body.appendChild(fl);
+      });
+      b.appendChild(body);wrap.appendChild(b);
+    });
+  }
+  $('#addBranch').onclick=()=>{state.alts.push({id:uid++});renderBranches();
+    setTimeout(()=>window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}),60);};
+
+  function renderCompare(){
+    const c=$('#compare');c.innerHTML='';
+    const lenses=[{id:'current',lbl:'いまの見方',data:state.current},
+      ...state.alts.map((a,i)=>({id:a.id,lbl:'別の見方 '+(i+1),data:a}))];
+    lenses.forEach((L,i)=>{
+      if(i>0){const f=document.createElement('div');f.className='fork';
+        f.innerHTML='<svg viewBox="0 0 200 30"><line x1="100" y1="0" x2="100" y2="14" stroke="#A8392B" stroke-width="1.2"/><path d="M40,28 Q100,14 160,28" fill="none" stroke="#C8BBA2" stroke-width="1"/></svg>';
+        c.appendChild(f);}
+      const card=document.createElement('div');card.className='vcard'+(state.chosen===L.id?' chosen':'');
+      const cog=L.data.cognition?escapeHtml(L.data.cognition):'<span style="color:var(--usuzumi)">（未記入）</span>';
+      const flow=[['感情',L.data.emotion],['行動',L.data.behavior]].filter(x=>x[1])
+        .map(x=>'<span><b>'+x[0]+'</b> '+escapeHtml(x[1])+'</span>').join('');
+      const out=L.data.outcome?escapeHtml(L.data.outcome):'<span style="color:var(--usuzumi)">（結末が未記入）</span>';
+      card.innerHTML='<div class="vc-pick">これで行く</div>'+
+        '<div class="vc-cog"><span class="el">'+L.lbl+' ・ 認知</span>'+cog+'</div>'+
+        (flow?'<div class="vc-flow">'+flow+'</div>':'')+
+        '<div class="vc-out"><span class="el">結末</span><div class="t">'+out+'</div></div>';
+      card.onclick=()=>{state.chosen=state.chosen===L.id?null:L.id;renderCompare();};
+      c.appendChild(card);
+    });
+  }
+
+  $('#next').onclick=()=>{if(state.step<STEPS.length-1){state.step++;show();}};
+  $('#back').onclick=()=>{if(state.step>0){state.step--;show();}};
+  $('#exToggle').onclick=()=>{state.showExamples=!state.showExamples;show(true);};
+  function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+  show();
+})();
+</script>
+</body>
+</html>

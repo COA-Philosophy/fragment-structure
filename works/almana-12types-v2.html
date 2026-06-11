@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALMANA — Fragments of Structure</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@200;300;400&family=Lora:ital@1&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400&display=swap');
+:root{
+  --ground:#e8e8e5;--paper:#f7f7f5;--sumi:#222120;--sumi-mid:#6f6b64;--sumi-faint:#8d887f;
+  --hair:#e0ddd6;--hair-soft:#eae7e0;--shu:#a8392b;
+  --sans:'Satoshi',ui-sans-serif,system-ui,sans-serif;--serifjp:'Noto Serif JP',serif;
+  --serif:'Lora',Georgia,serif;--logo:'Spectral',Georgia,serif;
+}
+/* 墨（dark）モード — 地と文字を反転。タイル地は焼付sumi面の #222120 に合わせて継ぎ目を消す */
+body.sumi{
+  --ground:#1b1a18;--paper:#222120;--sumi:#e9e6e0;--sumi-mid:#a39e95;--sumi-faint:#7d786f;
+  --hair:#34322e;--hair-soft:#2b2926;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--ground);color:var(--sumi);font-family:var(--sans);-webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;min-height:100vh;padding:0 0 84px;
+  transition:background .6s ease,color .6s ease;}
+
+.head{text-align:center;padding:64px 24px 6px;position:relative;}
+.head .wordmark{font-family:var(--logo);font-weight:400;font-size:22px;letter-spacing:.42em;color:var(--sumi);transition:color .6s ease;}
+.head .wordmark .sd{display:inline-block;width:.2em;height:.2em;border-radius:50%;background:var(--shu);margin-left:.32em;vertical-align:.1em;}
+.head .kick{font-family:var(--sans);font-weight:300;font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--sumi-mid);margin-top:18px;}
+.head .sub{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--sumi-faint);margin-top:10px;}
+.note{max-width:660px;margin:24px auto 0;text-align:center;font-family:var(--serifjp);font-weight:300;font-size:12px;line-height:1.95;color:var(--sumi-mid);padding:0 24px;}
+.note b{font-family:var(--serif);font-style:italic;font-weight:400;color:var(--sumi);}
+
+/* 白／墨 トグル */
+.toggle{display:flex;justify-content:center;margin:26px auto 0;}
+.toggle .seg{display:inline-flex;border:1px solid var(--hair);border-radius:999px;overflow:hidden;
+  background:var(--paper);transition:background .6s ease,border-color .6s ease;}
+.toggle button{appearance:none;border:0;background:transparent;cursor:pointer;
+  font-family:var(--sans);font-weight:400;font-size:11px;letter-spacing:.16em;color:var(--sumi-mid);
+  padding:8px 20px;transition:.2s;}
+.toggle button.on{background:var(--sumi);color:var(--ground);}
+
+.grid{max-width:1180px;margin:40px auto 0;padding:0 28px;display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:32px 24px;}
+.cell{display:flex;flex-direction:column;align-items:center;}
+.art{width:100%;aspect-ratio:1/1;background:var(--paper);border:1px solid var(--hair);border-radius:14px;
+  overflow:hidden;box-shadow:0 14px 30px -22px rgba(30,28,24,.34);position:relative;
+  transition:background .6s ease,border-color .6s ease;}
+.art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .7s ease;}
+.art img.in{opacity:1;}
+.art .no{position:absolute;top:11px;left:13px;font-family:var(--sans);font-weight:300;font-size:8px;
+  letter-spacing:.26em;text-transform:uppercase;color:var(--sumi-faint);z-index:2;transition:color .6s ease;}
+.art .reg{position:absolute;top:11px;right:13px;color:var(--shu);font-size:9px;z-index:2;}
+.cap{margin-top:13px;text-align:center;}
+.cap .code{font-family:var(--logo);font-weight:400;font-size:16px;letter-spacing:.04em;color:var(--sumi);transition:color .6s ease;}
+.cap .ja{display:block;font-family:var(--serifjp);font-weight:300;font-size:10px;letter-spacing:.04em;
+  color:var(--sumi-faint);margin-top:6px;line-height:1.6;}
+
+.foot{text-align:center;margin-top:60px;font-family:var(--serif);font-style:italic;font-size:12px;color:var(--sumi-faint);padding:0 24px;}
+.foot .formula{display:block;font-family:var(--sans);font-style:normal;font-weight:300;font-size:10px;
+  letter-spacing:.04em;color:var(--sumi-faint);margin-bottom:10px;}
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div class="wordmark">ALMANA<span class="sd"></span></div>
+  <div class="kick">Fragments of Structure — 12 types</div>
+  <div class="sub">twelve structures, drawn as ink.</div>
+  <p class="note">生まれた構造を、<b>strange attractor</b> の墨形に。対称ではなく、煙のように。形は構造データの seed から決まり、その上に一人ひとり固有の<b>ビスポークタイトル</b>が重なる2層。これは12タイプの representative — 本番は同じタイプ内でも、個の seed で一点物に揺らぐ。</p>
+  <div class="toggle">
+    <div class="seg">
+      <button id="tWhite" class="on" data-v="paper">白</button>
+      <button id="tSumi" data-v="sumi">墨</button>
+    </div>
+  </div>
+</header>
+
+<div class="grid" id="grid"></div>
+
+<div class="foot">
+  <span class="formula">de Jong&nbsp;:&nbsp; xₙ₊₁ = sin(a·y) − cos(b·x) ,&nbsp; yₙ₊₁ = sin(c·x) − cos(d·y)</span>
+  Fragments of Structure · The Modern Zen Archive · 共通の朱で署名する
+</div>
+
+<script>
+(() => {
+  'use strict';
+  // 焼付済みプレート（v4 工房 fire の paper / sumi 二面）。ファイル名 = de Jong レシピ。
+  const DIR = 'assets/12types/';
+  const TYPES = [
+    {code:'Architect',   ja:'星々を紡ぐ静かな設計者',               base:'Architect_mark_dejong_2.28_-0.86_0.65_1.22_g0.78'},
+    {code:'Weaver',      ja:'心と心を繋ぐ共感の紡ぎ手',             base:'Weaver_mark_dejong_-1.46_2.53_-0.67_1.05_g0.74'},
+    {code:'StormDancer', ja:'嵐の中心で舞う情熱の変革者',           base:'StormDancer_mark_dejong_2.96_0.49_0.82_-2.12_g0.44'},
+    {code:'Sage',        ja:'深淵を覗き、理を織りなす賢者',         base:'Sage_mark_dejong_1.63_-2.06_2.34_-1.39_g0.40'},
+    {code:'Artist',      ja:'世界に色彩を与える自由な表現者',       base:'Artist_mark_dejong_-1.46_2.53_-0.90_1.20_g0.74'},
+    {code:'Guardian',    ja:'大地に根を張り、礎を築く守護者',       base:'Guardian_mark_dejong_1.14_1.30_0.01_-2.91_g0.84'},
+    {code:'Seeker',      ja:'真理の光を灯す永遠の探求者',           base:'Seeker_mark_dejong_2.08_-1.36_2.20_-1.28_g0.36'},
+    {code:'Sovereign',   ja:'自らの王国を築き上げる静かなる統治者', base:'Sovereign_mark_dejong_-0.12_1.28_0.15_-3.00_g0.74'},
+    {code:'FlowWalker',  ja:'流れに乗り、変化を愉しむ賢い旅人',     base:'FlowWalker_mark_dejong_0.36_2.86_0.76_1.18_g0.78'},
+    {code:'Healer',      ja:'他者の痛みに寄り添う慈悲深き癒し手',   base:'Healer_mark_dejong_1.99_-3.00_3.00_-3.00_g0.74'},
+    {code:'Foreseer',    ja:'時代の先を読む鋭敏な夢見人',           base:'Foreseer_mark_dejong_1.75_2.57_1.51_-0.43_g0.74'},
+    {code:'Alchemist',   ja:'混沌から調和を生み出す錬金術師',       base:'Alchemist_mark_dejong_-2.92_2.25_1.52_-2.15_g0.68'},
+  ];
+  const srcOf = (base, v) => DIR + base + '_' + v + '_1280.png';
+
+  let variant = 'paper';
+  const grid = document.getElementById('grid');
+  const imgs = TYPES.map((t,i) => {
+    const cell=document.createElement('div'); cell.className='cell';
+    const art=document.createElement('div'); art.className='art';
+    const img=document.createElement('img'); img.loading='lazy'; img.alt=t.code+' — de Jong mark';
+    img.addEventListener('load', ()=>img.classList.add('in'));
+    img.src = srcOf(t.base, variant);
+    const no=document.createElement('span'); no.className='no'; no.textContent='Fig.'+String(i+1).padStart(2,'0');
+    const reg=document.createElement('span'); reg.className='reg'; reg.textContent='⊕';
+    art.appendChild(img); art.appendChild(no); art.appendChild(reg);
+    const cap=document.createElement('div'); cap.className='cap';
+    cap.innerHTML='<span class="code">'+t.code+'</span><span class="ja">'+t.ja+'</span>';
+    cell.appendChild(art); cell.appendChild(cap); grid.appendChild(cell);
+    return {img, base:t.base};
+  });
+
+  // 白／墨 トグル — 地（body.sumi）と画像の二面を同時に切り替える
+  const bW=document.getElementById('tWhite'), bS=document.getElementById('tSumi');
+  function setVariant(v){
+    if(v===variant) return;
+    variant=v;
+    document.body.classList.toggle('sumi', v==='sumi');
+    bW.classList.toggle('on', v==='paper');
+    bS.classList.toggle('on', v==='sumi');
+    imgs.forEach(o=>{ o.img.classList.remove('in'); o.img.src=srcOf(o.base, v); });
+  }
+  bW.addEventListener('click', ()=>setVariant('paper'));
+  bS.addEventListener('click', ()=>setVariant('sumi'));
+})();
+</script>
+
+</body>
+</html>

@@ -278,6 +278,32 @@
     transform: rotate(90deg);
   }
 
+  /* HTMLソースをコピー */
+  #viewer .copy {
+    position: absolute; top: 1.6rem; right: 5.4rem; z-index: 101;
+    height: 3rem; padding: 0 1.05rem; border-radius: 999px;
+    border: 1px solid var(--line-mid);
+    background: rgba(255,255,255,0.7); backdrop-filter: blur(8px);
+    color: var(--muted);
+    font-family: 'Satoshi', sans-serif; font-weight: 400;
+    font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 0.5rem;
+    transition: all 0.4s ease;
+  }
+  #viewer .copy:hover {
+    color: var(--gold); border-color: var(--gold-soft);
+  }
+  #viewer .copy.done {
+    color: var(--gold); border-color: var(--gold-soft);
+  }
+  #viewer .copy .glyph { font-size: 0.95rem; line-height: 1; }
+
+  @media (max-width: 600px) {
+    #viewer .copy .label { display: none; }
+    #viewer .copy { padding: 0; width: 3rem; justify-content: center; }
+  }
+
   /* ───── フッター ───── */
   footer {
     text-align: center;
@@ -309,6 +335,9 @@
 <footer>an evolving garden of code — grown one fragment at a time</footer>
 
 <div id="viewer">
+  <button class="copy" aria-label="HTMLをコピー" title="このHTMLをコピー">
+    <span class="glyph">⧉</span><span class="label">HTML</span>
+  </button>
   <button class="close" aria-label="閉じる">×</button>
 </div>
 
@@ -462,7 +491,7 @@
       still: ''
     },
     {
-      no: 'F015', version: 'v1', status: 'current',
+      no: 'F015', version: 'v4', status: 'current',
       project: 'STUDIES',
       use: '工房 / Studio',
       ja: '非対称の印を探す',
@@ -673,6 +702,7 @@
   const atelier = document.getElementById('atelier');
   const viewer = document.getElementById('viewer');
   const closeBtn = viewer.querySelector('.close');
+  const copyBtn = viewer.querySelector('.copy');
 
   // WORKS をプロジェクトごとに束ねる（出現順を保持）
   const groups = [];
@@ -789,10 +819,13 @@
 
   // ====== 全画面ビューア ======
   let viewerFrame = null;
+  let currentFile = null;
   function openViewer(src) {
+    currentFile = src;
+    resetCopyBtn();
     viewerFrame = document.createElement('iframe');
     viewerFrame.src = src;
-    viewer.insertBefore(viewerFrame, closeBtn);
+    viewer.insertBefore(viewerFrame, copyBtn);
     viewer.classList.add('open');
     document.body.style.overflow = 'hidden';
   }
@@ -806,6 +839,58 @@
   closeBtn.addEventListener('click', closeViewer);
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && viewer.classList.contains('open')) closeViewer();
+  });
+
+  // ====== HTMLソースをコピー ======
+  const copyLabel = copyBtn.querySelector('.label');
+  const copyGlyph = copyBtn.querySelector('.glyph');
+  let copyResetTimer = null;
+  function resetCopyBtn() {
+    clearTimeout(copyResetTimer);
+    copyBtn.classList.remove('done');
+    copyGlyph.textContent = '⧉';
+    if (copyLabel) copyLabel.textContent = 'HTML';
+  }
+  function flashCopy(ok) {
+    clearTimeout(copyResetTimer);
+    copyBtn.classList.add('done');
+    copyGlyph.textContent = ok ? '✓' : '×';
+    if (copyLabel) copyLabel.textContent = ok ? 'コピー済' : '失敗';
+    copyResetTimer = setTimeout(resetCopyBtn, 1800);
+  }
+  function legacyCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.top = '-9999px';
+    ta.setAttribute('readonly', '');
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    ta.remove();
+    return ok;
+  }
+  copyBtn.addEventListener('click', async () => {
+    if (!currentFile) return;
+    let html;
+    try {
+      const res = await fetch(currentFile);
+      if (!res.ok) throw new Error(res.status);
+      html = await res.text();
+    } catch (err) {
+      flashCopy(false);
+      return;
+    }
+    // まず Clipboard API、ダメなら textarea + execCommand にフォールバック
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(html);
+        flashCopy(true);
+        return;
+      }
+    } catch (err) { /* フォールバックへ */ }
+    flashCopy(legacyCopy(html));
   });
 
 })();

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SILAS — 非対称マーク explorer</title>
+<title>SILAS — 非対称マーク explorer v4</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400&family=Lora:ital@1&display=swap');
 @import url('https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500&display=swap');
@@ -31,7 +31,7 @@ h1{font-family:var(--serifjp);font-weight:400;font-size:30px;letter-spacing:.02e
 .bigtile .tl{top:13px;left:13px;}.bigtile .tr{top:13px;right:13px;transform:scaleX(-1);}
 .bigtile .bl{bottom:13px;left:13px;transform:scaleY(-1);}.bigtile .br{bottom:13px;right:13px;transform:scale(-1);}
 
-.smalls{display:flex;align-items:flex-end;gap:22px;margin-top:26px;padding:22px 8px;border:1px solid var(--hair-soft);justify-content:center;}
+.smalls{display:flex;align-items:flex-end;gap:22px;margin-top:26px;padding:22px 8px;border:1px solid var(--hair-soft);justify-content:center;flex-wrap:wrap;}
 .sz{display:flex;flex-direction:column;align-items:center;gap:9px;}
 .sz .lbl{font-family:var(--mono);font-size:9.5px;color:var(--sumi-faint);}
 .sz .frame{background:var(--paper);box-shadow:inset 0 0 0 1px var(--hair);}
@@ -40,7 +40,6 @@ h1{font-family:var(--serifjp);font-weight:400;font-size:30px;letter-spacing:.02e
 .apptile{display:flex;flex-direction:column;align-items:center;gap:9px;}
 .apptile .chrome{border-radius:22%;box-shadow:0 1px 4px rgba(30,28,24,.2);overflow:hidden;}
 .apptile .lbl{font-family:var(--mono);font-size:9.5px;color:var(--sumi-faint);}
-.smalls .cap,.smalls .note{font-family:var(--serif);font-style:italic;}
 
 /* right: controls */
 .right{width:328px;}
@@ -62,20 +61,29 @@ input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;bac
 .tg input{accent-color:var(--shu);}
 .btn{width:100%;background:transparent;border:1px solid var(--sumi);border-radius:4px;padding:12px;font-family:var(--sans);font-weight:400;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--sumi);cursor:pointer;transition:.2s;margin-top:6px;}
 .btn:hover{background:var(--sumi);color:var(--paper);}
+.btn.fire{border-color:var(--shu);color:var(--shu);margin-top:18px;}
+.btn.fire:hover{background:var(--shu);color:#f4ebe1;}
 .lock{margin-top:20px;padding:16px 16px;border:1px solid var(--hair-soft);}
 .lock .k{font-family:var(--sans);font-weight:300;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--sumi-faint);margin-bottom:7px;}
 .lock .v{font-family:var(--mono);font-size:11px;color:var(--shu);word-break:break-all;line-height:1.7;}
 .note{font-family:var(--serif);font-style:italic;font-size:12.5px;line-height:1.85;color:var(--sumi-faint);margin-top:20px;}
 .hide{display:none;}
 .smcap{font-family:var(--sans);font-weight:300;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--sumi-faint);text-align:center;width:100%;margin-bottom:-6px;}
+
+/* firing overlay */
+#ov{position:fixed;inset:0;z-index:2000;display:none;align-items:center;justify-content:center;
+  flex-direction:column;gap:12px;background:rgba(232,232,229,0.88);backdrop-filter:blur(3px);}
+#ov .big{font-family:var(--sans);font-weight:400;font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--sumi-soft);}
+#ov .pct{font-family:var(--serifjp);font-weight:300;font-size:36px;letter-spacing:.06em;color:var(--sumi);}
+#ov .stp{font-family:var(--sans);font-weight:300;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--sumi-faint);}
 </style>
 </head>
 <body>
 <div class="wrap">
 
-<div class="kicker">SILAS · asymmetric mathematical mark</div>
-<h1>非対称の印を探す</h1>
-<div class="sub">deterministic, not symmetric — structure without the cage</div>
+<div class="kicker">SILAS · asymmetric mathematical mark · v4</div>
+<h1>非対称の印を探す — 密度現像</h1>
+<div class="sub">the preview is the plate — what you see is what fires</div>
 
 <div class="lab">
 
@@ -86,7 +94,7 @@ input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;bac
     </div>
 
     <div class="smalls">
-      <div class="smcap">downsampled from hi-res — 「複雑→遠目で単純」の実検証</div>
+      <div class="smcap">downsampled from density master — 「複雑→遠目で単純」の実検証</div>
       <div class="sz"><div class="frame"><canvas id="s16"></canvas></div><div class="lbl">16</div></div>
       <div class="sz"><div class="frame"><canvas id="s32"></canvas></div><div class="lbl">32</div></div>
       <div class="sz"><div class="frame"><canvas id="s64"></canvas></div><div class="lbl">64</div></div>
@@ -133,12 +141,14 @@ input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;bac
       <div class="field"><label>b <span class="val" id="a_bV">-2.30</span></label><input type="range" id="a_b" min="-3" max="3" step="0.01" value="-2.3"></div>
       <div class="field"><label>c <span class="val" id="a_cV">2.40</span></label><input type="range" id="a_c" min="-3" max="3" step="0.01" value="2.4"></div>
       <div class="field"><label>d <span class="val" id="a_dV">-2.10</span></label><input type="range" id="a_d" min="-3" max="3" step="0.01" value="-2.1"></div>
+      <div class="field"><label>Ink γ（墨の濃度 — 小=濃 / 大=淡） <span class="val" id="a_gV">0.62</span></label><input type="range" id="a_g" min="0.30" max="1.20" step="0.02" value="0.62"></div>
       <button class="btn" id="aRand">別のアトラクタを引く</button>
     </div>
 
     <div class="toggles">
       <label class="tg"><input type="checkbox" id="tgShu"> 朱の核(中心の一点)</label>
-      <label class="tg"><input type="checkbox" id="tgNijimi"> にじみ</label>
+      <label class="tg"><input type="checkbox" id="tgNijimi"> にじみ(ベクタ系のみ)</label>
+      <label class="tg"><input type="checkbox" id="tgCap" checked> 題名を刻印</label>
     </div>
 
     <div class="lock">
@@ -146,38 +156,46 @@ input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;bac
       <div class="v" id="lockV">—</div>
     </div>
 
-    <div class="note">アートは seed で変えていいが、ロゴは固定パラメータ＝constant。気に入った形のこの値を控えれば、それが正準マークになる。墨で描き、フル＋縮小の二枚立てで書き出す。</div>
+    <button class="btn fire" id="fire">PNG · 焼付 — 透過 / 紙 / 墨 の三面</button>
+
+    <div class="note">アトラクタのプレビューは焼付と同じ密度現像（768pxマスタ → 各サイズへ）。見えている濃度＝焼き上がりの濃度。墨面は白 #F4F3F1 のインクで引く。「題名を刻印」で、左下に <span style="color:var(--shu)">⊕</span> deJong · a=… b=… γ=… を図版注記の流儀で焼き込む — 作品の題名であり、同時に再現レシピになる。焼付は 2000px・多重シード（約2,400万点）。</div>
   </div>
 
 </div>
 </div>
 
+<div id="ov"><div class="big">Firing the plate</div><div class="pct" id="ovp">0%</div><div class="stp" id="ovs">multi-seed · 2000px</div></div>
+
 <script>
 (function(){
   const $=id=>document.getElementById(id);
-  const GOLDEN=Math.PI*(3-Math.sqrt(5));
   let mode='phyllo';
   const dpr=Math.min(window.devicePixelRatio||1,2);
 
-  // canvases
+  // palette constants (literal — exports must not depend on CSS)
+  const SUMI=[34,33,31], PAPER=[247,247,245], SHIRO=[244,243,241], SHU='#a8392b';
+
+  // ---------- canvases ----------
   function setup(cv,css){cv.style.width=css+'px';cv.style.height=css+'px';cv.width=css*dpr;cv.height=css*dpr;const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);return c;}
   const big=$('big'), bigC=setup(big,360);
   const c16=setup($('s16'),16), c32=setup($('s32'),32), c64=setup($('s64'),64);
   const cap=setup($('appPaper'),76), cas=setup($('appSumi'),76);
   $('appPaper').parentNode.style.background='var(--paper)';
   $('appSumi').parentNode.style.background='var(--sumi)';
-  // hi-res offscreen for honest downsample
+  // vector master (phyllo / spiral downsample source)
   const off=document.createElement('canvas');off.width=512;off.height=512;const offC=off.getContext('2d');
+  // density masters (attractor) — paper face & sumi face, developed from one buffer
+  const MRES=768, LIVE_N=450000;
+  const mPaper=document.createElement('canvas');mPaper.width=mPaper.height=MRES;const mPaperC=mPaper.getContext('2d');
+  const mSumi=document.createElement('canvas');mSumi.width=mSumi.height=MRES;const mSumiC=mSumi.getContext('2d');
 
-  // ---------- geometry generators (normalized to bbox) ----------
+  // ---------- geometry generators (vector modes) ----------
   function genPhyllo(){
     const N=+$('p_n').value, c=+$('p_c').value, ds=+$('p_s').value, ang=(+$('p_a').value)*Math.PI/180, g=+$('p_g').value;
     const pts=[];
     for(let i=1;i<=N;i++){
       const a=i*ang;
-      // blend sqrt (sunflower) and exponential (nautilus shell)
       const rSun=c*Math.sqrt(i);
-      const rNau=c*0.45*Math.pow(1.0+0.9*(1-g)*0,1)*Math.exp(0.0009*(1-g)*0); // placeholder
       const rExp=c*1.1*Math.pow(1.020,i*(0.6*(1-g)+0.0001));
       const r=(1-g)*rExp*0.5 + g*rSun;
       const x=r*Math.cos(a), y=r*Math.sin(a);
@@ -197,22 +215,9 @@ input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;bac
     }
     return {type:'path',pts,w,taper};
   }
-  function genAttractor(){
-    const a=+$('a_a').value,b=+$('a_b').value,c=+$('a_c').value,d=+$('a_d').value;
-    const pts=[];let x=0.1,y=0.1;const N=70000;
-    for(let i=0;i<N;i++){
-      const nx=Math.sin(a*y)-Math.cos(b*x);
-      const ny=Math.sin(c*x)-Math.cos(d*y);
-      x=nx;y=ny;
-      if(i>50)pts.push({x,y});
-    }
-    return {type:'cloud',pts};
-  }
-  function geom(){return mode==='phyllo'?genPhyllo():mode==='spiral'?genSpiral():genAttractor();}
-
   function bbox(pts){let mnx=1e9,mny=1e9,mxx=-1e9,mxy=-1e9;for(const p of pts){if(p.x<mnx)mnx=p.x;if(p.y<mny)mny=p.y;if(p.x>mxx)mxx=p.x;if(p.y>mxy)mxy=p.y;}return{mnx,mny,mxx,mxy,w:mxx-mnx,h:mxy-mny,cx:(mnx+mxx)/2,cy:(mny+mxy)/2};}
 
-  // ---------- draw to a context at given size ----------
+  // ---------- vector draw ----------
   function draw(ctx,size,G,opts){
     opts=opts||{};
     ctx.clearRect(0,0,size,size);
@@ -223,72 +228,141 @@ input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;bac
     const X=p=>ox+p.x*sc, Y=p=>oy+p.y*sc;
     const ink=opts.ink||'rgba(34,33,31,';
     if(opts.nijimi){ctx.filter='blur('+(size*0.004).toFixed(2)+'px)';}
-
     if(G.type==='dots'){
       for(const p of G.pts){
         ctx.beginPath();ctx.fillStyle=ink+'0.92)';
         ctx.arc(X(p),Y(p),Math.max(0.35,p.rad*sc*0.5),0,6.283);ctx.fill();
       }
-    } else if(G.type==='path'){
+    } else {
       const n=G.pts.length;
       for(let i=1;i<n;i++){
         const p0=G.pts[i-1],p1=G.pts[i];
-        const tt=p1.t; // 0 inner-ish growth..1 outer
-        const lw=Math.max(0.4, (size*0.018)*G.w*(1 - G.taper*(1-tt)));
+        const tt=p1.t;
+        const lw=Math.max(0.4,(size*0.018)*G.w*(1-G.taper*(1-tt)));
         ctx.beginPath();ctx.strokeStyle=ink+'0.95)';ctx.lineWidth=lw;ctx.lineCap='round';
         ctx.moveTo(X(p0),Y(p0));ctx.lineTo(X(p1),Y(p1));ctx.stroke();
       }
-    } else { // cloud
-      const a=Math.max(0.04, 9000/G.pts.length);
-      ctx.fillStyle=ink+a.toFixed(3)+')';
-      const s=Math.max(0.5,size*0.0022);
-      for(const p of G.pts){ctx.fillRect(X(p),Y(p),s,s);}
     }
     ctx.filter='none';
-    // 朱 core
     if(opts.shu){
       let cxp,cyp;
       if(G.type==='path'){const last=G.pts[G.pts.length-1];cxp=X(last);cyp=Y(last);}
       else {cxp=ox+bb.cx*sc;cyp=oy+bb.cy*sc;}
-      ctx.beginPath();ctx.fillStyle='#a8392b';
+      ctx.beginPath();ctx.fillStyle=SHU;
       ctx.arc(cxp,cyp,Math.max(1.1,size*0.022),0,6.283);ctx.fill();
     }
   }
 
-  let curG=null;
-  function renderAll(){
-    curG=geom();
+  // ---------- attractor: density accumulate + develop ----------
+  function attractorParams(){return [+$('a_a').value,+$('a_b').value,+$('a_c').value,+$('a_d').value];}
+
+  function accumulate(RES,nPoints,seeds,onProgress){
+    // returns {acc,maxv,minX,maxX,minY,maxY,sc,ox,oy} — async-friendly only for export path
+    const [a,b,c,d]=attractorParams();
+    // bbox pass
+    let x=0.1,y=0.1,minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
+    for(let i=0;i<30000;i++){
+      const nx=Math.sin(a*y)-Math.cos(b*x), ny=Math.sin(c*x)-Math.cos(d*y);
+      x=nx;y=ny;
+      if(i>200){if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}
+    }
+    const PADF=0.16;
+    const spanX=(maxX-minX)||1e-3, spanY=(maxY-minY)||1e-3;
+    const sc=Math.min(RES*(1-2*PADF)/spanX, RES*(1-2*PADF)/spanY);
+    const ox=(RES-spanX*sc)/2 - minX*sc, oy=(RES-spanY*sc)/2 - minY*sc;
+    const acc=new Float32Array(RES*RES);
+    let maxv=0;
+    const per=Math.floor(nPoints/seeds);
+    for(let si=0;si<seeds;si++){
+      let sx=si===0?0.1:Math.random()*0.4-0.2, sy=si===0?0.1:Math.random()*0.4-0.2;
+      for(let i=0;i<40;i++){const nx=Math.sin(a*sy)-Math.cos(b*sx);const ny=Math.sin(c*sx)-Math.cos(d*sy);sx=nx;sy=ny;}
+      for(let i=0;i<per;i++){
+        const nx=Math.sin(a*sy)-Math.cos(b*sx);const ny=Math.sin(c*sx)-Math.cos(d*sy);sx=nx;sy=ny;
+        const px=(sx*sc+ox)|0, py=(sy*sc+oy)|0;
+        if(px>=0&&px<RES&&py>=0&&py<RES){const idx=py*RES+px;const v=++acc[idx];if(v>maxv)maxv=v;}
+      }
+      if(onProgress)onProgress(si,seeds);
+    }
+    return {acc,maxv,minX,maxX,minY,maxY,sc,ox,oy,RES};
+  }
+
+  function develop(plate,gamma,bg,ink,ctx){
+    // bg===null → transparent (alpha = density); else opaque blend bg→ink
+    const {acc,maxv,RES}=plate;
+    const denom=Math.log(1+maxv)||1;
+    const img=ctx.createImageData(RES,RES);
+    const px=img.data;
+    for(let i=0;i<acc.length;i++){
+      const v=acc[i];
+      const t=v<0.5?0:Math.pow(Math.log(1+v)/denom,gamma);
+      const q=i*4;
+      if(bg===null){
+        px[q]=ink[0];px[q+1]=ink[1];px[q+2]=ink[2];px[q+3]=Math.round(t*255);
+      }else{
+        px[q]  =Math.round(bg[0]+(ink[0]-bg[0])*t);
+        px[q+1]=Math.round(bg[1]+(ink[1]-bg[1])*t);
+        px[q+2]=Math.round(bg[2]+(ink[2]-bg[2])*t);
+        px[q+3]=255;
+      }
+    }
+    ctx.putImageData(img,0,0);
+  }
+
+  function shuOn(ctx,plate){
+    const {minX,maxX,minY,maxY,sc,ox,oy,RES}=plate;
+    ctx.beginPath();ctx.fillStyle=SHU;
+    ctx.arc(((minX+maxX)/2)*sc+ox,((minY+maxY)/2)*sc+oy,RES*0.022,0,6.283);ctx.fill();
+  }
+
+  function blit(ctx,sz,src){
+    ctx.clearRect(0,0,sz,sz);
+    ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+    ctx.drawImage(src,0,0,src.width,src.height,0,0,sz,sz);
+  }
+
+  // ---------- live render ----------
+  function renderAttractorLive(){
+    const g=+$('a_g').value, shu=$('tgShu').checked;
+    const plate=accumulate(MRES,LIVE_N,1,null);
+    develop(plate,g,PAPER,SUMI,mPaperC);
+    develop(plate,g,SUMI,SHIRO,mSumiC);
+    if(shu){shuOn(mPaperC,plate);shuOn(mSumiC,plate);}
+    blit(bigC,360,mPaper);
+    blit(c16,16,mPaper);blit(c32,32,mPaper);blit(c64,64,mPaper);
+    blit(cap,76,mPaper);blit(cas,76,mSumi);
+  }
+
+  function renderVectorLive(){
+    const G=mode==='phyllo'?genPhyllo():genSpiral();
     const shu=$('tgShu').checked, nij=$('tgNijimi').checked;
-    // big
-    draw(bigC,360,curG,{shu,nijimi:nij});
-    // hi-res then downsample (honest favicon test)
-    draw(offC,512,curG,{shu,nijimi:false});
-    [[c16,16],[c32,32],[c64,64]].forEach(([ctx,sz])=>{
-      ctx.clearRect(0,0,sz,sz);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
-      ctx.drawImage(off,0,0,512,512,0,0,sz,sz);
-    });
-    // app tiles (native render at tile size)
-    draw(cap,76,curG,{shu,nijimi:nij});
-    draw(cas,76,curG,{shu,nijimi:nij,ink:'rgba(244,235,225,'});
-    // lock readout
+    draw(bigC,360,G,{shu,nijimi:nij});
+    draw(offC,512,G,{shu,nijimi:false});
+    [[c16,16],[c32,32],[c64,64]].forEach(([ctx,sz])=>blit(ctx,sz,off));
+    draw(cap,76,G,{shu,nijimi:nij});
+    draw(cas,76,G,{shu,nijimi:nij,ink:'rgba(244,243,241,'});
+    return G;
+  }
+
+  function renderAll(){
+    if(mode==='attractor')renderAttractorLive();
+    else renderVectorLive();
     let v='';
     if(mode==='phyllo')v='phyllo · n='+$('p_n').value+' c='+$('p_c').value+' size='+$('p_s').value+' ang='+$('p_a').value+'° growth='+$('p_g').value;
     else if(mode==='spiral')v='spiral · b='+$('s_b').value+' turns='+$('s_t').value+' w='+$('s_w').value+' taper='+$('s_p').value;
-    else v='deJong · a='+$('a_a').value+' b='+$('a_b').value+' c='+$('a_c').value+' d='+$('a_d').value;
-    $('lockV').textContent=v+(shu?' · 朱core':'');
+    else v='deJong · a='+$('a_a').value+' b='+$('a_b').value+' c='+$('a_c').value+' d='+$('a_d').value+' γ='+$('a_g').value;
+    $('lockV').textContent=v+($('tgShu').checked?' · 朱core':'');
   }
 
-  // value labels
-  const valmap={p_n:'p_nV',p_c:'p_cV',p_s:'p_sV',p_a:'p_aV',p_g:'p_gV',s_b:'s_bV',s_t:'s_tV',s_w:'s_wV',s_p:'s_pV',a_a:'a_aV',a_b:'a_bV',a_c:'a_cV',a_d:'a_dV'};
+  // ---------- value labels / tabs / random ----------
+  const valmap={p_n:'p_nV',p_c:'p_cV',p_s:'p_sV',p_a:'p_aV',p_g:'p_gV',s_b:'s_bV',s_t:'s_tV',s_w:'s_wV',s_p:'s_pV',a_a:'a_aV',a_b:'a_bV',a_c:'a_cV',a_d:'a_dV',a_g:'a_gV'};
   Object.keys(valmap).forEach(id=>{const el=$(id);if(el)el.addEventListener('input',()=>{$(valmap[id]).textContent=parseFloat(el.value).toFixed(el.step.includes('.')?2:0);renderAll();});});
   $('tgShu').addEventListener('change',renderAll);
   $('tgNijimi').addEventListener('change',renderAll);
 
-  // tabs
   const DESC={
     phyllo:['フィロタキシス','黄金角137.5°で詰める。黄金比＝貝の正統な進化。非対称・密で、小サイズでも塊が残る。'],
     spiral:['対数螺旋','貝の一掃き。r = a·e^{bθ}。いちばん gesture・Zen。細線なので小サイズは太らせ／塗りが要る。'],
-    attractor:['ストレンジ・アトラクタ','de Jong 写像。混沌の底に潜む構造。決定論的なのに非対称で唯一。密なので縮小に強い。']
+    attractor:['ストレンジ・アトラクタ','de Jong 写像。混沌の底に潜む構造。決定論的なのに非対称で唯一。プレビュー＝焼付と同じ密度現像。']
   };
   document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');
@@ -302,6 +376,131 @@ input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;bac
     const r=()=>(Math.random()*6-3);
     ['a_a','a_b','a_c','a_d'].forEach(id=>{const v=r().toFixed(2);$(id).value=v;$(valmap[id]).textContent=parseFloat(v).toFixed(2);});
     renderAll();
+  });
+
+  /* ==================================================================
+     PLATE EXPORT — 2000px · three faces (transparent / paper / sumi-white)
+     ================================================================== */
+  const RES=2000, SEEDS=300, PER=80000;
+  let exporting=false;
+  const ov=$('ov'), ovp=$('ovp'), ovs=$('ovs');
+  function ovShow(step){ov.style.display='flex';ovs.textContent=step;}
+  function ovHide(){ov.style.display='none';}
+  const tick=()=>new Promise(r=>setTimeout(r,0));
+
+  function dlCanvas(canvas,name){
+    return new Promise(res=>{
+      canvas.toBlob(b=>{
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(b); a.download=name;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=>{URL.revokeObjectURL(a.href);res();},420);
+      },'image/png');
+    });
+  }
+
+  // art-title engraving — ⊕ in shu + params in faint ink, bottom-left, Fig.-annotation style
+  async function stampCaption(ctx,text,inkRGB,alpha){
+    try{await document.fonts.ready;}catch(e){}
+    const fs=Math.round(RES*0.013);
+    ctx.save();
+    if('letterSpacing' in ctx)ctx.letterSpacing='0.14em';
+    ctx.font='300 '+fs+'px Satoshi, ui-sans-serif, sans-serif';
+    ctx.textBaseline='alphabetic';ctx.textAlign='left';
+    const mx=Math.round(RES*0.05), my=RES-Math.round(RES*0.05);
+    ctx.fillStyle=SHU;
+    ctx.fillText('⊕',mx,my);
+    const w=ctx.measureText('⊕').width;
+    ctx.fillStyle='rgba('+inkRGB.join(',')+','+alpha+')';
+    ctx.fillText(text,mx+w+fs*0.6,my);
+    ctx.restore();
+  }
+
+  async function fireAttractor(shu){
+    const [a,b,c,d]=attractorParams();
+    const g=+$('a_g').value;
+    ovShow('multi-seed · '+(SEEDS*PER/1e6).toFixed(0)+'M points');
+    // async accumulation with progress (chunked by seeds)
+    // bbox + scale identical to accumulate(), but yielding to UI
+    let x=0.1,y=0.1,minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
+    for(let i=0;i<60000;i++){
+      const nx=Math.sin(a*y)-Math.cos(b*x), ny=Math.sin(c*x)-Math.cos(d*y);
+      x=nx;y=ny;
+      if(i>200){if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}
+    }
+    const PADF=0.16;
+    const spanX=(maxX-minX)||1e-3, spanY=(maxY-minY)||1e-3;
+    const sc=Math.min(RES*(1-2*PADF)/spanX, RES*(1-2*PADF)/spanY);
+    const ox=(RES-spanX*sc)/2 - minX*sc, oy=(RES-spanY*sc)/2 - minY*sc;
+    const acc=new Float32Array(RES*RES);
+    let maxv=0;
+    for(let si=0;si<SEEDS;si++){
+      let sx=Math.random()*0.4-0.2, sy=Math.random()*0.4-0.2;
+      for(let i=0;i<40;i++){const nx=Math.sin(a*sy)-Math.cos(b*sx);const ny=Math.sin(c*sx)-Math.cos(d*sy);sx=nx;sy=ny;}
+      for(let i=0;i<PER;i++){
+        const nx=Math.sin(a*sy)-Math.cos(b*sx);const ny=Math.sin(c*sx)-Math.cos(d*sy);sx=nx;sy=ny;
+        const px=(sx*sc+ox)|0, py=(sy*sc+oy)|0;
+        if(px>=0&&px<RES&&py>=0&&py<RES){const idx=py*RES+px;const v=++acc[idx];if(v>maxv)maxv=v;}
+      }
+      if((si&7)===0){ovp.textContent=Math.round(si/SEEDS*100)+'%';await tick();}
+    }
+    ovp.textContent='現像';
+    await tick();
+    const plate={acc,maxv,minX,maxX,minY,maxY,sc,ox,oy,RES};
+    const variants=[
+      {name:'trans', bg:null,  ink:SUMI},
+      {name:'paper', bg:PAPER, ink:SUMI},
+      {name:'sumi',  bg:SUMI,  ink:SHIRO},
+    ];
+    const stamp='dejong_'+a.toFixed(2)+'_'+b.toFixed(2)+'_'+c.toFixed(2)+'_'+d.toFixed(2)+'_g'+g.toFixed(2);
+    const capOn=$('tgCap').checked;
+    const capTxt='deJong · a='+a+' b='+b+' c='+c+' d='+d+' γ='+g;
+    for(const vt of variants){
+      const cv=document.createElement('canvas');cv.width=RES;cv.height=RES;
+      const ctx=cv.getContext('2d');
+      develop(plate,g,vt.bg,vt.ink,ctx);
+      if(shu)shuOn(ctx,plate);
+      if(capOn)await stampCaption(ctx,capTxt,vt.name==='sumi'?SHIRO:SUMI,vt.name==='sumi'?0.62:0.55);
+      ovs.textContent='焼付 · '+vt.name;
+      await dlCanvas(cv,'silas_mark_'+stamp+'_'+vt.name+'_'+RES+'.png');
+    }
+  }
+
+  async function fireVector(shu,nij){
+    const G=mode==='phyllo'?genPhyllo():genSpiral();
+    const variants=[
+      {name:'trans', bg:null,  ink:'rgba(34,33,31,'},
+      {name:'paper', bg:'rgb(247,247,245)', ink:'rgba(34,33,31,'},
+      {name:'sumi',  bg:'rgb(34,33,31)',    ink:'rgba(244,243,241,'},
+    ];
+    let stamp,capTxt;
+    if(mode==='phyllo'){stamp='phyllo_n'+$('p_n').value+'_c'+$('p_c').value+'_a'+$('p_a').value;
+      capTxt='phyllotaxis · n='+$('p_n').value+' c='+$('p_c').value+' ang='+$('p_a').value+'°';}
+    else {stamp='spiral_b'+$('s_b').value+'_t'+$('s_t').value;
+      capTxt='log spiral · b='+$('s_b').value+' turns='+$('s_t').value;}
+    const capOn=$('tgCap').checked;
+    for(const vt of variants){
+      ovs.textContent='焼付 · '+vt.name; ovp.textContent='—';
+      await tick();
+      const cv=document.createElement('canvas');cv.width=RES;cv.height=RES;
+      const ctx=cv.getContext('2d');
+      if(vt.bg){ctx.fillStyle=vt.bg;ctx.fillRect(0,0,RES,RES);}
+      draw(ctx,RES,G,{shu,nijimi:nij,ink:vt.ink});
+      if(capOn)await stampCaption(ctx,capTxt,vt.name==='sumi'?SHIRO:SUMI,vt.name==='sumi'?0.62:0.55);
+      await dlCanvas(cv,'silas_mark_'+stamp+'_'+vt.name+'_'+RES+'.png');
+    }
+  }
+
+  $('fire').addEventListener('click',async()=>{
+    if(exporting)return;exporting=true;
+    const shu=$('tgShu').checked, nij=$('tgNijimi').checked;
+    ovShow('preparing'); ovp.textContent='0%';
+    try{
+      if(mode==='attractor')await fireAttractor(shu);
+      else await fireVector(shu,nij);
+    }finally{
+      ovHide();exporting=false;
+    }
   });
 
   renderAll();

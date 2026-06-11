@@ -181,6 +181,7 @@
     <button class="slot" data-slot="10">11</button>
     <button class="slot" data-slot="11">12</button>
 
+    <button id="replayBtn" class="action">▶ Replay</button>
     <button id="pinBtn" class="action pin">📌 Pin</button>
     <button id="clearBtn" class="action">Clear slot</button>
     <button id="exportBtn" class="action">Export JSON</button>
@@ -239,6 +240,26 @@
 
   const slots = Array(12).fill(null);
   let pinTarget = 0;
+
+  // ── 描画アニメーション（▶ Replay / プリセット / スロット読込で発火） ──
+  const ANIM_MS = 3500;
+  let animProgress = 1;            // 1 = 描き終わり（静止）
+  let animStart = 0, animId = 0;
+  function stopAnim() {
+    if (animId) cancelAnimationFrame(animId);
+    animId = 0; animProgress = 1;
+  }
+  function startReplay() {
+    if (animId) cancelAnimationFrame(animId);
+    animStart = performance.now();
+    animProgress = 0;
+    (function loop() {
+      const now = performance.now();
+      animProgress = Math.min(1, (now - animStart) / ANIM_MS);
+      render();
+      animId = animProgress < 1 ? requestAnimationFrame(loop) : 0;
+    })();
+  }
 
   const cv = document.getElementById('c');
   const ctx = cv.getContext('2d');
@@ -314,9 +335,10 @@
 
   function drawCurve(cx, cy, scale, s) {
     const c = getCurve(s);
+    const upTo = Math.max(1, Math.floor(animProgress * c.pts));
     ctx.beginPath();
     let lastIn = false;
-    for (let i = 0; i <= c.pts; i++) {
+    for (let i = 0; i <= upTo; i++) {
       const [ux, uy, mag] = c.point(i);
       const inside = mag >= s.centerHole;
       if (inside) {
@@ -370,12 +392,13 @@
       const raw = +e.target.value;
       state[key] = scale === 1 ? raw : raw * scale;
       e.target.nextElementSibling.textContent = fmt(id, raw);
-      render();
+      stopAnim(); render();
     });
   }
   document.getElementById('family').addEventListener('change', e => {
-    state.family = e.target.value; render();
+    state.family = e.target.value; stopAnim(); render();
   });
+  document.getElementById('replayBtn').addEventListener('click', startReplay);
   bindRange('symmetry', 'symmetry');
   bindRange('step', 'step');
   bindRange('passes', 'passes');
@@ -383,21 +406,21 @@
   bindRange('sharpness', 'sharpness', 1/100);
   bindRange('phase', 'phase');
 
-  // Presets
+  // Presets: 切替時にアニメ再生（描かれていく工程を見せる）
   document.querySelectorAll('[data-preset]').forEach(btn => {
     btn.addEventListener('click', () => {
       Object.assign(state, PRESETS[+btn.dataset.preset]);
-      syncUI(); render();
+      syncUI(); startReplay();
     });
   });
 
-  // Slot click = load that slot's preset
+  // Slot click = そのスロットの印を読み込み＋アニメ再生
   document.querySelectorAll('.slot').forEach(btn => {
     btn.addEventListener('click', () => {
       const i = +btn.dataset.slot;
       if (slots[i]) {
         Object.assign(state, slots[i]);
-        syncUI(); render();
+        syncUI(); startReplay();
         pinTarget = i;  // 連続編集しやすいよう、編集中スロットを記憶
         document.querySelectorAll('.slot').forEach(b => b.style.outline = '');
         btn.style.outline = '2px solid rgba(43,41,37,0.55)';

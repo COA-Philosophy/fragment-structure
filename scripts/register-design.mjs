@@ -118,6 +118,10 @@ const use = need('use');
 const ja = need('ja');
 const en = need('en');
 const still = args.still ? String(args.still) : '';
+// 技法メタ（カタログの技法フィルタ／検索用）。family+tech があれば TECH マップへ追記。
+const family = args.family ? String(args.family) : '';
+const tech = args.tech ? String(args.tech) : '';
+const how = args.how ? String(args.how) : '';
 const esc = s => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 
 // --archive-no: 同 no の current を archived に
@@ -145,10 +149,39 @@ const entry =
 `;
 
 const closeIdx = index.indexOf('\n  ];', index.indexOf('const WORKS = ['));
-const out = index.slice(0, closeIdx + 1) + entry + index.slice(closeIdx + 1);
+let out = index.slice(0, closeIdx + 1) + entry + index.slice(closeIdx + 1);
+
+// ---- TECH マップにも追記（技法で引けるように）----
+// family+tech が渡された時だけ。how は任意。既に同 file が居れば追記しない。
+let techInjected = false, techNote = '';
+if (family && tech) {
+  const techStart = out.indexOf('const TECH = {');
+  if (techStart < 0) {
+    techNote = 'TECH マップが index.html に無いため技法は未登録';
+  } else {
+    const techClose = out.indexOf('\n  };', techStart);
+    if (techClose < 0) {
+      techNote = 'TECH マップの閉じが見つからず技法は未登録';
+    } else if (out.slice(techStart, techClose).includes(`'${fileRel}':`)) {
+      techNote = `TECH に既に ${fileRel} があるため追記スキップ`;
+    } else {
+      const techEntry =
+        `    '${esc(fileRel)}': { family: '${esc(family)}', tech: '${esc(tech)}', how: '${esc(how)}' },\n`;
+      out = out.slice(0, techClose + 1) + techEntry + out.slice(techClose + 1);
+      techInjected = true;
+    }
+  }
+} else if (family || tech || how) {
+  techNote = '技法登録には --family と --tech の両方が必要（今回は未登録）';
+} else {
+  techNote = '技法メタ未指定（--family/--tech/--how 省略 → カードに技法行は出ません）';
+}
+
 if (!DRY) fs.writeFileSync(INDEX, out, 'utf8');
 
 console.log(JSON.stringify({
   dry: DRY, no, version, status, project, use, ja, en,
-  file: fileRel, copied, archivedPrev: archivedCount
+  file: fileRel, copied, archivedPrev: archivedCount,
+  family: family || null, tech: tech || null, how: how || null,
+  techInjected, techNote
 }, null, 2));

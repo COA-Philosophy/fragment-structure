@@ -217,6 +217,115 @@
     color: var(--muted);
   }
 
+  /* 技法 ＝ 指して呼ぶための銘。用途ピル（金）とは役割を分け、墨で静かに */
+  .caption .techrow {
+    margin-top: 0.85rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--line);
+  }
+  .caption .tech-lab {
+    font-family: 'Satoshi', sans-serif; font-weight: 500;
+    font-size: 0.56rem; letter-spacing: 0.24em; text-transform: uppercase;
+    color: var(--gold);
+  }
+  .caption .tech {
+    display: block; margin-top: 0.28rem;
+    font-family: 'Noto Serif JP', serif; font-weight: 400;
+    font-size: 0.86rem; letter-spacing: 0.02em; line-height: 1.5;
+    color: var(--ink);
+  }
+  .caption .how {
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-top: 0.4rem;
+    font-family: 'Satoshi', sans-serif; font-weight: 300;
+    font-size: 0.72rem; line-height: 1.65; letter-spacing: 0.01em;
+    color: var(--muted);
+  }
+
+  /* 元コードの在処 ＋ 持ち出しボタン */
+  .caption .src {
+    display: flex; align-items: center; gap: 0.4rem;
+    margin-top: 0.8rem;
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    font-size: 0.66rem; letter-spacing: 0.01em;
+    color: var(--muted);
+    background: rgba(58,58,58,0.045);
+    border-radius: 0.35rem;
+    padding: 0.4rem 0.55rem;
+    overflow: hidden;
+  }
+  .caption .src .path { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .caption .cardacts { display: flex; gap: 0.45rem; margin-top: 0.65rem; }
+  .caption .cardacts button {
+    flex: 1;
+    font-family: 'Satoshi', sans-serif; font-weight: 400;
+    font-size: 0.62rem; letter-spacing: 0.12em;
+    color: var(--ink);
+    background: rgba(255,255,255,0.6);
+    border: 1px solid var(--line-mid);
+    border-radius: 0.4rem;
+    padding: 0.45rem 0.3rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 0.3rem;
+    transition: color 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+  }
+  .caption .cardacts button:hover { color: var(--gold); border-color: var(--gold-soft); }
+  .caption .cardacts button.done { color: var(--gold); border-color: var(--gold-soft); }
+
+  /* ───── フィルタバー（技法で引く・名前で引く） ───── */
+  .filterbar {
+    position: sticky; top: 0; z-index: 20;
+    margin-bottom: 3rem;
+    padding: 1rem 0.2rem 1.1rem;
+    background: rgba(249,248,246,0.86);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .filterbar .fsearch {
+    display: flex; align-items: center; gap: 0.55rem;
+    max-width: 420px;
+    background: rgba(255,255,255,0.7);
+    border: 1px solid var(--line-mid);
+    border-radius: 0.6rem;
+    padding: 0.55rem 0.85rem;
+    margin-bottom: 0.95rem;
+  }
+  .filterbar .fsearch span { color: var(--muted); font-size: 0.9rem; line-height: 1; }
+  .filterbar .fsearch input {
+    flex: 1; border: 0; background: transparent; outline: none;
+    font-family: 'Satoshi', sans-serif; font-size: 0.84rem; letter-spacing: 0.02em;
+    color: var(--ink);
+  }
+  .filterbar .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .filterbar .chip {
+    font-family: 'Satoshi', sans-serif; font-weight: 400;
+    font-size: 0.7rem; letter-spacing: 0.04em;
+    color: var(--muted);
+    background: rgba(255,255,255,0.55);
+    border: 1px solid var(--line-mid);
+    border-radius: 999px;
+    padding: 0.34rem 0.78rem;
+    cursor: pointer;
+    transition: color 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+  }
+  .filterbar .chip:hover { color: var(--ink); border-color: var(--gold-soft); }
+  .filterbar .chip.on { color: var(--bg); background: var(--ink); border-color: var(--ink); }
+  .filterbar .chip .c { opacity: 0.5; margin-left: 0.3em; font-size: 0.92em; }
+  .filterbar .chip[data-proj] { border-style: dashed; }
+  .filterbar .chip-sep { width: 1px; height: 1.1rem; background: var(--line-mid); margin: 0 0.25rem; }
+  .filterbar .fcount {
+    font-family: 'Lora', serif; font-style: italic;
+    font-size: 0.74rem; color: var(--muted); margin-left: auto;
+  }
+  .tile.hidden, .project.hidden, .tile.coming.hidden { display: none; }
+  .filtering .tile.coming { display: none; }
+
+  @media (max-width: 600px) {
+    .filterbar { margin-bottom: 2rem; }
+    .filterbar .fsearch { max-width: none; }
+  }
+
   /* 「来たる断片」プレースホルダ */
   .tile.coming {
     background: transparent;
@@ -330,7 +439,7 @@
   <div class="rule"></div>
 </header>
 
-<main id="atelier"></main>
+<main id="atelier"><div id="filterbar" class="filterbar" hidden></div></main>
 
 <footer>an evolving garden of code — grown one fragment at a time</footer>
 
@@ -726,6 +835,55 @@
     },
   ];
 
+  // ── 技法メタ（各作品のコードから命名 / works/<file> をキーに WORKS へマージ）──
+  // 新作を足したら、ここに 'works/xxx.html': { family, tech, how } を1行足す。
+  //   family : フィルタ用の技法ファミリー（チップは出現順で自動生成）
+  //   tech   : 技法名（指して呼ぶための短い名）
+  //   how    : どう描くかの一言（カードのホバー／検索対象）
+  const TECH = {
+    'works/mandala.html':              { family:'曼荼羅',        tech:'六段階モーフィング曼荼羅',            how:'無→種→芽→華→満開→光の6段階を三角窓重み関数でクロスフェードし、黄金角137.5°配置の花弁と多重対称リングを重ねる。' },
+    'works/sd-mandala-studio.html':    { family:'曼荼羅',        tech:'Maurer・スピログラフ・ローズ曲線探索', how:'Maurer曲線・内サイクロイド・ローズ曲線の3族をsymmetry・step角・sharpness等7変数で切替え、極座標点列をdash描画で再生。' },
+    'works/sd-opening.html':           { family:'粒子場',        tech:'星座粒子の楕円軌道収束→水平線',        how:'各粒子に独立した楕円軌道を与えて漂わせ、easeInQuartで中心へ引き込み、画面幅を横断する輝線を描いてホワイトアウト遷移。' },
+    'works/sd-zen-lines.html':         { family:'枯山水・線画',  tech:'stroke-dasharray のコマ送り描画',     how:'螺旋ロゴSVGの各pathの全長をstroke-dasharrayにし、6パターンの順序とランダム遅延でoffsetを0へ戻して筆描きを再現。' },
+    'works/sd-particles.html':         { family:'粒子場',        tech:'近傍接続線＋中心収束',                how:'150粒子が楕円軌道を周回し、距離135px以下のペアを線で結んで星座を作り、easeInOutSineで全粒子を中央へ収束させる。' },
+    'works/sd-pulse.html':             { family:'脈動・波',      tech:'心拍型 scale/opacity 脈動',           how:'10%キーフレームでscale1.1・opacity1へ急上昇し残り85%静止する非対称heartbeatをlogo/影/glowの3層に周期2秒でかける。' },
+    'works/sd-meditation-pulse.html':  { family:'脈動・波',      tech:'緩速心拍の三層パルス',                how:'sd-pulseと同構造で周期を4秒へ延ばしピーク到達を5%へ前倒し、瞬発後の長い静寂を強調した瞑想的な一拍に。' },
+    'works/sd-expanding.html':         { family:'脈動・波',      tech:'SVGロゴの拡大回転登場',               how:'@keyframesでコンテナをscale0.05→1へ3秒拡大し、同時にrotate360degを加えて渦巻きながら登場させる。' },
+    'works/sd-converge.html':          { family:'粒子場',        tech:'星座生成＋中心収束ローディング',      how:'楕円軌道で星を漂わせ近傍を線で結び、reveal時にeaseInOutSineで全星を画面中央へ吸い込んで消すローディング演出。' },
+    'works/sd-attractor.html':         { family:'アトラクタ',    tech:'ストレンジアトラクタの墨一筆3D巡回',  how:'Lorenz・Aizawa等5種の微分方程式をdt刻みで積分し、16000点の軌跡をWEBGLで回転させながら半透明の墨線で描く。' },
+    'works/sd-parametric.html':        { family:'枯山水・線画',  tech:'パラメトリック曲線の一筆墨描き',      how:'バラ曲線・ハイポトロコイド・Maurer roseを極座標式で全点計算し、8秒かけて線を引き完成後フェードして次の曲線へ。' },
+    'works/sd-mandala-marks.html':     { family:'曼荼羅',        tech:'Maurer rose 12タイプ同時アニメ',      how:'symmetry・step・passesでMaurer roseの各点θ=i×stepを計算し、回転コピーした線をグリッド12マスに時差アニメで描く。' },
+    'works/silas-profile-demo.html':   { family:'対話・読み物',  tech:'占術統合プロフィール＋型印SVG透かし', how:'スマホモック内に占術5系統のテキストを組版し、背景にMaurer rose(n=8,d=43°)のSVGパスを0.085透明度で透かす読み物。' },
+    'works/sd-todays-mountain.html':   { family:'風景',          tech:'テキスト種シードの fBm 稜線水墨',      how:'キーワード文字列をhashで整数シード化し、mulberry32乱数のパーリンfBmで多層の稜線パスを生成、かすれ・霞フィルタを重ねる。' },
+    'works/sd-asym-studio.html':       { family:'印・マーク',    tech:'三モード密度現像マーク生成器',        how:'フィロタキシス・対数螺旋・de Jongの3方式を切替え、ピクセル密度バッファをlog-γ現像して非対称な印を焼き付ける工房。' },
+    'works/sd-ratio-spirals.html':     { family:'印・マーク',    tech:'四比率の対数螺旋比較',                how:'黄金・白銀・大和・青銅の比からb=ln(ratio)/(π/2)を求め、同一パラメータでr=a·e^bθの対数螺旋を4並列描画して差を可視化。' },
+    'works/sd-attractor-morph.html':   { family:'アトラクタ',    tech:'複数3Dアトラクタ間クロスフェード',    how:'Aizawa・Lorenz等5種を毎フレーム積分し2D投影点を密度バッファに累積・log-γ現像、時計で二系統の点数配分を補間して形を移行。' },
+    'works/almana-hero.html':          { family:'アトラクタ',    tech:'de Jong密度現像ヒーロー',             how:'5セットのde Jongパラメータ(x=sin(ay)−cos(bx))をマルチシード累積→log-γ現像で1200pxに焼き、クロスフェードで切替えるLP背景。' },
+    'works/almana-living-dejong.html': { family:'アトラクタ',    tech:'正弦波ドリフトする生体de Jong',       how:'4パラメータを互いに素な周期の正弦波で変化させながらde Jong写像を毎フレーム9万点積分し、減衰で過去を薄め呼吸するように変形。' },
+    'works/almana-karesansui.html':    { family:'枯山水・線画',  tech:'青ノイズ石配置×フローフィールド砂紋', how:'シード決定論PRNGで石を青ノイズ配置し、基本方向＋パーリン揺動＋石の接線斥力で流向を作り等間隔ストリームラインで砂紋を引く。' },
+    'works/almana-hero-karesansui.html':{ family:'枯山水・線画', tech:'枯山水フローフィールドLP背景',        how:'固定石3個を基点に、パーリン揺動＋石斥力の流向場でRK2ストリームラインを等間隔展開し帯域フェードでLP背景に描く。' },
+    'works/almana-seal.html':          { family:'枯山水・線画',  tech:'誕生日ハッシュ駆動の流線積分',        how:'生年月日をFNVハッシュ→mulberry32乱数化し、渦芯と石のベクトル場をRK2積分して円内に等間隔の流線を敷き詰める。' },
+    'works/almana-light.html':         { family:'枯山水・線画',  tech:'方位角ライティングの畝レリーフ',      how:'流線構造はそのままに、各セグメントの法線と光ベクトルの内積で明暗2面をオフセット描画し、光源方位をリアルタイム可変。' },
+    'works/almana-grows.html':         { family:'枯山水・線画',  tech:'記録累積による段階的な流線開示',      how:'記録1件ごとにrevealFrac=pow(n/40,0.6)で描く流線数を決め、感情状態が線の透明度と太さを変調しながら描き足す。' },
+    'works/almana-core.html':          { family:'地層標本',      tech:'五行比率の地層コア標本',              how:'生年月日ハッシュから五行ごとに乱数をpow(x,1.7)+0.05で正規化して層厚比を決め、各層に等間隔の層理線を描く縦型コア標本。' },
+    'works/almana-convergence.html':   { family:'3D多面体',      tech:'シード変形多面体の収束アニメ',        how:'ハッシュで正4・8・20面体を選び各頂点を非均等スケールと回転で歪め、5群に分けた頂点を時差補間で中心へ収束させ遠近投影で回す。' },
+    'works/almana-convergence-lp.html':{ family:'3D多面体',     tech:'三角双錐の六面ホバーLP',              how:'固定の三角双錐(5頂点6面)を分解状態から収束させ、ホバー時に面の法線判定で該当面を朱ハイライトし占術テキストを連動表示。' },
+    'works/almana-12types.html':       { family:'アトラクタ',    tech:'de Jongアトラクタ点描（11万点）',     how:'x=sin(a·y)−cos(b·x)の漸化式を11万回反復し、収束した軌道点を0.9px・透明度7%の墨点で重ね打ちして墨形に。' },
+    'works/almana-12types-v2.html':    { family:'アトラクタ',    tech:'de Jong紋章をbase64焼付プレートで内蔵', how:'de Jongで事前生成した12タイプの紋章をbase64 PNGとしてHTMLに埋め込み、img要素で遅延表示する版。' },
+    'works/almana-blanc-reading.html': { family:'3D多面体',      tech:'三角双錐6面の透視投影＋面選択回転',   how:'頂点5・6面の三角双錐を透視投影して描き、選択面の法線をHEROベクトルへ最短回転で向け、アイドル時はsin波で静かに揺らす。' },
+    'works/sd-unkai-hero.html':        { family:'風景',          tech:'ドメインワープfBm雲海のタイル視差',   how:'fbm→q→warpの2段ドメインワープでtileableな雲密度場を焼き付け、近・遠2層を異なるズームと速度で横スクロールして俯瞰雲海に。' },
+    'works/sd-unkai-hero-v3.html':     { family:'風景',          tech:'法線差分ライティング付きfBm雲海',     how:'上下・左右の密度差分でトップライトと影を計算し、マクロfBmで雲塊の密集・開口を制御した雲海を2段parallaxで合成。' },
+    'works/almana-dawn-hero.html':     { family:'風景',          tech:'fBm雲海＋rfbm連峰＋Aizawa紋章',       how:'ドメインワープfBm雲海・rfbm稜線山脈・乱数かすれ岩肌の3層を合成し、上部にAizawaアトラクタの軌道トレイルをALMANA紋として重ねる。' },
+    'works/almana-reframe-work.html':  { family:'対話・読み物',  tech:'4段階ステッパー型の認知リフレーミングUI', how:'事実→現在の解釈→別の解釈→分岐比較の4パネルをstepStateで管理し、入力収集とカード比較をJSで描く対話型ワーク。' },
+    'works/almana-dawn-hero-blanc.html':{ family:'風景',         tech:'fBm雲海＋Aizawa重畳ヒーロー',         how:'ドメインワープfBmで雲海をオフスクリーンに焼き、Aizawa系の軌跡をバンド別透明度で毎フレーム回転描画してロゴマークに重ねるblanc版。' },
+    'works/almana-patterns.html':      { family:'対話・読み物',  tech:'フォンモック内のAIログ読み物',        how:'CSSだけのフォンシェル内に静的テキストを配置し、Now/Pattern/Friction/Nextの4節をfade-inで見せる読み物レイアウト。' },
+    'works/almana-streams.html':       { family:'対話・読み物',  tech:'グリフヒートマップ付き日次方向ログ',  how:'CSS Grid 7列のカレンダー状セルに↑～—↓のグリフを直書きし、凡例カウントとAI読み下しを下部に続ける静的モック。' },
+    'works/almana-dialogue-sumi.html': { family:'対話・読み物',  tech:'暗色テーマの対話スレッドUI',          how:'CSSカスタムプロパティをphoneスコープで上書きしてダーク反転し、ALMANAと自分のバブルを左右に配置したチャット型モック。' },
+    'works/almana-lp-phones-study.html':{ family:'レイアウト研究',tech:'3画面配置バリアント比較',             how:'flat/fan/stagger/perspectiveの4パターンをJSで生成し、iframe3台をCSS transformで並べ替えて配置の差を一覧比較する研究ページ。' },
+    'works/almana-logo.html':          { family:'印・マーク',    tech:'ブランドマーク＆ロゴタイプ規定',      how:'1枚のマーク画像をdata-URIでCSS変数化して全所で共有し、各サイズ・ロゴタイプ・ロックアップ・余白規定を1枚に組んだブランドidentityシート。' },
+  };
+  WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
+
   const atelier = document.getElementById('atelier');
   const viewer = document.getElementById('viewer');
   const closeBtn = viewer.querySelector('.close');
@@ -796,10 +954,34 @@
       metaLine +
       (w.use ? `<span class="use">${w.use}</span>` : '') +
       `<span class="ja">${w.ja}</span>` +
-      `<span class="en">${w.en}</span>`;
+      `<span class="en">${w.en}</span>` +
+      (w.tech
+        ? `<div class="techrow"><span class="tech-lab">技法</span>` +
+            `<span class="tech">${w.tech}</span>` +
+            (w.how ? `<span class="how">${w.how}</span>` : '') +
+          `</div>`
+        : '') +
+      `<div class="src"><span style="opacity:.55">▸</span>` +
+        `<span class="path" title="${w.file}">${w.file}</span></div>` +
+      `<div class="cardacts">` +
+        `<button type="button" class="copy-html"><span class="g">⧉</span><span class="t">HTML</span></button>` +
+        `<button type="button" class="copy-path"><span class="g">⌁</span><span class="t">パス</span></button>` +
+      `</div>`;
 
     tile.appendChild(frame);
     tile.appendChild(caption);
+
+    // カード上で完結するコピー（タイルクリック＝拡大表示へ伝播させない）
+    const cHtml = caption.querySelector('.copy-html');
+    const cPath = caption.querySelector('.copy-path');
+    cHtml.addEventListener('click', (e) => { e.stopPropagation(); cardCopyHtml(w.file, cHtml); });
+    cPath.addEventListener('click', (e) => { e.stopPropagation(); cardCopyText(w.file, cPath); });
+
+    // 検索用の素引き文字列（No・名前・技法・作り方・用途・パスを連結）
+    tile._hay = [w.no, w.version, w.ja, w.en, w.tech, w.how, w.use, w.project, w.file]
+      .filter(Boolean).join(' ').toLowerCase();
+    tile._family = w.family || '';
+    tile._project = w.project || '';
 
     // ビューポートに入ったら自動再生（IntersectionObserverが制御）
     tile._live = live;
@@ -839,6 +1021,105 @@
 
     atelier.appendChild(section);
   });
+
+  // ====== フィルタバー（技法で引く・名前で引く・プロジェクトで束ねる） ======
+  buildFilter();
+
+  function buildFilter() {
+    const fb = document.getElementById('filterbar');
+    if (!fb) return;
+    // 技法ファミリーを出現順で集計（データが増えればチップも自動で増える）
+    const famOrder = [], famCount = {};
+    WORKS.forEach(w => {
+      const f = w.family; if (!f) return;
+      if (!(f in famCount)) { famCount[f] = 0; famOrder.push(f); }
+      famCount[f]++;
+    });
+    let html =
+      '<div class="fsearch"><span>⌕</span>' +
+      '<input type="search" id="fq" placeholder="技法・作品名・No で検索…" autocomplete="off" aria-label="検索"></div>' +
+      '<div class="chips">' +
+      '<button class="chip on" data-all="1">すべて</button>';
+    famOrder.forEach(f => {
+      html += `<button class="chip" data-fam="${f}">${f}<span class="c">${famCount[f]}</span></button>`;
+    });
+    html += '<span class="chip-sep"></span>';
+    groups.forEach(g => {
+      html += `<button class="chip" data-proj="${g.project}">${g.project}<span class="c">${g.items.length}</span></button>`;
+    });
+    html += '<span class="fcount" id="fcount"></span></div>';
+    fb.innerHTML = html;
+    fb.removeAttribute('hidden');
+
+    let actFam = '', actProj = '', q = '';
+    const chipEls = Array.prototype.slice.call(fb.querySelectorAll('.chip'));
+    function syncChips() {
+      chipEls.forEach(c => {
+        if (c.dataset.all !== undefined) c.classList.toggle('on', !actFam && !actProj);
+        else if (c.dataset.fam !== undefined) c.classList.toggle('on', !!actFam && c.dataset.fam === actFam);
+        else if (c.dataset.proj !== undefined) c.classList.toggle('on', !!actProj && c.dataset.proj === actProj);
+      });
+    }
+    function apply() {
+      const tiles = Array.prototype.slice.call(document.querySelectorAll('.tile:not(.coming)'));
+      tiles.forEach(t => {
+        const ok =
+          (!actFam || t._family === actFam) &&
+          (!actProj || t._project === actProj) &&
+          (!q || (t._hay || '').indexOf(q) > -1);
+        t.classList.toggle('hidden', !ok);
+      });
+      document.querySelectorAll('.project').forEach(sec => {
+        const vis = sec.querySelectorAll('.tile:not(.coming):not(.hidden)').length;
+        sec.classList.toggle('hidden', vis === 0);
+      });
+      const filtering = !!(actFam || actProj || q);
+      atelier.classList.toggle('filtering', filtering);
+      const shown = tiles.filter(t => !t.classList.contains('hidden')).length;
+      const fc = document.getElementById('fcount');
+      if (fc) fc.textContent = filtering ? `${shown} / ${tiles.length}` : `${tiles.length} fragments`;
+    }
+    fb.addEventListener('click', e => {
+      const chip = e.target.closest('.chip'); if (!chip) return;
+      if (chip.dataset.all !== undefined) { actFam = ''; actProj = ''; }
+      else if (chip.dataset.fam !== undefined) actFam = (actFam === chip.dataset.fam ? '' : chip.dataset.fam);
+      else if (chip.dataset.proj !== undefined) actProj = (actProj === chip.dataset.proj ? '' : chip.dataset.proj);
+      syncChips(); apply();
+    });
+    const qinput = fb.querySelector('#fq');
+    qinput_listen(qinput, v => { q = v.trim().toLowerCase(); apply(); });
+    apply();
+  }
+  function qinput_listen(el, cb) { if (el) el.addEventListener('input', () => cb(el.value)); }
+
+  // ====== カード上で完結するコピー（HTMLソース / 相対パス） ======
+  function flashBtn(btn, ok) {
+    const g = btn.querySelector('.g'), t = btn.querySelector('.t');
+    const baseGlyph = btn.classList.contains('copy-html') ? '⧉' : '⌁';
+    const baseLabel = btn.classList.contains('copy-html') ? 'HTML' : 'パス';
+    btn.classList.add('done');
+    if (g) g.textContent = ok ? '✓' : '×';
+    if (t) t.textContent = ok ? 'コピー済' : '失敗';
+    setTimeout(() => {
+      btn.classList.remove('done');
+      if (g) g.textContent = baseGlyph;
+      if (t) t.textContent = baseLabel;
+    }, 1600);
+  }
+  async function cardCopyText(text, btn) {
+    let ok = false;
+    try {
+      if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); ok = true; }
+      else ok = legacyCopy(text);
+    } catch (e) { ok = legacyCopy(text); }
+    flashBtn(btn, ok);
+  }
+  async function cardCopyHtml(file, btn) {
+    let html;
+    try { const res = await fetch(file); if (!res.ok) throw new Error(res.status); html = await res.text(); }
+    catch (e) { flashBtn(btn, false); return; }
+    cardCopyText(html, btn);
+  }
 
   requestAnimationFrame(() => {
     document.querySelectorAll('.tile').forEach(t => t.classList.add('in'));

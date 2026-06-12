@@ -884,6 +884,11 @@
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 
+  // このリポの実体の在処。別プロジェクトから作品を指す時は相対パスでは辿れないので、
+  // `パス` コピーと .path ホバーはフルパスを渡す。移設したらここだけ直す。
+  const REPO_ABS = 'C:\\Development\\fragment-structure';
+  const absPath = rel => REPO_ABS + '\\' + String(rel).replace(/\//g, '\\');
+
   const atelier = document.getElementById('atelier');
   const viewer = document.getElementById('viewer');
   const closeBtn = viewer.querySelector('.close');
@@ -962,7 +967,7 @@
           `</div>`
         : '') +
       `<div class="src"><span style="opacity:.55">▸</span>` +
-        `<span class="path" title="${w.file}">${w.file}</span></div>` +
+        `<span class="path" title="${absPath(w.file)}">${w.file}</span></div>` +
       `<div class="cardacts">` +
         `<button type="button" class="copy-html"><span class="g">⧉</span><span class="t">HTML</span></button>` +
         `<button type="button" class="copy-path"><span class="g">⌁</span><span class="t">パス</span></button>` +
@@ -975,7 +980,7 @@
     const cHtml = caption.querySelector('.copy-html');
     const cPath = caption.querySelector('.copy-path');
     cHtml.addEventListener('click', (e) => { e.stopPropagation(); cardCopyHtml(w.file, cHtml); });
-    cPath.addEventListener('click', (e) => { e.stopPropagation(); cardCopyText(w.file, cPath); });
+    cPath.addEventListener('click', (e) => { e.stopPropagation(); cardCopyText(absPath(w.file), cPath); });
 
     // 検索用の素引き文字列（No・名前・技法・作り方・用途・パスを連結）
     tile._hay = [w.no, w.version, w.ja, w.en, w.tech, w.how, w.use, w.project, w.file]

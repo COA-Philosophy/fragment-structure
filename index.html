@@ -630,8 +630,8 @@
       no: 'F018', version: 'v1', status: 'current',
       project: 'ALMANA',
       use: 'LP / Hero',
-      ja: 'Almana 扉',
-      en: 'Hero — de Jong self-portrait',
+      ja: 'ヒーロー / 構造プロフィール左右分割',
+      en: 'Hero — Structure profile split (blanc)',
       file: 'works/almana-hero.html',
       still: ''
     },
@@ -833,6 +833,15 @@
       file: 'works/almana-logo.html',
       still: ''
     },
+    {
+      no: 'F039', version: 'v1', status: 'current',
+      project: 'ALMANA',
+      use: 'LP / Hero',
+      ja: 'ヒーロー / アトラクタ背景 × 構造診断',
+      en: 'Hero — attractor backdrop x Structure',
+      file: 'works/almana-hero-attractor.html',
+      still: ''
+    },
   ];
 
   // ── 技法メタ（各作品のコードから命名 / works/<file> をキーに WORKS へマージ）──
@@ -858,7 +867,7 @@
     'works/sd-asym-studio.html':       { family:'印・マーク',    tech:'三モード密度現像マーク生成器',        how:'フィロタキシス・対数螺旋・de Jongの3方式を切替え、ピクセル密度バッファをlog-γ現像して非対称な印を焼き付ける工房。' },
     'works/sd-ratio-spirals.html':     { family:'印・マーク',    tech:'四比率の対数螺旋比較',                how:'黄金・白銀・大和・青銅の比からb=ln(ratio)/(π/2)を求め、同一パラメータでr=a·e^bθの対数螺旋を4並列描画して差を可視化。' },
     'works/sd-attractor-morph.html':   { family:'アトラクタ',    tech:'複数3Dアトラクタ間クロスフェード',    how:'Aizawa・Lorenz等5種を毎フレーム積分し2D投影点を密度バッファに累積・log-γ現像、時計で二系統の点数配分を補間して形を移行。' },
-    'works/almana-hero.html':          { family:'アトラクタ',    tech:'de Jong密度現像ヒーロー',             how:'5セットのde Jongパラメータ(x=sin(ay)−cos(bx))をマルチシード累積→log-γ現像で1200pxに焼き、クロスフェードで切替えるLP背景。' },
+    'works/almana-hero.html':          { family:'レイアウト研究',  tech:'左右分割×ライブモック額装ヒーロー',   how:'左コピー/右ステージのGrid分割。実モックをiframe埋込しzoom縮約、.phoneカードへ密着クリップ＋角丸影で浮遊。' },
     'works/almana-living-dejong.html': { family:'アトラクタ',    tech:'正弦波ドリフトする生体de Jong',       how:'4パラメータを互いに素な周期の正弦波で変化させながらde Jong写像を毎フレーム9万点積分し、減衰で過去を薄め呼吸するように変形。' },
     'works/almana-karesansui.html':    { family:'枯山水・線画',  tech:'青ノイズ石配置×フローフィールド砂紋', how:'シード決定論PRNGで石を青ノイズ配置し、基本方向＋パーリン揺動＋石の接線斥力で流向を作り等間隔ストリームラインで砂紋を引く。' },
     'works/almana-hero-karesansui.html':{ family:'枯山水・線画', tech:'枯山水フローフィールドLP背景',        how:'固定石3個を基点に、パーリン揺動＋石斥力の流向場でRK2ストリームラインを等間隔展開し帯域フェードでLP背景に描く。' },
@@ -881,6 +890,7 @@
     'works/almana-dialogue-sumi.html': { family:'対話・読み物',  tech:'暗色テーマの対話スレッドUI',          how:'CSSカスタムプロパティをphoneスコープで上書きしてダーク反転し、ALMANAと自分のバブルを左右に配置したチャット型モック。' },
     'works/almana-lp-phones-study.html':{ family:'レイアウト研究',tech:'3画面配置バリアント比較',             how:'flat/fan/stagger/perspectiveの4パターンをJSで生成し、iframe3台をCSS transformで並べ替えて配置の差を一覧比較する研究ページ。' },
     'works/almana-logo.html':          { family:'印・マーク',    tech:'ブランドマーク＆ロゴタイプ規定',      how:'1枚のマーク画像をdata-URIでCSS変数化して全所で共有し、各サイズ・ロゴタイプ・ロックアップ・余白規定を1枚に組んだブランドidentityシート。' },
+    'works/almana-hero-attractor.html': { family: 'アトラクタ', tech: '極薄ストレンジ・アトラクタ背景 × リアル端末額装', how: 'p5 WEBGLで5種アトラクタを巡回積分し極薄墨の一筆で大きく背景化、左コピー＋リアルiPhone(実モック埋込)を前面に重ねる' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

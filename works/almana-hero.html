@@ -4,17 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ALMANA — HERO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#F4F2EC; --ink:#1A1815;
-    --hair:rgba(26,24,21,0.20); --soft:rgba(26,24,21,0.50);
+    --ground:#e8e8e5; --paper:#f7f7f5; --ink:#222120;
+    --hair:#e0ddd6; --soft:#6f6b64; --shu:#a8392b;
     --grotesque:"Archivo","Neue Haas Grotesk Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+    --logo:'Spectral',Georgia,serif;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);
+  html,body{margin:0;padding:0;background:var(--ground);color:var(--ink);
     font-family:var(--grotesque);-webkit-font-smoothing:antialiased;}
 
-  .hero{min-height:100vh;display:grid;grid-template-columns:0.95fr 1.05fr;}
+  .hero{position:relative;min-height:100vh;display:grid;grid-template-columns:0.95fr 1.05fr;}
 
   /* ---- left : copy ---- */
   .copy{display:flex;flex-direction:column;justify-content:center;
@@ -22,10 +26,13 @@
   .eyebrow{font-size:10px;letter-spacing:0.34em;text-transform:uppercase;
     color:var(--soft);margin-bottom:34px;}
   /* EDIT COPY HERE ↓ */
-  .wordmark{font-size:clamp(56px,9vw,148px);line-height:0.92;font-weight:600;
-    letter-spacing:0.02em;text-transform:uppercase;margin:0;}
+  .wordmark{font-family:var(--logo);font-size:clamp(34px,5vw,72px);line-height:1;font-weight:400;
+    letter-spacing:0.38em;text-transform:uppercase;color:var(--ink);margin:0;white-space:nowrap;}
+  .wordmark::after{content:"";display:inline-block;width:0.13em;height:0.13em;border-radius:50%;
+    background:var(--shu);margin-left:0.3em;vertical-align:0.1em;}
   .tagline{font-size:clamp(15px,1.5vw,19px);line-height:1.6;color:#3a352f;
-    max-width:30ch;margin:30px 0 0;font-weight:400;}
+    max-width:36ch;margin:30px 0 0;font-weight:400;}
+  .tagline .jp{white-space:nowrap;}
   .tagline em{font-style:italic;color:var(--soft);}
   /* EDIT COPY HERE ↑ */
   .cta{margin-top:46px;display:inline-flex;align-items:center;gap:12px;
@@ -33,17 +40,18 @@
     text-decoration:none;font-size:11px;letter-spacing:0.24em;text-transform:uppercase;
     padding:15px 26px;transition:background .18s,color .18s;}
   .cta:hover{background:var(--ink);color:var(--paper);}
+  .cta-note{margin-top:14px;font-size:10.5px;letter-spacing:0.1em;color:var(--soft);}
   .footnote{position:absolute;left:5vw;bottom:34px;font-size:9px;letter-spacing:0.24em;
     text-transform:uppercase;color:var(--soft);}
 
-  /* ---- right : living karesansui ---- */
-  .stage{position:relative;overflow:hidden;border-left:1px solid var(--hair);}
-  .plate{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
-    opacity:0;transition:opacity 4s ease;animation:drift 26s ease-in-out infinite alternate;
-    transform-origin:50% 52%;}
-  .plate.active{opacity:1;}
-  @keyframes drift{from{transform:scale(1.0) translate(0,0);}
-    to{transform:scale(1.055) translate(-1.2%,0.8%);}}
+  /* ---- right : Structure phone mock ---- */
+  .stage{position:relative;overflow:visible;
+    display:flex;align-items:center;justify-content:center;}
+  .device{position:relative;width:320px;height:700px;overflow:hidden;flex:0 0 auto;
+    background:transparent;border-radius:30px;zoom:var(--ds,0.9);
+    box-shadow:0 40px 80px -38px rgba(34,33,32,0.30), 0 12px 30px -18px rgba(34,33,32,0.12);}
+  .device iframe{display:block;width:360px;height:760px;border:0;background:transparent;
+    margin:-22px 0 0 -20px;}
 
   .reg{position:absolute;width:13px;height:13px;pointer-events:none;}
   .reg::before,.reg::after{content:"";position:absolute;background:var(--hair);}
@@ -53,17 +61,14 @@
 
   .stamp{position:absolute;top:24px;right:24px;text-align:right;
     font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--soft);line-height:1.7;}
-  .caption{position:absolute;left:24px;bottom:24px;
-    font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--soft);}
 
   @media (max-width:860px){
-    .hero{grid-template-columns:1fr;}
-    .copy{order:2;padding:10vw 8vw 12vw;}
-    .stage{order:1;height:48vh;border-left:none;border-bottom:1px solid var(--hair);}
-    .footnote{position:static;margin-top:40px;}
-  }
-  @media (prefers-reduced-motion: reduce){
-    .plate{animation:none;}
+    .hero{grid-template-columns:1fr;min-height:0;}
+    .copy{order:1;padding:16vw 8vw 2vw;}
+    .stage{order:2;height:auto;padding:6vw 0 4vw;}
+    .device{--ds:0.55;}
+    .stamp,.reg{display:none;}
+    .footnote{order:3;position:static;left:auto;bottom:auto;margin:0;padding:6vw 8vw 12vw;}
   }
 </style>
 </head>
@@ -72,103 +77,21 @@
     <section class="copy">
       <!-- ===== EDIT COPY BLOCK ===== -->
       <div class="eyebrow">Almana — Generative Self-Portrait</div>
-      <h1 class="wordmark">Almana</h1>
-      <p class="tagline">生まれた構造を、一枚の図形に。<br>
-        <em>deterministic, not symmetric — your structure, drawn once.</em></p>
-      <a class="cta" href="#">あなたの形を見る →</a>
+      <h1 class="wordmark">ALMANA</h1>
+      <p class="tagline"><span class="jp">わたしを紐解く、知のアルゴリズム。</span><br>
+        <em>decoding the self — the algorithm of knowing.</em></p>
+      <a class="cta" href="#">あなたの構造を見に行く →</a>
+      <div class="cta-note">３分で完了、登録不要</div>
       <!-- ===== /EDIT COPY BLOCK ===== -->
-      <div class="footnote">Almana · ver 0.1 · almana.app</div>
     </section>
 
     <section class="stage" id="stage">
       <div class="reg tl"></div><div class="reg brm"></div>
-      <div class="stamp">De Jong<br>Generative Mark</div>
-      <div class="caption" id="caption">a — b — c — d —</div>
+      <div class="device"><iframe loading="lazy" scrolling="no" src="silas-blanc-profile-crystal.html?hero"></iframe></div>
+      <div class="stamp">Structure<br>構造</div>
     </section>
+
+    <div class="footnote">Almana · ver 0.1 · almana.app</div>
   </main>
-
-<script>
-// ---- curated de Jong parameter sets (swap freely / paste from the explorer) ----
-const PLATES=[
-  [1.40,-2.30,2.40,-2.10],
-  [-2.24,0.43,-0.65,-2.43],
-  [-2.00,-2.00,-1.20,2.00],
-  [1.641,1.902,0.316,1.525],
-  [-0.827,-1.637,1.659,-0.943],
-];
-const PAPER=[244,242,236], INK=[26,24,21];
-const SIZE=1200;          // bake resolution (square, displayed contained)
-const STEP=8000;          // ms a plate holds before crossfading
-const stage=document.getElementById('stage');
-const captionEl=document.getElementById('caption');
-const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-let plates=[], idx=0, paused=false, timer=null;
-
-function bakePlate([a,b,c,d]){
-  const acc=new Float32Array(SIZE*SIZE);
-  const m=0.12, half=SIZE*(1-2*m)/2, sc=half/2.2, cx=SIZE/2, cy=SIZE/2;
-  const SEEDS=80, PER=32500;        // ≈ 2.6M points, multi-seed even fill
-  let maxv=0;
-  for(let s=0;s<SEEDS;s++){
-    let x=Math.random()*0.4-0.2, y=Math.random()*0.4-0.2;
-    for(let i=0;i<30;i++){ const nx=Math.sin(a*y)-Math.cos(b*x); const ny=Math.sin(c*x)-Math.cos(d*y); x=nx; y=ny; }
-    for(let i=0;i<PER;i++){
-      const nx=Math.sin(a*y)-Math.cos(b*x); const ny=Math.sin(c*x)-Math.cos(d*y); x=nx; y=ny;
-      const px=(cx+nx*sc)|0, py=(cy-ny*sc)|0;
-      if(px>=0&&px<SIZE&&py>=0&&py<SIZE){ const k=py*SIZE+px; const v=++acc[k]; if(v>maxv)maxv=v; }
-    }
-  }
-  const cnv=document.createElement('canvas'); cnv.width=SIZE; cnv.height=SIZE;
-  const ctx=cnv.getContext('2d'); const img=ctx.createImageData(SIZE,SIZE); const px=img.data;
-  const denom=Math.log(1+maxv)||1, g=0.60;
-  const dR=INK[0]-PAPER[0], dG=INK[1]-PAPER[1], dB=INK[2]-PAPER[2];
-  for(let i=0;i<acc.length;i++){
-    const v=acc[i]; let r,gg,bb;
-    if(v<0.5){ r=PAPER[0]; gg=PAPER[1]; bb=PAPER[2]; }
-    else{ const t=Math.pow(Math.log(1+v)/denom,g); r=PAPER[0]+dR*t; gg=PAPER[1]+dG*t; bb=PAPER[2]+dB*t; }
-    const q=i*4; px[q]=r; px[q+1]=gg; px[q+2]=bb; px[q+3]=255;
-  }
-  ctx.putImageData(img,0,0);
-  return cnv;
-}
-
-function fmt([a,b,c,d]){
-  const f=x=>(x>=0?' ':'−')+Math.abs(x).toFixed(2);
-  return 'de jong · a'+f(a)+'  b'+f(b)+'  c'+f(c)+'  d'+f(d);
-}
-function setCaption(i){ captionEl.textContent=fmt(PLATES[i]); }
-
-function addPlate(cnv,i){
-  cnv.className='plate'; stage.appendChild(cnv); plates.push(cnv);
-  if(plates.length===1){ cnv.classList.add('active'); setCaption(0); }
-}
-function advance(){
-  if(plates.length<2) return;
-  const next=(idx+1)%plates.length;
-  plates[idx].classList.remove('active');
-  plates[next].classList.add('active');
-  idx=next; setCaption(idx);
-}
-function startCycle(){
-  if(reduced) return;
-  clearTimeout(timer);
-  const tick=()=>{ timer=setTimeout(()=>{ if(!paused) advance(); tick(); }, STEP); };
-  tick();
-}
-
-// pause when the hero is scrolled out of view (battery / CPU)
-new IntersectionObserver(es=>{ paused=!es[0].isIntersecting; },{threshold:0.05}).observe(stage);
-
-// bake plate-by-plate : first appears fast, rest fill in without blocking
-window.addEventListener('load', async ()=>{
-  for(let i=0;i<PLATES.length;i++){
-    const cnv=bakePlate(PLATES[i]);
-    addPlate(cnv,i);
-    if(i===0 && !reduced) startCycle();
-    await new Promise(r=>setTimeout(r,40));
-  }
-});
-</script>
 </body>
 </html>

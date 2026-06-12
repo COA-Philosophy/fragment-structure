@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALMANA — HERO / attractor backdrop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500&family=Noto+Serif+JP:wght@300;400;500&family=Lora:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+<style>
+  :root{
+    --ground:#e8e8e5; --paper:#f7f7f5; --sumi:#222120; --sumi-soft:#3a3733;
+    --sumi-mid:#6f6b64; --sumi-faint:#8d887f; --sumi-pale:#cbc6bc;
+    --hair:#e0ddd6; --shu:#a8392b;
+    --logo:'Spectral',Georgia,serif; --serifjp:'Noto Serif JP',serif;
+    --sans:'Satoshi',ui-sans-serif,system-ui,sans-serif; --serif:'Lora',Georgia,serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{background:var(--ground);color:var(--sumi);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+
+  .hero{position:relative;min-height:100vh;overflow:hidden;}
+
+  /* ---- background : faint, large strange-attractor (sumi one-stroke) ---- */
+  #bg{position:absolute;inset:0;z-index:0;pointer-events:none;}
+  #bg canvas{display:block;pointer-events:none;}
+  .veil{position:absolute;inset:0;z-index:1;pointer-events:none;
+    background:
+      linear-gradient(90deg, var(--ground) 0%, rgba(232,232,229,.55) 30%, rgba(232,232,229,0) 56%),
+      radial-gradient(125% 95% at 68% 50%, rgba(232,232,229,0) 38%, var(--ground) 100%);}
+
+  /* ---- foreground grid ---- */
+  .inner{position:relative;z-index:2;min-height:100vh;max-width:1240px;margin:0 auto;
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,360px);
+    gap:clamp(24px,2.2vw,40px);align-items:center;
+    padding:clamp(40px,6vh,90px) clamp(34px,5.5vw,64px);}
+
+  /* left copy */
+  .copy{max-width:780px;margin-left:-40px;}
+  .eyebrow{display:flex;align-items:center;gap:13px;
+    font-size:10.5px;letter-spacing:.32em;text-transform:uppercase;color:var(--sumi-mid);
+    margin-bottom:clamp(20px,2.4vw,30px);}
+  .eyebrow .ln{width:30px;height:1px;background:var(--sumi-pale);}
+  .wordmark{font-family:var(--logo);font-weight:400;font-size:clamp(34px,4.6vw,62px);
+    line-height:1;letter-spacing:.38em;text-transform:uppercase;color:var(--sumi);
+    white-space:nowrap;margin-bottom:clamp(22px,2.8vw,34px);}
+  .wordmark::after{content:"";display:inline-block;width:.12em;height:.12em;border-radius:50%;
+    background:var(--shu);margin-left:.3em;vertical-align:.12em;}
+  .headline{font-family:var(--serifjp);font-weight:500;color:var(--sumi);
+    font-size:clamp(26px,3.7vw,50px);line-height:1.46;letter-spacing:.03em;}
+  .headline .l{display:block;}
+  .headline .mbr{display:none;}
+  .lede{font-family:var(--serifjp);font-weight:300;color:var(--sumi-soft);
+    font-size:clamp(13.5px,1.25vw,16px);line-height:2.0;letter-spacing:.05em;
+    margin-top:clamp(24px,2.8vw,34px);}
+  .lede-en{font-family:var(--serif);font-style:italic;font-weight:400;color:var(--sumi-faint);
+    font-size:clamp(13px,1.15vw,15px);line-height:1.7;margin-top:14px;}
+  .cta-row{display:flex;align-items:center;gap:22px;flex-wrap:wrap;
+    margin-top:clamp(34px,4vw,48px);}
+  .btn{display:inline-flex;align-items:center;gap:16px;
+    font-family:var(--sans);font-weight:500;font-size:12px;letter-spacing:.18em;
+    color:var(--sumi);text-decoration:none;border:1px solid var(--sumi);
+    padding:16px 30px;border-radius:2px;background:transparent;cursor:pointer;
+    transition:background .35s,color .35s,gap .35s;}
+  .btn:hover{background:var(--sumi);color:var(--ground);gap:22px;}
+  .btn-note{font-size:11px;letter-spacing:.08em;color:var(--sumi-mid);}
+
+  /* right : realistic iPhone with the Structure crystal screen */
+  .stage{position:relative;display:flex;align-items:center;justify-content:center;}
+  .iphone{position:relative;width:344px;height:724px;border-radius:54px;padding:13px;
+    background:linear-gradient(150deg,#e7e5df 0%,#c9c6be 38%,#dad7d0 64%,#bebbb3 100%);
+    box-shadow:0 54px 96px -46px rgba(34,33,31,.5), 0 0 0 1px rgba(34,33,31,.07),
+      inset 0 0 0 1px rgba(255,255,255,.35);
+    zoom:var(--ds,0.92);}
+  .iphone .screen{position:relative;width:318px;height:698px;border-radius:42px;
+    overflow:hidden;background:var(--paper);}
+  .iphone iframe{display:block;width:360px;height:760px;border:0;background:transparent;
+    margin:-22px 0 0 -21px;}
+  .iphone .island{position:absolute;top:17px;left:50%;transform:translateX(-50%);
+    width:98px;height:28px;border-radius:16px;background:#16150f;z-index:3;}
+  .iphone .island::after{content:"";position:absolute;top:50%;right:13px;transform:translateY(-50%);
+    width:7px;height:7px;border-radius:50%;background:#23211a;
+    box-shadow:inset 0 0 0 1px rgba(120,150,170,.35);}
+
+  /* six-facet faint labels (the radar's axes, scattered) */
+  .facets{position:absolute;inset:0;z-index:2;pointer-events:none;}
+  .facet{position:absolute;font-family:var(--sans);font-weight:400;
+    font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:var(--sumi-faint);
+    line-height:1.55;opacity:.62;}
+  .facet b{display:block;font-family:var(--serifjp);font-weight:300;
+    font-size:11px;letter-spacing:.12em;text-transform:none;color:var(--sumi-mid);margin-top:2px;}
+  .facet.essence {top:9%;  left:1%;}
+  .facet.emotion {top:20%; right:2%; text-align:right;}
+  .facet.thought {top:45%; left:-3%;}
+  .facet.relation{top:55%; right:0;  text-align:right;}
+  .facet.action  {bottom:18%;left:1%;}
+  .facet.flow    {bottom:8%; right:5%; text-align:right;}
+
+  /* gallery annotations */
+  .fig{position:absolute;z-index:3;font-family:var(--sans);font-weight:400;
+    font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--sumi-faint);
+    display:flex;align-items:center;gap:8px;}
+  .fig .seal{width:11px;height:11px;border-radius:2px;background:var(--shu);
+    display:inline-flex;align-items:center;justify-content:center;}
+  .fig .seal i{width:4px;height:4px;border:1px solid #f4ebe1;border-radius:1px;}
+  .fig-tr{top:clamp(22px,3vh,40px);right:clamp(24px,3.4vw,52px);}
+  .fig-bl{bottom:clamp(22px,3vh,40px);left:clamp(24px,3.4vw,52px);}
+  .tick{position:absolute;width:14px;height:14px;pointer-events:none;z-index:3;}
+  .tick::before,.tick::after{content:"";position:absolute;background:var(--sumi-pale);}
+  .tick::before{width:14px;height:1px;top:6px;} .tick::after{height:14px;width:1px;left:6px;}
+  .tick.tl{top:22px;left:22px;} .tick.br{bottom:22px;right:22px;}
+
+  /* ---- responsive : copy-first, phone as a smaller product shot below ---- */
+  @media (max-width:920px){
+    .inner{grid-template-columns:1fr;gap:0;min-height:0;
+      padding:17vw 8vw 15vw;}
+    .copy{order:1;max-width:none;margin-left:0;}
+    .stage{order:2;margin-top:13vw;}
+    .iphone{--ds:0.62;}
+    .facets{display:none;}
+    .fig-tr{top:18px;right:20px;} .fig-bl{bottom:18px;left:20px;}
+    .tick{display:none;}
+    /* attractor anchors to the top viewport (backdrop behind the copy) */
+    #bg{height:100vh;bottom:auto;}
+    .veil{background:radial-gradient(106% 58% at 50% 33%,
+      rgba(232,232,229,.16) 0%, rgba(232,232,229,.56) 52%, var(--ground) 100%);}
+    .headline .mbr{display:inline;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .btn{transition:none;}
+  }
+</style>
+</head>
+<body>
+  <main class="hero">
+    <div id="bg"></div>
+    <div class="veil"></div>
+
+    <span class="tick tl"></span><span class="tick br"></span>
+
+    <div class="facets">
+      <div class="facet essence">Essence<b>本質</b></div>
+      <div class="facet emotion">Emotion<b>感情</b></div>
+      <div class="facet thought">Thought<b>思考</b></div>
+      <div class="facet relation">Relation<b>関係性</b></div>
+      <div class="facet action">Action<b>行動</b></div>
+      <div class="facet flow">Flow<b>流れ</b></div>
+    </div>
+
+    <div class="inner">
+      <div class="copy">
+        <div class="eyebrow"><span>Almana — Structure Diagnosis</span><span class="ln"></span></div>
+        <h1 class="wordmark">ALMANA</h1>
+        <div class="headline">
+          <span class="l">あなたは、</span>
+          <span class="l">どんな構造で<br class="mbr">動いているのか。</span>
+        </div>
+        <p class="lede">生年月日と日々の記録から、<br>
+          思考・感情・行動のパターンを静かに読み解く、<br>
+          生成型セルフポートレート。</p>
+        <p class="lede-en">A generative self-portrait for your inner structure.</p>
+        <div class="cta-row">
+          <a class="btn" href="#">構造診断をはじめる <span>→</span></a>
+          <span class="btn-note">3分で完了、登録不要</span>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="iphone">
+          <div class="island"></div>
+          <div class="screen">
+            <iframe loading="lazy" scrolling="no" src="silas-blanc-profile-crystal.html?hero"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fig fig-tr">FIG.05</div>
+    <div class="fig fig-bl"><span class="seal"><i></i></span> FIG.00 · ALMANA.APP</div>
+  </main>
+
+<script>
+// ---- faint large strange-attractor backdrop (ported from sd-attractor.html, blanc-tuned) ----
+(function(){
+  const ATTR = {
+    aizawa:        { a:.95, b:.7, c:.6, d:3.5, e:.25, f:.1, scale:150, dt:.01,  seed:[.1,.1,.1] },
+    lorenz:        { sigma:10, rho:28, beta:8/3,        scale:7,   dt:.006, seed:[.1,.1,.1] },
+    halvorsen:     { a:1.4,                              scale:22,  dt:.004, seed:[.1,.1,.1] },
+    newtonLeipnik: { a:.4, b:.175,                       scale:260, dt:.008, seed:[.1,.1,.1] },
+    chen:          { a:35, b:3, c:28,                    scale:4.5, dt:.004, seed:[.1,.1,.1] },
+  };
+  const ORDER = ['aizawa','lorenz','halvorsen','newtonLeipnik','chen'];
+  const INK = [34,33,32], INK_A = 30;        // 薄く（faint sumi）— やや濃く
+  const BIG = 1.5;                           // 大きく（scale up to fill the hero）
+  const MAX_TRAIL=16000, STEPS=16, FADE_MS=2600, MIN_DRAW_MS=6000,
+        STABLE_MS=3000, CELL=14, HOLD_MS=4200, SAFETY_MS=30000;
+
+  const sketch = (p)=>{
+    let sys, trail, scaleK, kind, phaseStart, angle=0;
+    let visited, coverageMark, lastMarkAt, lastGrowAt, readyAt, reduce=false, W=0, H=0, paused=false;
+    let staticMode=false, freezeAt=0, frozen=false, MAXT=16000;
+    const isMobile=()=>window.matchMedia('(max-width:920px)').matches;
+
+    function host(){ return document.getElementById('bg'); }
+    function reseed(k){
+      kind=k; const P=ATTR[k]; scaleK=P.scale; const s=P.seed;
+      sys={x:s[0],y:s[1],z:s[2]}; trail=[]; phaseStart=p.millis();
+      visited=new Set(); coverageMark=0; lastMarkAt=phaseStart; lastGrowAt=phaseStart; readyAt=0;
+    }
+    function step(){
+      const P=ATTR[kind], dt=P.dt; let {x,y,z}=sys, dx,dy,dz;
+      switch(kind){
+        case 'aizawa':
+          dx=(z-P.b)*x-P.d*y; dy=P.d*x+(z-P.b)*y;
+          dz=P.c+P.a*z-(z*z*z)/3-(x*x+y*y)*(1+P.e*z)+P.f*z*x*x*x; break;
+        case 'lorenz':
+          dx=P.sigma*(y-x); dy=x*(P.rho-z)-y; dz=x*y-P.beta*z; break;
+        case 'halvorsen':
+          dx=-P.a*x-4*y-4*z-y*y; dy=-P.a*y-4*z-4*x-z*z; dz=-P.a*z-4*x-4*y-x*x; break;
+        case 'newtonLeipnik':
+          dx=-P.a*x+y+10*y*z; dy=-x-0.4*y+5*x*z; dz=P.b*z-5*x*y; break;
+        case 'chen':
+          dx=P.a*(y-x); dy=(P.c-P.a)*x-x*z+P.c*y; dz=x*y-P.b*z; break;
+      }
+      sys.x+=dx*dt; sys.y+=dy*dt; sys.z+=dz*dt;
+    }
+
+    p.setup=function(){
+      const el=host(); W=el.clientWidth||window.innerWidth; H=el.clientHeight||window.innerHeight;
+      const c=p.createCanvas(W,H,p.WEBGL); c.parent('bg');
+      reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const mob=isMobile();
+      staticMode = mob || reduce;        // mobile / reduced-motion: draw once, then freeze (battery / CPU)
+      MAXT = mob ? 9000 : 16000;
+      p.pixelDensity(mob ? 1 : Math.min(2,window.devicePixelRatio||1));
+      if(staticMode) p.frameRate(30);
+      reseed(ORDER[0]);
+      if(reduce) prefill();              // no draw-in motion: build the full curve up-front
+      // pause when off-screen (battery / CPU)
+      new IntersectionObserver(es=>{ paused=!es[0].isIntersecting; },{threshold:0.02}).observe(host());
+    };
+    function prefill(){
+      for(let i=0;i<MAXT;i++){
+        step();
+        if(!isFinite(sys.x)||!isFinite(sys.y)||!isFinite(sys.z)||Math.abs(sys.x)>1e5) break;
+        trail.push([sys.x*scaleK, sys.y*scaleK, sys.z*scaleK]);
+      }
+      if(trail.length>MAXT) trail.splice(0,trail.length-MAXT);
+      readyAt = phaseStart;              // already "settled" → freezes on first frame
+    }
+    p.windowResized=function(){ const el=host(); W=el.clientWidth; H=el.clientHeight; p.resizeCanvas(W,H); if(frozen) p.redraw(); };
+
+    p.draw=function(){
+      if(paused){ p.clear(); return; }
+      p.clear();
+      const now=p.millis();
+
+      if(!reduce){
+        for(let i=0;i<STEPS;i++){
+          step();
+          if(!isFinite(sys.x)||!isFinite(sys.y)||!isFinite(sys.z)||Math.abs(sys.x)>1e5){
+            reseed(ORDER[(ORDER.indexOf(kind)+1)%ORDER.length]); return;
+          }
+          const px=sys.x*scaleK, py=sys.y*scaleK, pz=sys.z*scaleK;
+          trail.push([px,py,pz]);
+          visited.add((px/CELL|0)+','+(py/CELL|0)+','+(pz/CELL|0));
+        }
+        if(trail.length>MAXT) trail.splice(0,trail.length-MAXT);
+        if(now-lastMarkAt>800){ if(visited.size-coverageMark>6) lastGrowAt=now; coverageMark=visited.size; lastMarkAt=now; }
+        if(readyAt===0 && ((now-lastGrowAt>STABLE_MS && now-phaseStart>MIN_DRAW_MS) || now-phaseStart>(staticMode?7000:SAFETY_MS))) readyAt=now;
+      }
+
+      let fade;
+      if(readyAt===0){ fade=Math.min(1,(now-phaseStart)/FADE_MS); }
+      else if(staticMode){ fade=1; if(!freezeAt) freezeAt=now; }
+      else {
+        const held=now-readyAt;
+        if(held>HOLD_MS+FADE_MS){ reseed(ORDER[(ORDER.indexOf(kind)+1)%ORDER.length]); return; }
+        fade = held<HOLD_MS ? 1 : 1-(held-HOLD_MS)/FADE_MS;
+      }
+
+      if(!reduce && !frozen) angle+=0.0016;
+      const f = BIG * ((W<H) ? W/640 : Math.min(W,H)/860);   // portrait: fill width / landscape: fit-to-hero × large
+      p.push();
+      p.rotateY(angle);
+      p.rotateX(-0.20 + Math.sin(angle*0.7)*0.10);
+      p.scale(f);
+      p.stroke(INK[0],INK[1],INK[2], INK_A*fade);
+      p.strokeWeight(0.65);
+      p.noFill();
+      p.beginShape();
+      for(const pt of trail) p.vertex(pt[0],pt[1],pt[2]);
+      p.endShape();
+      p.pop();
+
+      // mobile / reduced-motion: one settled frame, then stop the loop (≈zero ongoing cost)
+      if(staticMode && freezeAt && (now-freezeAt) >= (reduce?0:700)){ frozen=true; p.noLoop(); }
+    };
+  };
+  new p5(sketch);
+})();
+</script>
+</body>
+</html>

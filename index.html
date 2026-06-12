@@ -842,6 +842,15 @@
       file: 'works/almana-hero-attractor.html',
       still: ''
     },
+    {
+      no: 'F040', version: 'v1', status: 'current',
+      project: 'ALMANA',
+      use: 'LP / Hero',
+      ja: '構造の肖像 — 紋カードLP',
+      en: 'Generative Self-Portrait — Cards Hero',
+      file: 'works/almana-lp-cards.html',
+      still: ''
+    },
   ];
 
   // ── 技法メタ（各作品のコードから命名 / works/<file> をキーに WORKS へマージ）──
@@ -891,6 +900,7 @@
     'works/almana-lp-phones-study.html':{ family:'レイアウト研究',tech:'3画面配置バリアント比較',             how:'flat/fan/stagger/perspectiveの4パターンをJSで生成し、iframe3台をCSS transformで並べ替えて配置の差を一覧比較する研究ページ。' },
     'works/almana-logo.html':          { family:'印・マーク',    tech:'ブランドマーク＆ロゴタイプ規定',      how:'1枚のマーク画像をdata-URIでCSS変数化して全所で共有し、各サイズ・ロゴタイプ・ロックアップ・余白規定を1枚に組んだブランドidentityシート。' },
     'works/almana-hero-attractor.html': { family: 'アトラクタ', tech: '極薄ストレンジ・アトラクタ背景 × リアル端末額装', how: 'p5 WEBGLで5種アトラクタを巡回積分し極薄墨の一筆で大きく背景化、左コピー＋リアルiPhone(実モック埋込)を前面に重ねる' },
+    'works/almana-lp-cards.html': { family: 'レイアウト研究', tech: '浮遊カードデッキ・クラスター', how: '12型の焼付プレートを円環に収めたカードを絶対配置で重ね散らし、列幅を実測してクラスター全体を等比縮小し中央に収める' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

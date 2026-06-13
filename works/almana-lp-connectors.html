@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALMANA — LP connectors / 認識 + 締め</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@300;400;500&family=Shippori+Mincho:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --washi:#e8e8e5; --ink:#1f1f1d; --shu:#a8392b;
+    --mid:rgba(31,31,29,0.6); --faint:rgba(31,31,29,0.42); --pale:rgba(31,31,29,0.26);
+    --hair:rgba(31,31,29,0.16);
+    --grot:"Archivo","Helvetica Neue",sans-serif;
+    --jp:"Zen Kaku Gothic New",sans-serif;
+    --mincho:"Shippori Mincho",serif;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ background:var(--washi); color:var(--ink); font-family:var(--jp);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+
+  .band{ position:relative; min-height:92vh; display:flex; align-items:center; }
+  .band + .band{ border-top:1px solid var(--hair); }
+  .inner{ width:100%; max-width:1180px; margin:0 auto; padding:96px 40px; text-align:center; }
+
+  .eyebrow{ font-family:var(--grot); font-size:10.5px; letter-spacing:.34em; text-transform:uppercase;
+    color:var(--faint); display:inline-flex; align-items:center; gap:10px; justify-content:center; }
+  .eyebrow .mk{ color:var(--shu); }
+
+  /* S1 — 認識 / quiet center */
+  .recog{ margin-top:36px; font-family:var(--mincho); font-weight:400;
+    font-size:clamp(22px,3vw,36px); line-height:2.25; letter-spacing:.05em; color:var(--ink); }
+  .recog span{ display:block; }
+
+  /* CV — 締め / grounded */
+  .land{ font-family:var(--mincho); font-weight:400; font-size:clamp(28px,3.9vw,52px);
+    line-height:1.5; letter-spacing:.05em; color:var(--ink); }
+  .bridge{ margin-top:24px; font-family:var(--jp); font-weight:300; font-size:clamp(13px,1.2vw,15px);
+    letter-spacing:.08em; color:var(--mid); }
+  .cta{ display:inline-flex; align-items:center; gap:14px; margin-top:36px;
+    font-family:var(--jp); font-weight:500; font-size:15px; letter-spacing:.14em; color:var(--ink);
+    border:1px solid var(--ink); padding:16px 32px; text-decoration:none; background:transparent;
+    transition:background .3s,color .3s,gap .3s; }
+  .cta .arw{ color:var(--shu); }
+  .cta:hover{ background:var(--ink); color:var(--washi); gap:19px; }
+  .cta:hover .arw{ color:var(--washi); }
+  .micro{ margin-top:20px; font-family:var(--grot); font-weight:400; font-size:10px;
+    letter-spacing:.2em; text-transform:uppercase; color:var(--faint); }
+  .micro .sep{ margin:0 10px; color:var(--pale); }
+
+  /* gentle reveal — visible by default; only hidden once JS arms it (no-JS / IO-fail safe) */
+  .rise{ opacity:1; transform:none; }
+  .js .rise{ opacity:0; transform:translateY(12px);
+    transition:opacity 1s cubic-bezier(.22,.61,.36,1), transform 1s cubic-bezier(.22,.61,.36,1); }
+  .js .rise.in{ opacity:1; transform:none; }
+  .js .recog span.rise{ transition-delay:var(--d,0s); }
+
+  @media (prefers-reduced-motion:reduce){ .rise,.js .rise{ opacity:1!important; transform:none!important; transition:none!important; } }
+  @media (max-width:640px){ .inner{ padding:84px 26px; } }
+</style>
+</head>
+<body>
+
+<!-- S1 — 認識 / quiet center -->
+<section class="band s1">
+  <div class="inner">
+    <div class="eyebrow rise"><span class="mk">⊕</span><span>もし、こんな感覚があるなら</span></div>
+    <p class="recog">
+      <span class="rise" style="--d:.0s">同じところで、いつも立ち止まる。</span>
+      <span class="rise" style="--d:.18s">もやもやを、うまく言葉にできない。</span>
+      <span class="rise" style="--d:.36s">動けない理由が、まだ見えていない。</span>
+    </p>
+  </div>
+</section>
+
+<!-- CV — 締め / grounded -->
+<section class="band cv">
+  <div class="inner">
+    <div class="land rise">生きた跡は、やがて<br>ひとつの模様になる。</div>
+    <div class="bridge rise">まずは、あなたの構造から。</div>
+    <div class="rise"><a class="cta" href="#">無料で診断する <span class="arw">→</span></a></div>
+    <div class="micro rise">占うためではなく、読むために<span class="sep">·</span>約2分<span class="sep">·</span>登録不要</div>
+  </div>
+</section>
+
+<script>
+  document.documentElement.classList.add('js');
+  const rises = document.querySelectorAll('.rise');
+  const io = new IntersectionObserver((es)=>{
+    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold:0.2 });
+  rises.forEach(el=>io.observe(el));
+  // safety net: if IO never reports (e.g. background tab), reveal everything anyway
+  setTimeout(()=>rises.forEach(el=>el.classList.add('in')), 1600);
+</script>
+</body>
+</html>

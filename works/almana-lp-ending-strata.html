@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALMANA — LP ending / continuity over strata</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@300;400;500&family=Shippori+Mincho:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+<style>
+  :root{
+    --washi:#e8e8e5;
+    --ink:#1f1f1d;
+    --shu:#a8392b;
+    --grot:"Archivo","Helvetica Neue",sans-serif;
+    --jp:"Zen Kaku Gothic New",sans-serif;
+    --mincho:"Shippori Mincho",serif;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    background:var(--washi); color:var(--ink);
+    font-family:var(--jp);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    overflow:hidden;
+  }
+  /* p5 strata canvas = full-bleed background */
+  canvas{ position:fixed; inset:0; z-index:0; display:block; }
+
+  .hero{ position:relative; z-index:1; width:100vw; height:100vh; overflow:hidden; }
+  .scrim{
+    position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(100deg,
+      rgba(232,232,229,0.72) 0%,
+      rgba(232,232,229,0.40) 30%,
+      rgba(232,232,229,0.0) 54%);
+  }
+  .vignette{
+    position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(120% 120% at 42% 45%,
+      rgba(252,252,251,0.18) 0%, rgba(138,138,142,0.12) 100%);
+    mix-blend-mode:multiply;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead{
+    position:absolute; top:0; left:0; right:0;
+    display:flex; align-items:flex-start; justify-content:space-between;
+    padding:clamp(22px,3vw,40px) clamp(24px,4.5vw,64px);
+    z-index:6;
+  }
+  .brand{ display:flex; align-items:baseline; gap:13px; }
+  .brand svg.wordmark{ height:clamp(15px,1.7vw,19px); width:auto; display:block; }
+  .brand .tag{
+    font-family:var(--mincho); font-size:11px; letter-spacing:0.22em;
+    color:rgba(31,31,29,0.62); white-space:nowrap;
+  }
+  .annot{
+    font-family:var(--grot); font-size:10px; letter-spacing:0.18em;
+    text-transform:uppercase; text-align:right; line-height:1.7;
+    color:rgba(31,31,29,0.5);
+  }
+  .annot .reg{ color:var(--shu); }
+
+  /* ---------- copy (left, over the strata) ---------- */
+  .copy{
+    position:absolute; left:clamp(24px,6vw,96px); top:50%;
+    transform:translateY(-50%);
+    max-width:min(540px,44vw);
+    z-index:4;
+  }
+  .eyebrow{
+    font-family:var(--grot); font-size:10.5px; letter-spacing:0.34em;
+    text-transform:uppercase; color:rgba(31,31,29,0.45);
+    margin-bottom:clamp(18px,2.4vw,30px);
+    display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow .mk{ color:var(--shu); }
+  .eyebrow .ln{ width:34px; height:1px; background:rgba(31,31,29,0.35); display:inline-block; }
+
+  h1.headline{
+    font-family:var(--jp); font-weight:300;
+    font-size:clamp(36px,5.4vw,72px);
+    line-height:1.3; letter-spacing:0.04em;
+    color:var(--ink);
+  }
+  h1.headline .line{ display:block; }
+
+  p.body{
+    margin-top:clamp(24px,3vw,40px);
+    font-family:var(--jp); font-weight:400;
+    font-size:clamp(15px,1.5vw,19px);
+    line-height:2.05; letter-spacing:0.05em;
+    color:rgba(31,31,29,0.80);
+  }
+  p.body .line{ display:block; }
+
+  .flow{
+    margin-top:clamp(28px,3.6vw,48px);
+    display:flex; align-items:center; gap:clamp(12px,1.3vw,20px);
+    font-family:var(--mincho); font-weight:500;
+    font-size:clamp(15px,1.45vw,19px); letter-spacing:0.14em; color:var(--ink);
+  }
+  .flow i{ color:var(--shu); font-style:normal; font-size:0.92em; }
+  .flow .en{ display:block; font-family:var(--grot); font-weight:400;
+    font-size:8.5px; letter-spacing:0.2em; text-transform:uppercase;
+    color:rgba(31,31,29,0.42); margin-top:5px; }
+  .flow .step{ text-align:center; }
+
+  .cta{ margin-top:clamp(28px,3.6vw,46px); }
+  a.primary{
+    display:inline-flex; align-items:center; gap:14px;
+    font-family:var(--jp); font-weight:500;
+    font-size:clamp(13px,1.1vw,15px); letter-spacing:0.14em;
+    color:var(--ink); text-decoration:none;
+    border:1px solid var(--ink); padding:15px 26px;
+    background:rgba(232,232,229,0.5); cursor:pointer;
+    transition:background .35s ease, color .35s ease, gap .35s ease;
+  }
+  a.primary .arrow{ color:var(--shu); transition:transform .35s ease, color .35s ease; }
+  a.primary:hover{ background:var(--ink); color:var(--washi); gap:20px; }
+  a.primary:hover .arrow{ color:var(--washi); transform:translateX(3px); }
+
+  /* ---------- phones (right, perspective) ---------- */
+  .phones-wrap{
+    position:absolute; right:0; top:0; bottom:0; width:60vw;
+    display:flex; align-items:center; justify-content:flex-end;
+    padding-right:clamp(20px,3vw,64px);
+    z-index:3; pointer-events:none;
+  }
+  .scene{ display:flex; perspective:2100px; transform:scale(var(--pscale,0.98)); transform-origin:right center; }
+  .device{
+    position:relative; width:340px; height:720px; overflow:hidden; flex:0 0 auto;
+    border-radius:38px; background:var(--washi);
+    box-shadow:0 54px 96px -42px rgba(31,31,29,0.55), 0 14px 34px -20px rgba(31,31,29,0.40);
+  }
+  .device iframe{ display:block; width:340px; height:740px; border:0; background:transparent; }
+  .scene .device:nth-child(1){ transform:rotateY(27deg) translateX(40px) scale(.95); z-index:1; }
+  .scene .device:nth-child(2){ z-index:3; }
+  .scene .device:nth-child(3){ transform:rotateY(-27deg) translateX(-40px) scale(.95); z-index:1; }
+
+  /* ---------- staggered reveal ---------- */
+  .reveal{ opacity:0; transform:translateY(11px); }
+  .hero.ready .reveal{ animation:rise .95s cubic-bezier(.22,.61,.36,1) both; }
+  @keyframes rise{ from{opacity:0; transform:translateY(11px);} to{opacity:1; transform:translateY(0);} }
+  .hero.ready .masthead .reveal{ animation-delay:.2s; }
+  .hero.ready .eyebrow{ animation-delay:.7s; }
+  .hero.ready h1.headline .line:nth-child(1){ animation-delay:1.0s; }
+  .hero.ready h1.headline .line:nth-child(2){ animation-delay:1.45s; }
+  .hero.ready p.body .line:nth-child(1){ animation-delay:2.0s; }
+  .hero.ready p.body .line:nth-child(2){ animation-delay:2.25s; }
+  .hero.ready p.body .line:nth-child(3){ animation-delay:2.5s; }
+  .hero.ready .flow{ animation-delay:2.95s; }
+  .hero.ready .cta{ animation-delay:3.25s; }
+  .hero.ready .phones-wrap{ animation:rise 1.2s cubic-bezier(.22,.61,.36,1) both; animation-delay:1.3s; }
+
+  .footnote{
+    position:absolute; bottom:clamp(18px,2.4vw,30px); right:clamp(24px,4.5vw,64px);
+    font-family:var(--grot); font-size:9px; letter-spacing:0.16em;
+    text-transform:uppercase; color:rgba(31,31,29,0.34);
+    text-align:right; line-height:1.7; z-index:6;
+  }
+
+  @media (max-width:1500px){
+    .copy{ max-width:min(460px,40vw); }
+    .phones-wrap{ --pscale:0.82; }
+  }
+  @media (max-width:1180px){
+    .copy{ max-width:min(420px,46vw); }
+    .phones-wrap{ width:56vw; --pscale:0.6; }
+  }
+  @media (max-width:760px){
+    body,.hero{ overflow:auto; }
+    .hero{ height:auto; min-height:100vh; }
+    .copy{ position:static; transform:none; max-width:none; padding:118px 28px 0; text-align:center; }
+    .eyebrow{ justify-content:center; }
+    .flow{ justify-content:center; }
+    .scrim{ background:linear-gradient(0deg, rgba(232,232,229,0.55) 0%, rgba(232,232,229,0) 60%); }
+    .phones-wrap{ position:static; width:100%; height:auto; padding:36px 0 80px; transform:none; }
+    .scene{ --pscale:0.62; }
+    .brand .tag{ display:none; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .hero.ready .reveal,.hero.ready .phones-wrap{ animation:none; opacity:1; transform:none; }
+  }
+</style>
+<style>html.embed .footnote,html.embed .annot{display:none!important}</style><script>if((location.search+location.hash).indexOf('embed')>-1)document.documentElement.classList.add('embed')</script>
+</head>
+<body>
+<div class="hero" id="hero">
+  <div class="scrim"></div>
+  <div class="vignette"></div>
+
+  <header class="masthead">
+    <div class="brand reveal">
+      <svg class="wordmark" xmlns="http://www.w3.org/2000/svg" viewBox="9.0 -689.0 7095.0 718.0" aria-label="ALMANA">
+        <g transform="scale(1,-1)">
+          <path d="M33 0V16L97 49L353 665H398L650 52L717 16V0H469V16L557 50L482 235H239L165 50L249 16V0ZM262 290H460L361 536Z" fill="#1f1f1d"/>
+          <path d="M1195 0V16L1275 56V604L1195 644V660H1455V644L1365 604V55H1608L1676 222H1692V0Z" fill="#1f1f1d"/>
+          <path d="M2202 0V16L2281 56L2302 603L2216 644V660H2401L2632 128L2862 660H3038V644L2954 604L2971 56L3041 16V0H2811V16L2885 55L2875 548L2636 -5H2591L2356 541L2343 55L2424 16V0Z" fill="#1f1f1d"/>
+          <path d="M3514 0V16L3578 49L3834 665H3879L4131 52L4198 16V0H3950V16L4038 50L3963 235H3720L3646 50L3730 16V0ZM3743 290H3941L3842 536Z" fill="#1f1f1d"/>
+          <path d="M4671 0V16L4751 56V602L4672 644V660H4819L5201 180V606L5101 644V660H5350V644L5271 605V-5H5234L4821 516V55L4921 16V0Z" fill="#1f1f1d"/>
+          <path d="M5823 0V16L5887 49L6143 665H6188L6440 52L6507 16V0H6259V16L6347 50L6272 235H6029L5955 50L6039 16V0ZM6052 290H6250L6151 536Z" fill="#1f1f1d"/>
+          <circle cx="7025.0" cy="55.0" r="55.0" fill="#a8392b"/>
+        </g>
+      </svg>
+      <span class="tag">自己理解AI</span>
+    </div>
+    <div class="annot reveal">
+      <span class="reg">⊕</span> FIG.07 — 地層 / STRATA<br>
+      対話 → 記録 → パターン
+    </div>
+  </header>
+
+  <div class="copy">
+    <div class="eyebrow reveal"><span class="mk">⊕</span><span>after the reading</span><span class="ln"></span></div>
+    <h1 class="headline">
+      <span class="line reveal">診断のあとも、</span>
+      <span class="line reveal">続いていく。</span>
+    </h1>
+    <p class="body">
+      <span class="line reveal">対話で、その日の状態をことばにする。</span>
+      <span class="line reveal">記録が、日々静かに積もっていく。</span>
+      <span class="line reveal">やがて、自分のパターンが見えてくる。</span>
+    </p>
+    <div class="flow reveal">
+      <span class="step">対話<span class="en">Dialogue</span></span><i>→</i>
+      <span class="step">記録<span class="en">Streams</span></span><i>→</i>
+      <span class="step">パターン<span class="en">Patterns</span></span>
+    </div>
+    <div class="cta reveal">
+      <a class="primary" href="#">続けて読む <span class="arrow">→</span></a>
+    </div>
+  </div>
+
+  <div class="phones-wrap reveal">
+    <div class="scene persp">
+      <div class="device"><iframe loading="lazy" scrolling="no" src="silas-blanc-dialogue-dark.html?hero"></iframe></div>
+      <div class="device"><iframe loading="lazy" scrolling="no" src="silas-blanc-log-streams.html?hero"></iframe></div>
+      <div class="device"><iframe loading="lazy" scrolling="no" src="almana-patterns.html?hero"></iframe></div>
+    </div>
+  </div>
+
+  <div class="footnote reveal">
+    Strata field · sumi on washi<br>The Modern Zen Archive
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   ALMANA LP ending — STRATA field background (p5.js).
+   Adapted from works/strata.html: blanc-recolored, UI panel
+   removed, builds once then holds (tap canvas to re-rake).
+   ============================================================ */
+const SUMI  = [31, 31, 29];
+const WASHI = [232, 232, 229];   // blanc ground (#e8e8e5)
+const SHU   = [168, 57, 43];
+
+// fixed parameters (the spacious tuning: few tall dunes)
+const P = { amp: 6.0, shear: 0.45, freq: 2.5, contrast: 3.0, rows: 18, speed: 1.0, grain: 78, pcount: 150, psize: 1.6, shu: 0 };
+
+let W, H;
+let spacing, topM = 78, botM = 56;
+let maxRows = 18, targetRows = 18;
+let ampBase;
+let revealed = 0, revealRate;
+let seedPhase = 0;
+let mode = 'build', holdCounter = 0;
+let fade = 255, fadeTarget = 0;
+let paper;
+const SURF_COLS = 110;
+let surfaceY = new Array(SURF_COLS + 1).fill(0);
+let particles = [];
+let shuPoint = null;
+
+function applyParams() {
+  targetRows = round(P.rows);
+  spacing = (H - topM - botM) / targetRows;
+  maxRows = targetRows;
+  ampBase = spacing * P.amp;
+  revealRate = (1 / 26) * P.speed;
+  revealed = min(revealed, maxRows);
+}
+function recompute() { applyParams(); }
+
+function bakePaper() {
+  paper = createGraphics(W, H);
+  paper.clear(); paper.noStroke();
+  const n = (W * H) / 210;
+  for (let k = 0; k < n; k++) {
+    const x = random(W), y = random(H);
+    if (random() < 0.82) paper.fill(SUMI[0], SUMI[1], SUMI[2], random(3, 10));
+    else paper.fill(255, 255, 252, random(4, 12));
+    paper.rect(x, y, random() < 0.5 ? 1 : 1.4, 1);
+  }
+}
+
+function reseed() {
+  seedPhase = random(1000);
+  noiseSeed(floor(random(1e6)));
+  revealed = 0; shuPoint = null;
+  for (const p of particles) Object.assign(p, spawnP());
+}
+
+function setup() {
+  W = windowWidth; H = windowHeight;
+  const cnv = createCanvas(W, H);
+  pixelDensity(min(2, window.devicePixelRatio || 1));
+  cnv.mousePressed(triggerReset);
+  cnv.touchStarted(() => { triggerReset(); return false; });
+  recompute(); bakePaper(); reseed();
+  ensureParticles(); recomputeSurface();
+  fade = 255; fadeTarget = 0;
+}
+function windowResized() {
+  W = windowWidth; H = windowHeight;
+  resizeCanvas(W, H);
+  recompute(); bakePaper();
+  surfaceY = new Array(SURF_COLS + 1).fill(H);
+}
+function easeOut(t){ return 1 - pow(1 - t, 3); }
+
+function ridgeHeight(x, i) {
+  const t = seedPhase, sh = P.shear, fr = P.freq;
+  const macro = noise(x * 0.0011 * fr + i * (sh * 0.4) + 70.0, i * 0.06 + t);
+  const env   = 0.15 + P.contrast * pow(macro, 1.8);
+  const n1 = noise(x * 0.0024 * fr + i * sh + 11.0, i * 0.13 + t);
+  const n2 = noise(x * 0.0052 * fr + i * (sh * 0.9) + 40.0, i * 0.20 + t * 1.3);
+  return ampBase * env * (0.74 * pow(n1, 1.7) + 0.26 * n2);
+}
+function hash(a, b) {
+  let h = sin(a * 127.1 + b * 311.7 + seedPhase * 13.0) * 43758.5453;
+  return h - floor(h);
+}
+function ink(a){ stroke(SUMI[0], SUMI[1], SUMI[2], a); }
+
+function drawLayer(i, rise) {
+  const by = H - botM - i * spacing;
+  const d = i / maxRows;
+  const aFront = lerp(232, 48, d);
+  const dx = max(2, W / 440);
+  const pts = [];
+  for (let x = -dx; x <= W + dx; x += dx) pts.push([x, by - ridgeHeight(x, i) * rise]);
+
+  noStroke(); fill(WASHI[0], WASHI[1], WASHI[2]);
+  beginShape(); vertex(-dx, H + 2);
+  for (const p of pts) vertex(p[0], p[1]);
+  vertex(W + dx, H + 2); endShape(CLOSE);
+
+  const band = spacing * 1.9;
+  const stippleN = round(P.grain);
+  for (let k = 0; k < stippleN; k++) {
+    const t = (k + hash(i, k)) / stippleN;
+    const xi = t * W;
+    const idx = constrain(round((xi + dx) / dx), 0, pts.length - 1);
+    const cy = pts[idx][1];
+    const off = pow(hash(i * 2.3, k * 1.1), 1.8) * band;
+    const jx = (hash(k * 1.7, i) - 0.5) * dx * 1.6;
+    const a = aFront * (1 - off / band) * 0.55 * rise * (0.45 + 0.6 * hash(i, k * 3.1));
+    ink(a); strokeWeight(0.8 + 0.6 * hash(k, i));
+    point(xi + jx, cy + off);
+  }
+  for (let j = 0; j < pts.length; j++) {
+    const p = pts[j];
+    if (hash(i * 1.3, j * 0.7) > 0.22) {
+      const jy = (hash(j, i * 1.9) - 0.5) * 1.3;
+      const a = aFront * (0.5 + 0.5 * hash(i, j)) * rise;
+      ink(a); strokeWeight(0.9 + hash(j * 2.1, i) * 0.7);
+      point(p[0] + (hash(j, i) - 0.5) * dx * 0.8, p[1] + jy);
+    }
+  }
+  noFill(); ink(aFront * 0.24 * rise); strokeWeight(0.8);
+  beginShape(); for (const p of pts) vertex(p[0], p[1]); endShape();
+}
+
+function draw() {
+  background(WASHI[0], WASHI[1], WASHI[2]);
+  if (mode === 'build') {
+    revealed = min(revealed + revealRate, maxRows);
+    if (revealed >= maxRows) { mode = 'hold'; setShuPoint(); }
+  } else if (mode === 'out') {
+    if (fade >= 250) { reseed(); fadeTarget = 0; mode = 'build'; }
+  }
+  /* 'hold' — stay until the canvas is tapped (triggerReset) */
+
+  const top = floor(revealed);
+  const frac = easeOut(revealed - top);
+  for (let i = min(top, maxRows - 1); i >= 0; i--) {
+    const rise = (i === top) ? frac : 1;
+    if (rise <= 0.001) continue;
+    drawLayer(i, rise);
+  }
+
+  if (frameCount % 4 === 0) recomputeSurface();
+  if (P.pcount > 0) stepParticles();
+  drawShu();
+  image(paper, 0, 0, W, H);
+
+  const live = (W * H) / 11000;
+  for (let k = 0; k < live; k++) { ink(random(3, 8)); strokeWeight(1); point(random(W), random(H)); }
+
+  fade += (fadeTarget - fade) * 0.045;
+  if (fade > 0.5) { noStroke(); fill(WASHI[0], WASHI[1], WASHI[2], fade); rect(0, 0, W, H); }
+}
+
+function spawnP() { return { x: random(W), y: random(-50, H * 0.12), vx: 0, vy: random(0.2, 0.5) }; }
+function ensureParticles() {
+  const n = round(P.pcount);
+  while (particles.length < n) particles.push(spawnP());
+  if (particles.length > n) particles.length = n;
+}
+function recomputeSurface() {
+  const top = min(floor(revealed), maxRows - 1);
+  for (let c = 0; c <= SURF_COLS; c++) {
+    const x = c / SURF_COLS * W; let m = H;
+    for (let i = 0; i <= top; i++) {
+      const y = (H - botM - i * spacing) - ridgeHeight(x, i);
+      if (y < m) m = y;
+    }
+    surfaceY[c] = m;
+  }
+}
+function surfAt(x) {
+  const fc = constrain(x / W * SURF_COLS, 0, SURF_COLS);
+  const c = floor(fc), f = fc - c;
+  const a = surfaceY[c], b = surfaceY[min(c + 1, SURF_COLS)];
+  return a + (b - a) * f;
+}
+function stepParticles() {
+  ensureParticles(); noStroke();
+  const fadeDist = 46;
+  for (const p of particles) {
+    const ang = noise(p.x * 0.0016, p.y * 0.0016, frameCount * 0.003 + seedPhase) * TWO_PI * 1.5;
+    p.vx = p.vx * 0.92 + cos(ang) * 0.05;
+    p.vy = constrain(p.vy + 0.01, 0.2, 0.8);
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x += W; else if (p.x > W) p.x -= W;
+    const sy = surfAt(p.x); const d = sy - p.y;
+    if ((d <= 0 && sy < H - 4) || p.y > H) { Object.assign(p, spawnP()); continue; }
+    let a = 46;
+    if (sy < H - 4) a *= constrain(d / fadeDist, 0, 1);
+    if (a < 1) continue;
+    const s = P.psize * (0.7 + 0.6 * noise(p.x * 0.05, p.y * 0.05));
+    fill(SUMI[0], SUMI[1], SUMI[2], a); circle(p.x, p.y, s);
+  }
+}
+function setShuPoint() {
+  recomputeSurface();
+  let best = -1, bx = W * 0.5, by = H * 0.6;
+  for (let c = 4; c <= SURF_COLS - 4; c++) {
+    if (surfaceY[c] > best) { best = surfaceY[c]; bx = c / SURF_COLS * W; by = surfaceY[c]; }
+  }
+  shuPoint = { x: bx, y: by - 2 };
+}
+function drawShu() {
+  if (P.shu < 0.5 || !shuPoint) return;
+  noStroke();
+  fill(SHU[0], SHU[1], SHU[2], 26); circle(shuPoint.x, shuPoint.y, 11);
+  fill(SHU[0], SHU[1], SHU[2], 240); circle(shuPoint.x, shuPoint.y, 3.2);
+}
+function triggerReset() { if (mode !== 'out') { mode = 'out'; fadeTarget = 255; } }
+</script>
+
+<script>
+/* ending overlay: reveal + scale the perspective phone cluster to the space right of the copy */
+(function(){
+  const clampN=(v,a,b)=>v<a?a:v>b?b:v;
+  const hero=document.getElementById('hero');
+  function fitPhones(){
+    const scene=document.querySelector('.scene');
+    const wrap=document.querySelector('.phones-wrap');
+    const copy=document.querySelector('.copy');
+    const vw=document.documentElement.clientWidth;
+    if(vw<=760){ scene.style.transform=''; return; }
+    scene.style.transform='none';
+    const natW=scene.getBoundingClientRect().width||1020;
+    const padR=parseFloat(getComputedStyle(wrap).paddingRight)||0;
+    const avail=(vw-padR)-copy.getBoundingClientRect().right-44;
+    const s=clampN(avail/natW, 0.55, 1.12);
+    scene.style.transformOrigin='right center';
+    scene.style.transform='scale('+s+')';
+  }
+  hero.classList.add('ready');
+  fitPhones();
+  let rt=null;
+  addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(fitPhones,160);});
+})();
+</script>
+</body>
+</html>

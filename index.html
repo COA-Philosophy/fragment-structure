@@ -896,6 +896,15 @@
       file: 'works/almana-lp-ending.html',
       still: ''
     },
+    {
+      no: 'F044', version: 'v1', status: 'current',
+      project: 'ALMANA',
+      use: 'LP / Ending',
+      ja: 'LPエンディング — 地層に継続体験',
+      en: 'LP Ending — continuity over strata',
+      file: 'works/almana-lp-ending-strata.html',
+      still: ''
+    },
   ];
 
   // ── 技法メタ（各作品のコードから命名 / works/<file> をキーに WORKS へマージ）──
@@ -951,6 +960,7 @@
     'works/almana-hero-karesansui-v2.html': { family: '枯山水・線画', tech: '枯山水フローフィールド砂紋（石を回避）', how: 'Perlinで歪めた流向場を中点法で積分した流線を、ブルーノイズ配点から引き、石の周りで場を曲げて砂紋を描く' },
     'works/strata.html': { family: '地層標本', tech: '墨ノイズ稜線の前後遮蔽積層', how: 'Perlin稜線を背面から手前へ和紙で遮蔽しつつ積層、各層を点描と擦れで墨化、粒子は稜線で消える' },
     'works/almana-lp-ending.html': { family: '枯山水・線画', tech: '枯山水砂紋に3画面を重ねるLP終景', how: '石を文字裏に寄せた枯山水フローフィールド背景に、対話→記録→パターンのperspective3画面をJSで右の空きに最大化して重ねる' },
+    'works/almana-lp-ending-strata.html': { family: '地層標本', tech: 'ノイズ地層に3画面を重ねるLP終景', how: 'Perlinノイズ駆動の地層稜線を奥→手前へrake(点描＋かすれ)で重ね、対話→記録→パターンの3画面をperspectiveで右に重畳' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

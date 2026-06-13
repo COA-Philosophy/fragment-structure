@@ -654,7 +654,7 @@
       still: ''
     },
     {
-      no: 'F021', version: 'v1', status: 'current',
+      no: 'F021', version: 'v1', status: 'archived',
       project: 'ALMANA',
       use: 'LP / Hero',
       ja: 'Almana 扉（流れ）',
@@ -869,6 +869,15 @@
       file: 'works/almana-lp-continuity.html',
       still: ''
     },
+    {
+      no: 'F021', version: 'v2', status: 'current',
+      project: 'ALMANA',
+      use: 'LP / Hero',
+      ja: 'Almana 扉（流れ）',
+      en: 'Hero — karesansui flow-field LP',
+      file: 'works/almana-hero-karesansui-v2.html',
+      still: ''
+    },
   ];
 
   // ── 技法メタ（各作品のコードから命名 / works/<file> をキーに WORKS へマージ）──
@@ -921,6 +930,7 @@
     'works/almana-lp-cards.html': { family: 'レイアウト研究', tech: '浮遊カードデッキ・クラスター', how: '12型の焼付プレートを円環に収めたカードを絶対配置で重ね散らし、列幅を実測してクラスター全体を等比縮小し中央に収める' },
     'works/almana-convergence-lp-v2.html': { family: '3D多面体', tech: '双三角錐の六面収束結晶（面=観測レンズ）', how: '5頂点6面の双三角錐を各面乱数シードで飛散させ、イージングで定位置へ収束。3D回転＋透視投影＋前後カリングで結晶化' },
     'works/almana-lp-continuity.html': { family: 'レイアウト研究', tech: '3画面フォン配置スタディ（row/fan/stagger/遠近）', how: '同一3画面(対話/記録/パターン)を?heroでクロップした端末窓で、平置き・扇・段違い・CSS perspectiveの4配置を並べ比較' },
+    'works/almana-hero-karesansui-v2.html': { family: '枯山水・線画', tech: '枯山水フローフィールド砂紋（石を回避）', how: 'Perlinで歪めた流向場を中点法で積分した流線を、ブルーノイズ配点から引き、石の周りで場を曲げて砂紋を描く' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

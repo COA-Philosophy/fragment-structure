@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALMANA — LP three-phone arrangement study</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@200;300;400;500&family=Lora:ital,wght@0,400;1,400&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400&display=swap');
+:root{
+  --ground:#e8e8e5;--paper:#f7f7f5;--sumi:#222120;--sumi-mid:#6f6b64;--sumi-faint:#8d887f;--sumi-pale:#cbc6bc;
+  --hair:#e0ddd6;--shu:#a8392b;
+  --sans:'Satoshi',ui-sans-serif,system-ui,sans-serif;--serifjp:'Noto Serif JP',serif;
+  --serif:'Lora',Georgia,serif;--logo:'Spectral',Georgia,serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--ground);color:var(--sumi);font-family:var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;min-height:100vh;padding:0 0 90px;}
+
+.page-head{text-align:center;padding:56px 24px 6px;}
+.page-head .wordmark{font-family:var(--logo);font-weight:400;font-size:15px;letter-spacing:.4em;color:var(--sumi);}
+.page-head .wordmark::after{content:"";display:inline-block;width:.2em;height:.2em;border-radius:50%;background:var(--shu);margin-left:.32em;vertical-align:.08em;}
+.page-head .kicker{font-family:var(--sans);font-weight:300;font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--sumi-mid);margin-top:16px;}
+.page-head .sub{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--sumi-faint);margin-top:10px;}
+.legend{font-family:var(--sans);font-weight:300;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--sumi-faint);margin-top:18px;}
+.legend b{color:var(--sumi-mid);font-weight:400;}
+
+.block{max-width:1240px;margin:40px auto 0;padding:0 24px;}
+.block .h{text-align:center;margin-bottom:6px;}
+.block .h .t{font-family:var(--sans);font-weight:500;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--sumi);}
+.block .h .t .k{color:var(--shu);margin-right:9px;}
+.block .h .d{font-family:var(--serif);font-style:italic;font-size:12.5px;color:var(--sumi-faint);margin-top:6px;}
+
+/* ===== device = clipped window onto a live ?embed mock ===== */
+.scene{position:relative;display:flex;justify-content:center;align-items:flex-start;min-height:800px;padding:30px 0 0;}
+.device{position:relative;width:360px;height:760px;overflow:hidden;flex:0 0 auto;}
+.device iframe{display:block;width:360px;height:778px;border:0;background:transparent;}
+
+.scene.row{gap:26px;}
+
+.scene.fan{align-items:center;}
+.scene.fan .device:nth-child(1){transform:rotate(-7deg) translateY(22px);margin-right:-56px;z-index:1;}
+.scene.fan .device:nth-child(2){z-index:3;transform:translateY(-8px) scale(1.035);}
+.scene.fan .device:nth-child(3){transform:rotate(7deg) translateY(22px);margin-left:-56px;z-index:1;}
+
+.scene.stagger{gap:24px;}
+.scene.stagger .device:nth-child(1){transform:translateY(48px) rotate(-2.5deg);}
+.scene.stagger .device:nth-child(3){transform:translateY(48px) rotate(2.5deg);}
+
+.scene.persp{perspective:1750px;gap:0;}
+.scene.persp .device:nth-child(1){transform:rotateY(30deg) translateX(46px) scale(.95);z-index:1;}
+.scene.persp .device:nth-child(2){z-index:3;}
+.scene.persp .device:nth-child(3){transform:rotateY(-30deg) translateX(-46px) scale(.95);z-index:1;}
+</style>
+</head>
+<body>
+
+<header class="page-head">
+  <div class="wordmark">ALMANA</div>
+  <div class="kicker">LP ending — continuity flow</div>
+  <div class="sub">対話 → 記録 → パターン。診断のあとも、続いていく。</div>
+  <div class="legend">左 <b>対話 / Dialogue</b> &nbsp;·&nbsp; 中 <b>記録 / Streams</b> &nbsp;·&nbsp; 右 <b>パターン / Patterns</b></div>
+</header>
+
+<main id="main"></main>
+
+<script>
+'use strict';
+const SCREENS = [
+  'silas-blanc-dialogue-dark.html?hero',
+  'silas-blanc-log-streams.html?hero',
+  'almana-patterns.html?hero',
+];
+const PATTERNS = [
+  {key:'A', cls:'row',     t:'フラット / flat row',   d:'3画面を等価に並べる。誠実・読みやすい・SaaS的。'},
+  {key:'B', cls:'fan',     t:'扇・重なり / fan',       d:'中央を前に、両脇を傾けて重ねる。ヒーローらしい王道。'},
+  {key:'C', cls:'stagger', t:'段違い / stagger',      d:'中央を上げ、両脇を下げる。軽やかでリズムが出る。'},
+  {key:'D', cls:'persp',   t:'遠近 / perspective',    d:'奥行きで3D化。プロダクト感・奥行きを強調。'},
+];
+
+const main = document.getElementById('main');
+const bust = (location.search.match(/[?&]v=([^&]+)/)||[])[1] || '';
+PATTERNS.forEach(p=>{
+  const devices = SCREENS.map(src=>
+    `<div class="device"><iframe loading="lazy" scrolling="no" src="${src}${bust?('&v='+bust):''}"></iframe></div>`
+  ).join('');
+  const block=document.createElement('section'); block.className='block';
+  block.innerHTML=`<div class="h"><div class="t"><span class="k">${p.key}</span>${p.t}</div><div class="d">${p.d}</div></div>
+    <div class="scene ${p.cls}">${devices}</div>`;
+  main.appendChild(block);
+});
+</script>
+
+</body>
+</html>

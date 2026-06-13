@@ -104,6 +104,16 @@ body{background:var(--ground);color:var(--sumi);font-family:var(--sans);-webkit-
 .wm::after,.wordmark::after{content:"";display:inline-block;width:.2em;height:.2em;border-radius:50%;background:var(--shu);margin-left:.3em;vertical-align:.06em;}
 .topbar .silas-svg,.page-head .mark .silas-svg{display:none;}
 </style>
+<style>/* ?embed / ?hero — crop chrome so this screen sits in a phone frame like its siblings */
+html.embed body{background:transparent!important;padding:0!important;min-height:0!important;}
+html.embed .page-head,html.embed .caption,html.embed .page-foot{display:none!important;}
+html.embed .stage{padding:0!important;}
+html.embed .frame-wrap{animation:none!important;opacity:1!important;transform:none!important;}
+html.hero .stage{padding:22px 0!important;}
+html.hero .phone{min-height:0!important;height:700px!important;}
+html.hero .screen{overflow:hidden;}
+</style>
+<script>(function(){var q=location.search+location.hash;if(q.indexOf('hero')>-1)document.documentElement.classList.add('embed','hero');else if(q.indexOf('embed')>-1)document.documentElement.classList.add('embed');})()</script>
 </head>
 <body>
 

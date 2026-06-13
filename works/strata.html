@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>STRATA — Almana / sumi on washi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500&family=Noto+Serif+JP:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+<style>
+  :root{
+    --sumi:#1F1F1D; --washi:#FDF9F0; --shu:#A8392B;
+    --spectral:'Spectral','Noto Serif JP',Georgia,serif;
+    --satoshi:'Satoshi',ui-sans-serif,system-ui,sans-serif;
+  }
+  html,body{margin:0;padding:0;height:100%;background:var(--washi);overflow:hidden;}
+  canvas{display:block;}
+
+  .anno{position:fixed;pointer-events:none;z-index:10;color:rgba(31,31,29,0.5);}
+  #tl{top:20px;left:22px;}
+  #bl{bottom:20px;left:22px;}
+  #br{bottom:20px;right:22px;text-align:right;}
+
+  .wordmark{
+    font-family:var(--spectral);font-weight:500;font-size:19px;
+    letter-spacing:.38em;color:var(--sumi);line-height:1;
+    display:flex;align-items:center;
+  }
+  .shu-dot{
+    display:inline-block;width:.11em;height:.11em;border-radius:50%;
+    background:var(--shu);margin-left:.34em;
+  }
+  .sub{
+    font-family:var(--satoshi);font-weight:500;font-size:10px;
+    letter-spacing:.26em;text-transform:uppercase;
+    color:rgba(31,31,29,0.42);margin-top:9px;
+  }
+  .tech{
+    font-family:var(--satoshi);font-weight:500;font-size:10.5px;
+    letter-spacing:.2em;text-transform:uppercase;
+    color:rgba(31,31,29,0.46);line-height:1.6;
+  }
+  .reg{display:inline-block;width:9px;height:9px;position:relative;vertical-align:middle;margin-right:9px;}
+  .reg:before,.reg:after{content:"";position:absolute;background:rgba(31,31,29,0.46);}
+  .reg:before{left:4px;top:0;width:1px;height:9px;}
+  .reg:after{top:4px;left:0;height:1px;width:9px;}
+
+  /* parameter panel */
+  #panel{
+    position:fixed;top:18px;right:18px;z-index:20;
+    width:214px;max-height:calc(100vh - 36px);overflow:auto;
+    background:rgba(253,249,240,0.84);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);
+    border:1px solid rgba(31,31,29,0.16);
+    padding:16px 16px 14px;
+    font-family:var(--satoshi);color:var(--sumi);
+    transition:opacity .25s ease, transform .25s ease;
+  }
+  #panel.hidden{opacity:0;transform:translateY(-6px);pointer-events:none;}
+  #panel h4{
+    margin:0 0 16px;font-size:10px;font-weight:500;
+    letter-spacing:.26em;text-transform:uppercase;color:rgba(31,31,29,0.55);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  #panel h4 #closeP{cursor:pointer;font-size:14px;line-height:1;color:rgba(31,31,29,0.4);}
+  .ctrl{margin-bottom:13px;}
+  .ctrl .row{display:flex;justify-content:space-between;align-items:baseline;}
+  .ctrl label{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:rgba(31,31,29,0.62);}
+  .ctrl .val{font-size:9.5px;font-variant-numeric:tabular-nums;color:rgba(31,31,29,0.4);}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:1px;
+    background:rgba(31,31,29,0.25);outline:none;margin:7px 0 2px;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:9px;height:9px;border-radius:50%;
+    background:var(--shu);cursor:pointer;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:9px;height:9px;border:none;border-radius:50%;background:var(--shu);cursor:pointer;
+  }
+  .btns{display:flex;gap:8px;margin-top:8px;}
+  .btns button{
+    flex:1;font-family:var(--satoshi);font-size:9px;font-weight:500;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--sumi);
+    background:transparent;border:1px solid rgba(31,31,29,0.28);
+    padding:8px 4px;cursor:pointer;transition:background .15s,color .15s;
+  }
+  .btns button:hover{background:var(--sumi);color:var(--washi);}
+  #toggle{
+    position:fixed;top:18px;right:18px;z-index:21;display:none;
+    font-family:var(--satoshi);font-size:9px;font-weight:500;
+    letter-spacing:.2em;text-transform:uppercase;color:rgba(31,31,29,0.55);
+    background:rgba(253,249,240,0.72);border:1px solid rgba(31,31,29,0.2);
+    padding:8px 11px;cursor:pointer;
+  }
+  #toggle.show{display:block;}
+</style>
+</head>
+<body>
+<div class="anno" id="tl">
+  <div class="wordmark">ALMANA<span class="shu-dot"></span></div>
+  <div class="sub"><span class="reg"></span>STRATA FIELD</div>
+</div>
+<div class="anno" id="bl"><div class="tech">NOISE No.<span id="seed">000</span> / コードアート</div></div>
+<div class="anno" id="br"><div class="tech">LAYERS <span id="count">00</span> / <span id="total">00</span><br>TAP TO RE-SEED</div></div>
+
+<button id="toggle">⊕ PARAMS</button>
+<div id="panel">
+  <h4>PARAMETERS <span id="closeP">×</span></h4>
+  <div id="sliders"></div>
+  <div class="btns">
+    <button id="reseedBtn">Re-seed</button>
+    <button id="saveBtn">Save PNG</button>
+  </div>
+</div>
+
+<script>
+const SUMI = [31, 31, 29];
+const WASHI = [253, 249, 240];
+
+// live-tunable parameters
+const P = { amp: 6.0, shear: 0.45, freq: 1.0, contrast: 1.9, rows: 44, speed: 1.0, grain: 78, pcount: 220, psize: 1.6, shu: 0 };
+const CTRLS = [
+  { k: 'amp',      label: 'Amplitude',  min: 2,    max: 9,   step: 0.1,  fmt: v => v.toFixed(1) },
+  { k: 'shear',    label: 'Shear',      min: 0.05, max: 0.7, step: 0.01, fmt: v => v.toFixed(2) },
+  { k: 'freq',     label: 'Frequency',  min: 0.4,  max: 2.5, step: 0.05, fmt: v => v.toFixed(2) },
+  { k: 'contrast', label: 'Contrast',   min: 0.6,  max: 3.0, step: 0.05, fmt: v => v.toFixed(2) },
+  { k: 'rows',     label: 'Lines',      min: 18,   max: 80,  step: 1,    fmt: v => v.toFixed(0) },
+  { k: 'speed',    label: 'Rake speed', min: 0.3,  max: 3,   step: 0.05, fmt: v => v.toFixed(2) },
+  { k: 'grain',    label: 'Ink grain',  min: 20,   max: 160, step: 2,    fmt: v => v.toFixed(0) },
+  { k: 'pcount',   label: 'Particles',  min: 0,    max: 600, step: 10,   fmt: v => v.toFixed(0) },
+  { k: 'psize',    label: 'Grain size', min: 0.5,  max: 5,   step: 0.1,  fmt: v => v.toFixed(1) },
+  { k: 'shu',      label: 'Shu point',  min: 0,    max: 1,   step: 1,    fmt: v => v >= 0.5 ? 'On' : 'Off' },
+];
+
+let W, H;
+let spacing, topM = 78, botM = 56;
+let maxRows = 44, targetRows = 44;
+let ampBase;
+let revealed = 0, revealRate;
+let seedPhase = 0;
+let mode = 'build', holdCounter = 0;
+let fade = 255, fadeTarget = 0;     // washi overlay alpha (open with fade-in from white)
+const HOLD_FRAMES = 150;
+let paper;                          // baked paper-grain layer
+const SURF_COLS = 110;
+let surfaceY = new Array(SURF_COLS + 1).fill(0);
+let particles = [];
+let shuPoint = null;
+const SHU = [168, 57, 43];
+
+const $ = id => document.getElementById(id);
+
+function applyParams() {
+  targetRows = round(P.rows);
+  spacing = (H - topM - botM) / targetRows;
+  maxRows = targetRows;
+  ampBase = spacing * P.amp;
+  revealRate = (1 / 26) * P.speed;
+  revealed = min(revealed, maxRows);
+  if ($('total')) $('total').textContent = nf(maxRows, 2);
+}
+function recompute() { applyParams(); }
+
+function bakePaper() {
+  paper = createGraphics(W, H);
+  paper.clear();
+  paper.noStroke();
+  const n = (W * H) / 210;
+  for (let k = 0; k < n; k++) {
+    const x = random(W), y = random(H);
+    if (random() < 0.82) {                 // dark sumi specks
+      paper.fill(SUMI[0], SUMI[1], SUMI[2], random(3, 10));
+    } else {                               // a few light flecks
+      paper.fill(255, 255, 252, random(4, 12));
+    }
+    paper.rect(x, y, random() < 0.5 ? 1 : 1.4, 1);
+  }
+}
+
+function reseed() {
+  seedPhase = random(1000);
+  noiseSeed(floor(random(1e6)));
+  revealed = 0;
+  shuPoint = null;
+  for (const p of particles) Object.assign(p, spawnP());
+  $('seed').textContent = nf(floor(random(999)), 3);
+}
+
+function setup() {
+  W = windowWidth; H = windowHeight;
+  const cnv = createCanvas(W, H);
+  pixelDensity(min(2, window.devicePixelRatio || 1));
+  cnv.mousePressed(triggerReset);
+  cnv.touchStarted(() => { triggerReset(); return false; });
+  recompute(); bakePaper(); reseed();
+  ensureParticles(); recomputeSurface();
+  buildUI();
+  fade = 255; fadeTarget = 0;
+}
+
+function windowResized() {
+  W = windowWidth; H = windowHeight;
+  resizeCanvas(W, H);
+  recompute(); bakePaper();
+  surfaceY = new Array(SURF_COLS + 1).fill(H);
+}
+
+function easeOut(t){ return 1 - pow(1 - t, 3); }
+
+function ridgeHeight(x, i) {
+  // steep flowing dunes, driven by live params (shear / freq / contrast)
+  const t = seedPhase, sh = P.shear, fr = P.freq;
+  const macro = noise(x * 0.0011 * fr + i * (sh * 0.4) + 70.0, i * 0.06 + t);
+  const env   = 0.15 + P.contrast * pow(macro, 1.8);
+  const n1 = noise(x * 0.0024 * fr + i * sh + 11.0, i * 0.13 + t);
+  const n2 = noise(x * 0.0052 * fr + i * (sh * 0.9) + 40.0, i * 0.20 + t * 1.3);
+  return ampBase * env * (0.74 * pow(n1, 1.7) + 0.26 * n2);
+}
+
+function hash(a, b) {
+  let h = sin(a * 127.1 + b * 311.7 + seedPhase * 13.0) * 43758.5453;
+  return h - floor(h);
+}
+function ink(a){ stroke(SUMI[0], SUMI[1], SUMI[2], a); }
+
+function drawLayer(i, rise) {
+  const by = H - botM - i * spacing;
+  const d = i / maxRows;                  // 0 front .. 1 back
+  const aFront = lerp(232, 48, d);        // front dense sumi -> back recedes to washi
+  const dx = max(2, W / 440);
+
+  const pts = [];
+  for (let x = -dx; x <= W + dx; x += dx) {
+    pts.push([x, by - ridgeHeight(x, i) * rise]);
+  }
+
+  // 1) occlude underside with washi (hides layers behind)
+  noStroke();
+  fill(WASHI[0], WASHI[1], WASHI[2]);
+  beginShape();
+  vertex(-dx, H + 2);
+  for (const p of pts) vertex(p[0], p[1]);
+  vertex(W + dx, H + 2);
+  endShape(CLOSE);
+
+  // 2) ink-spray stipple band hugging the groove (tighter for serenity)
+  const band = spacing * 1.9;
+  const stippleN = round(P.grain);
+  for (let k = 0; k < stippleN; k++) {
+    const t = (k + hash(i, k)) / stippleN;
+    const xi = t * W;
+    const idx = constrain(round((xi + dx) / dx), 0, pts.length - 1);
+    const cy = pts[idx][1];
+    const off = pow(hash(i * 2.3, k * 1.1), 1.8) * band;
+    const jx = (hash(k * 1.7, i) - 0.5) * dx * 1.6;
+    const a = aFront * (1 - off / band) * 0.55 * rise * (0.45 + 0.6 * hash(i, k * 3.1));
+    ink(a); strokeWeight(0.8 + 0.6 * hash(k, i));
+    point(xi + jx, cy + off);
+  }
+
+  // 3) dry-brush (kasure) along the groove — fewer gaps, gentle jitter
+  for (let j = 0; j < pts.length; j++) {
+    const p = pts[j];
+    if (hash(i * 1.3, j * 0.7) > 0.22) {
+      const jy = (hash(j, i * 1.9) - 0.5) * 1.3;
+      const a = aFront * (0.5 + 0.5 * hash(i, j)) * rise;
+      ink(a); strokeWeight(0.9 + hash(j * 2.1, i) * 0.7);
+      point(p[0] + (hash(j, i) - 0.5) * dx * 0.8, p[1] + jy);
+    }
+  }
+
+  // 4) faint continuous rake groove so the line stays legible
+  noFill();
+  ink(aFront * 0.24 * rise);
+  strokeWeight(0.8);
+  beginShape();
+  for (const p of pts) vertex(p[0], p[1]);
+  endShape();
+}
+
+function draw() {
+  background(WASHI[0], WASHI[1], WASHI[2]);
+
+  // state machine
+  if (mode === 'build') {
+    revealed = min(revealed + revealRate, maxRows);
+    if (revealed >= maxRows) { mode = 'hold'; holdCounter = HOLD_FRAMES; setShuPoint(); }
+  } else if (mode === 'hold') {
+    if (--holdCounter <= 0) { mode = 'out'; fadeTarget = 255; }
+  } else if (mode === 'out') {
+    if (fade >= 250) { reseed(); fadeTarget = 0; mode = 'build'; }
+  }
+
+  // strata back -> front
+  const top = floor(revealed);
+  const frac = easeOut(revealed - top);
+  for (let i = min(top, maxRows - 1); i >= 0; i--) {
+    const rise = (i === top) ? frac : 1;
+    if (rise <= 0.001) continue;
+    drawLayer(i, rise);
+  }
+  $('count').textContent = nf(min(top, maxRows), 2);
+
+  // --- drifting particles: fade out and vanish as they reach the strata line ---
+  if (frameCount % 4 === 0) recomputeSurface();
+  if (P.pcount > 0) stepParticles();
+  drawShu();
+
+  // baked paper grain over everything (unifies the noise, static)
+  image(paper, 0, 0, W, H);
+
+  // light live grain for a touch of life
+  const live = (W * H) / 11000;
+  for (let k = 0; k < live; k++) {
+    ink(random(3, 8)); strokeWeight(1);
+    point(random(W), random(H));
+  }
+
+  // quiet reset / open — ink recedes into washi white
+  fade += (fadeTarget - fade) * 0.045;
+  if (fade > 0.5) {
+    noStroke();
+    fill(WASHI[0], WASHI[1], WASHI[2], fade);
+    rect(0, 0, W, H);
+  }
+}
+
+function spawnP() {
+  return { x: random(W), y: random(-50, H * 0.12), vx: 0, vy: random(0.2, 0.5) };
+}
+function ensureParticles() {
+  const n = round(P.pcount);
+  while (particles.length < n) particles.push(spawnP());
+  if (particles.length > n) particles.length = n;
+}
+
+// silhouette (upper envelope) of revealed strata, per column
+function recomputeSurface() {
+  const top = min(floor(revealed), maxRows - 1);
+  for (let c = 0; c <= SURF_COLS; c++) {
+    const x = c / SURF_COLS * W;
+    let m = H;
+    for (let i = 0; i <= top; i++) {
+      const y = (H - botM - i * spacing) - ridgeHeight(x, i);
+      if (y < m) m = y;
+    }
+    surfaceY[c] = m;
+  }
+}
+function surfAt(x) {
+  const fc = constrain(x / W * SURF_COLS, 0, SURF_COLS);
+  const c = floor(fc), f = fc - c;
+  const a = surfaceY[c], b = surfaceY[min(c + 1, SURF_COLS)];
+  return a + (b - a) * f;
+}
+
+function stepParticles() {
+  ensureParticles();
+  noStroke();
+  const fadeDist = 46;
+  for (const p of particles) {
+    // drift on a slow flow field (漂う) + gentle gravity (沈む)
+    const ang = noise(p.x * 0.0016, p.y * 0.0016, frameCount * 0.003 + seedPhase) * TWO_PI * 1.5;
+    p.vx = p.vx * 0.92 + cos(ang) * 0.05;
+    p.vy = constrain(p.vy + 0.01, 0.2, 0.8);
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x += W; else if (p.x > W) p.x -= W;
+
+    const sy = surfAt(p.x);
+    const d = sy - p.y;                         // height above the strata line
+    if ((d <= 0 && sy < H - 4) || p.y > H) {
+      Object.assign(p, spawnP());               // touched the line → vanish
+      continue;
+    }
+    let a = 46;                                 // fade out as it nears the surface
+    if (sy < H - 4) a *= constrain(d / fadeDist, 0, 1);
+    if (a < 1) continue;
+    const s = P.psize * (0.7 + 0.6 * noise(p.x * 0.05, p.y * 0.05));
+    fill(SUMI[0], SUMI[1], SUMI[2], a);
+    circle(p.x, p.y, s);
+  }
+}
+
+function setShuPoint() {
+  recomputeSurface();
+  let best = -1, bx = W * 0.5, by = H * 0.6;
+  for (let c = 4; c <= SURF_COLS - 4; c++) {
+    if (surfaceY[c] > best) { best = surfaceY[c]; bx = c / SURF_COLS * W; by = surfaceY[c]; }
+  }
+  shuPoint = { x: bx, y: by - 2 };
+}
+function drawShu() {
+  if (P.shu < 0.5 || !shuPoint) return;
+  noStroke();
+  fill(SHU[0], SHU[1], SHU[2], 26); circle(shuPoint.x, shuPoint.y, 11);
+  fill(SHU[0], SHU[1], SHU[2], 240); circle(shuPoint.x, shuPoint.y, 3.2);
+}
+
+function triggerReset() {
+  if (mode !== 'out') { mode = 'out'; fadeTarget = 255; }
+}
+
+function buildUI() {
+  const box = $('sliders');
+  CTRLS.forEach(c => {
+    const wrap = document.createElement('div');
+    wrap.className = 'ctrl';
+    wrap.innerHTML =
+      '<div class="row"><label>' + c.label + '</label>' +
+      '<span class="val" id="v_' + c.k + '">' + c.fmt(P[c.k]) + '</span></div>';
+    const inp = document.createElement('input');
+    inp.type = 'range'; inp.min = c.min; inp.max = c.max; inp.step = c.step; inp.value = P[c.k];
+    inp.addEventListener('input', () => {
+      P[c.k] = parseFloat(inp.value);
+      $('v_' + c.k).textContent = c.fmt(P[c.k]);
+      applyParams();
+    });
+    wrap.appendChild(inp);
+    box.appendChild(wrap);
+  });
+  $('reseedBtn').addEventListener('click', triggerReset);
+  $('saveBtn').addEventListener('click', () => saveCanvas('almana-strata', 'png'));
+  $('closeP').addEventListener('click', () => {
+    $('panel').classList.add('hidden'); $('toggle').classList.add('show');
+  });
+  $('toggle').addEventListener('click', () => {
+    $('panel').classList.remove('hidden'); $('toggle').classList.remove('show');
+  });
+}
+</script>
+</body>
+</html>

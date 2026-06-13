@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALMANA — 六観の収束 / Convergence (LP)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@300;400;500&family=Shippori+Mincho:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{ --washi:#e8e8e5; --ink:#1f1f1d; --shu:#a8392b;
+    --grot:"Archivo","Helvetica Neue",sans-serif; --jp:"Zen Kaku Gothic New",sans-serif; --mincho:"Shippori Mincho",serif; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{ background:var(--washi); color:var(--ink); font-family:var(--jp); -webkit-font-smoothing:antialiased; min-height:100vh;
+    background-image:radial-gradient(125% 120% at 50% 36%, rgba(252,252,251,0.30) 0%, rgba(138,138,142,0.14) 100%); }
+  .wrap{ max-width:1180px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; padding:clamp(20px,3vw,40px) clamp(24px,5vw,64px); }
+  header{ display:flex; align-items:flex-start; justify-content:space-between; border-bottom:1px solid rgba(31,31,29,0.22); padding-bottom:12px; }
+  .brand{ display:flex; align-items:baseline; gap:12px; }
+  .brand svg{ height:clamp(15px,1.7vw,18px); width:auto; display:block; }
+  .brand .tag{ font-family:var(--mincho); font-size:11px; letter-spacing:0.22em; color:rgba(31,31,29,0.6); }
+  .annot{ font-family:var(--grot); font-size:10px; letter-spacing:0.18em; text-transform:uppercase; text-align:right; line-height:1.7; color:rgba(31,31,29,0.5); }
+  .annot .reg{ color:var(--shu); }
+
+  main{ flex:1; display:grid; grid-template-columns:minmax(300px,1fr) minmax(320px,560px); gap:clamp(28px,5vw,64px); align-items:center; padding:clamp(18px,3vh,32px) 0 0; }
+  @media (max-width:880px){ main{ grid-template-columns:1fr; gap:24px; } }
+  .col-left{ max-width:470px; }
+  .no{ font-family:var(--grot); font-size:11px; letter-spacing:0.26em; text-transform:uppercase; color:var(--shu); }
+  .head{ margin-top:16px; font-family:var(--mincho); font-weight:400; font-size:clamp(26px,3.2vw,38px); line-height:1.45; letter-spacing:0.03em; }
+  .sub{ margin-top:14px; font-family:var(--mincho); font-size:clamp(13px,1.5vw,15px); letter-spacing:0.05em; color:rgba(31,31,29,0.6); }
+  .lenses{ margin-top:24px; }
+  .lenses .lab{ font-family:var(--grot); font-size:9.5px; letter-spacing:0.16em; text-transform:uppercase; color:rgba(31,31,29,0.5); }
+  .lenses .list{ margin-top:9px; font-family:var(--mincho); font-size:14.5px; line-height:1.95; color:rgba(31,31,29,0.82); }
+  .lenses .list span{ transition:color .3s, opacity .3s; cursor:default; }
+  .lenses .list span.act{ color:var(--shu); }
+  .lenses .list span.dim{ opacity:0.30; }
+  .specs{ margin-top:18px; font-family:var(--grot); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:rgba(31,31,29,0.6); }
+  .specs b{ font-weight:500; color:var(--ink); margin:0 4px; }
+
+  .readblock{ margin-top:20px; min-height:108px; border-left:1px solid rgba(31,31,29,0.3); padding-left:15px; transition:opacity .3s ease; }
+  .read-lab{ font-family:var(--grot); font-size:9px; letter-spacing:0.18em; text-transform:uppercase; color:var(--shu); min-height:11px; }
+  .read-sys{ font-family:var(--mincho); font-size:18px; color:var(--ink); margin-top:8px; line-height:1.3; }
+  .read-sys .ro{ font-family:var(--grot); font-size:9px; letter-spacing:0.14em; color:rgba(31,31,29,0.45); margin-left:10px; }
+  .read-desc{ font-family:var(--mincho); font-size:12.5px; line-height:1.95; color:rgba(31,31,29,0.62); margin-top:10px; }
+
+  .actions{ margin-top:26px; display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+  .mini{ font-family:var(--grot); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(31,31,29,0.55); cursor:pointer; background:none; border:none; }
+  .mini:hover{ color:var(--ink); }
+  .mini.accent{ color:var(--shu); border:1px solid var(--shu); padding:9px 14px; }
+  .mini.accent:hover{ background:var(--shu); color:var(--washi); }
+  .hint{ margin-top:14px; font-family:var(--mincho); font-size:11px; color:rgba(31,31,29,0.42); letter-spacing:0.04em; }
+
+  .stage-wrap{ display:flex; justify-content:center; }
+  .stage{ position:relative; width:100%; max-width:560px; aspect-ratio:1/1; }
+  canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .cross{ position:absolute; width:12px; height:12px; opacity:0.4; }
+  .cross::before,.cross::after{ content:""; position:absolute; background:rgba(31,31,29,0.55); }
+  .cross::before{ left:5px; top:0; width:1px; height:12px; } .cross::after{ left:0; top:5px; width:12px; height:1px; }
+  .c-tl{top:2px;left:2px}.c-tr{top:2px;right:2px}.c-bl{bottom:2px;left:2px}.c-br{bottom:2px;right:2px}
+  .ov{ position:absolute; font-family:var(--grot); font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(31,31,29,0.4); pointer-events:none; }
+  .ov-tl{ top:12px; left:14px; line-height:1.6; } .ov-tl .reg{ color:var(--shu); }
+  .ov-br{ bottom:12px; right:14px; text-align:right; }
+
+  footer{ font-family:var(--grot); font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(31,31,29,0.35); text-align:center; padding:18px 0 4px; }
+</style>
+<style>html.embed header,html.embed footer,html.embed .footnote,html.embed .ov,html.embed .stage-cap{display:none!important}html.embed .wrap{justify-content:center}
+/* bare: 結晶(canvas)だけを出す。言葉は埋め込み先(LP)が担う */
+html.bare .col-left{display:none!important}html.bare main{grid-template-columns:1fr!important;padding:0!important}html.bare .stage{max-width:none}html.bare .wrap{padding:0!important;justify-content:center}html.bare .ov{display:none!important}</style><script>(function(){var h=location.search+location.hash;if(h.indexOf('embed')>-1)document.documentElement.classList.add('embed');if(h.indexOf('bare')>-1)document.documentElement.classList.add('bare');})()</script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="9.0 -689.0 7095.0 718.0" aria-label="ALMANA"><g transform="scale(1,-1)">
+        <path d="M33 0V16L97 49L353 665H398L650 52L717 16V0H469V16L557 50L482 235H239L165 50L249 16V0ZM262 290H460L361 536Z" fill="#1f1f1d"/>
+        <path d="M1195 0V16L1275 56V604L1195 644V660H1455V644L1365 604V55H1608L1676 222H1692V0Z" fill="#1f1f1d"/>
+        <path d="M2202 0V16L2281 56L2302 603L2216 644V660H2401L2632 128L2862 660H3038V644L2954 604L2971 56L3041 16V0H2811V16L2885 55L2875 548L2636 -5H2591L2356 541L2343 55L2424 16V0Z" fill="#1f1f1d"/>
+        <path d="M3514 0V16L3578 49L3834 665H3879L4131 52L4198 16V0H3950V16L4038 50L3963 235H3720L3646 50L3730 16V0ZM3743 290H3941L3842 536Z" fill="#1f1f1d"/>
+        <path d="M4671 0V16L4751 56V602L4672 644V660H4819L5201 180V606L5101 644V660H5350V644L5271 605V-5H5234L4821 516V55L4921 16V0Z" fill="#1f1f1d"/>
+        <path d="M5823 0V16L5887 49L6143 665H6188L6440 52L6507 16V0H6259V16L6347 50L6272 235H6029L5955 50L6039 16V0ZM6052 290H6250L6151 536Z" fill="#1f1f1d"/>
+        <circle cx="7025.0" cy="55.0" r="55.0" fill="#a8392b"/>
+      </g></svg>
+      <span class="tag">自己理解AI</span>
+    </div>
+    <div class="annot"><span class="reg">⊕</span> 六観の収束 / Convergence<br>Six lenses · One structure</div>
+  </header>
+
+  <main>
+    <div class="col-left">
+      <div class="no">ALM · CONVERGENCE</div>
+      <div class="head">言い当てるためではなく、<br>読むために。</div>
+      <div class="sub">ひとつでは見えない構造がある。</div>
+      <div class="lenses">
+        <div class="lab">観測レンズ ×6 / Observation lenses</div>
+        <div class="list" id="lensList">
+          <span data-fi="0">算命学</span>　<span data-fi="1">九星気学</span>　<span data-fi="2">四柱推命</span><br>
+          <span data-fi="3">干支</span>　<span data-fi="4">数秘</span>　<span data-fi="5">西洋占術</span>
+        </div>
+      </div>
+      <div class="specs">構造 <b>5</b>頂点 · <b>9</b>稜 · <b>6</b>面</div>
+      <div class="readblock" id="readBlock">
+        <div class="read-lab" id="readLab"></div>
+        <div class="read-sys" id="readSys"></div>
+        <div class="read-desc" id="readDesc"></div>
+      </div>
+      <div class="actions">
+        <button class="mini accent" id="replayBtn">組み直す ↻</button>
+        <button class="mini" id="exportBtn">PNG 書き出し ↓</button>
+      </div>
+      <div class="hint">図の面に触れると、その観がひとつ起き上がります。</div>
+    </div>
+
+    <div class="stage-wrap"><div class="stage" id="stage">
+      <canvas id="cv"></canvas>
+      <span class="cross c-tl"></span><span class="cross c-tr"></span><span class="cross c-bl"></span><span class="cross c-br"></span>
+      <div class="ov ov-tl"><span class="reg">⊕</span> FIG.04 · 六観 / SIX LENSES</div>
+      <div class="ov ov-br">DETERMINISTIC · ONE CORE</div>
+    </div></div>
+  </main>
+
+  <footer>Triangular bipyramid · Six lenses, one core · The Modern Zen Archive</footer>
+</div>
+
+<script>
+const INK='31,31,29', SHU='168,57,43';
+function hashStr(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const TAU=Math.PI*2, clamp=(v,a,b)=>v<a?a:v>b?b:v, smooth=(e0,e1,x)=>{const t=clamp((x-e0)/(e1-e0),0,1);return t*t*(3-2*t);};
+function rotAxis(v,k,ang){ const c=Math.cos(ang),s=Math.sin(ang),d=k[0]*v[0]+k[1]*v[1]+k[2]*v[2];
+  const cx=k[1]*v[2]-k[2]*v[1], cy=k[2]*v[0]-k[0]*v[2], cz=k[0]*v[1]-k[1]*v[0];
+  return [ v[0]*c+cx*s+k[0]*d*(1-c), v[1]*c+cy*s+k[1]*d*(1-c), v[2]*c+cz*s+k[2]*d*(1-c) ]; }
+function ptInTri(px,py,a,b,c){ const d=(b.y-c.y)*(a.x-c.x)+(c.x-b.x)*(a.y-c.y); if(Math.abs(d)<1e-6)return false;
+  const u=((b.y-c.y)*(px-c.x)+(c.x-b.x)*(py-c.y))/d, v=((c.y-a.y)*(px-c.x)+(a.x-c.x)*(py-c.y))/d; return u>=0&&v>=0&&u+v<=1; }
+
+const GENERAL_NOTE='六つの体系を、占うためではなく、構造を読むための観測レンズとして重ねています。未来を当てる装置ではなく、ひとつでは見えない奥行きを多面的に読むための道具です。';
+const SYSTEMS=[
+  {jp:'算命学',  ro:'SANMEIGAKU',     desc:'生まれ持った構造と、人生の骨格を読む。'},
+  {jp:'九星気学',ro:'KYUSEI-KIGAKU',  desc:'流れの向きと、いま身を置く場を読む。'},
+  {jp:'四柱推命',ro:'SHICHU-SUIMEI',  desc:'時間の配列から、気質と巡りを読む。'},
+  {jp:'干支',    ro:'KANSHI',         desc:'あなたの内側にある、自然な役割と関係を読む。'},
+  {jp:'数秘',    ro:'SUHI',           desc:'繰り返されるリズムと、行動の癖を読む。'},
+  {jp:'西洋占術',ro:'SEIYO-SENJUTSU', desc:'表現のしかたと、心の動き方を読む。'},
+];
+
+const cvs=document.getElementById('cv'), ctx=cvs.getContext('2d'), stageEl=document.getElementById('stage');
+const lensSpans=[...document.querySelectorAll('#lensList span')];
+const readBlock=document.getElementById('readBlock'), readLab=document.getElementById('readLab'), readSys=document.getElementById('readSys'), readDesc=document.getElementById('readDesc');
+let W=0,H=0,DPR=1,cx=0,cy=0,R3=0,FOC=0;
+let P=null, ax=0.42, ay=0, raf=null, t0=null, lastT=0, flightSeed=1, hoveredFi=null, lastProj=[];
+let autoFi=0, autoStarted=false, autoNext=null, lastActive='init', leftTO=null;
+
+function fit(){ const r=stageEl.getBoundingClientRect(); DPR=Math.min(window.devicePixelRatio||1,2);
+  W=Math.round(r.width); H=Math.round(r.height); cvs.width=Math.round(W*DPR); cvs.height=Math.round(H*DPR);
+  cx=W/2; cy=H/2; R3=Math.min(W,H)*0.27; FOC=R3*4.4; }
+
+function buildLP(){
+  const T=[0,1.28,0], B=[0,-1.28,0], rho=0.96;
+  const e=[90,210,330].map(a=>{const r=a*Math.PI/180;return [rho*Math.cos(r),0,rho*Math.sin(r)];});
+  const verts=[T,B,e[0],e[1],e[2]];
+  const fdef=[
+    {idx:[0,2,3],up:true}, {idx:[0,3,4],up:true}, {idx:[0,4,2],up:true},
+    {idx:[1,3,2],up:false},{idx:[1,4,3],up:false},{idx:[1,2,4],up:false},
+  ];
+  const faces=fdef.map((d,fi)=>{ const hp=d.idx.map(i=>verts[i]);
+    const c=[(hp[0][0]+hp[1][0]+hp[2][0])/3,(hp[0][1]+hp[1][1]+hp[2][1])/3,(hp[0][2]+hp[1][2]+hp[2][2])/3];
+    return {hp,c,up:d.up,fi,sys:SYSTEMS[fi]}; });
+  P={verts,faces,G:6};
+  seedFlight(flightSeed);
+}
+function seedFlight(seed){
+  P.faces.forEach((f,fi)=>{ const r=mulberry32(hashStr('almana-lp~'+seed+'~'+fi));
+    let dx=r()*2-1,dy=r()*2-1,dz=r()*2-1; let L=Math.hypot(dx,dy,dz)||1; dx/=L;dy/=L;dz/=L;
+    let kx=r()*2-1,ky=r()*2-1,kz=r()*2-1; let L2=Math.hypot(kx,ky,kz)||1; kx/=L2;ky/=L2;kz/=L2;
+    f.dir=[dx,dy,dz]; f.dist=1.25+r()*1.0; f.axis=[kx,ky,kz]; f.amt=TAU*(0.5+r()*0.8); f.g=fi; });
+}
+function rot(p){
+  const ca=Math.cos(ax),sa=Math.sin(ax), cb=Math.cos(ay),sb=Math.sin(ay);
+  let y1=p[1]*ca - p[2]*sa, z1=p[1]*sa + p[2]*ca, x1=p[0];
+  return [ x1*cb + z1*sb, y1, -x1*sb + z1*cb ];
+}
+function facePoints(f,t,forced){
+  const dur=1.0, delay=0.42;
+  const pp = forced?1: smooth(0,1, clamp((t - f.g*delay)/dur,0,1));
+  const k=1-pp, off=[f.dir[0]*f.dist*k, f.dir[1]*f.dist*k, f.dir[2]*f.dist*k];
+  const s=0.55+0.45*pp, ang=f.amt*k;
+  return f.hp.map(Hp=>{ const rel=[(Hp[0]-f.c[0])*s,(Hp[1]-f.c[1])*s,(Hp[2]-f.c[2])*s];
+    const rr=rotAxis(rel,f.axis,ang);
+    return rot([f.c[0]+off[0]+rr[0], f.c[1]+off[1]+rr[1], f.c[2]+off[2]+rr[2]]); });
+}
+function projPt(p,CX,CY,r3,f){ const denom=Math.max(r3*0.5, f - p[2]*r3); const fac=f/denom; return {x:CX+p[0]*r3*fac, y:CY-p[1]*r3*fac}; }
+
+function drawScene(c,CX,CY,r3,f,sw,t,forced,labelAmt,activeFi,strong){
+  const anyAct = activeFi!==null && activeFi!==undefined;
+  const pls=P.faces.map(fa=>{ const pts=facePoints(fa,t,forced); const az=(pts[0][2]+pts[1][2]+pts[2][2])/3;
+    const cc=[(pts[0][0]+pts[1][0]+pts[2][0])/3,(pts[0][1]+pts[1][1]+pts[2][1])/3,(pts[0][2]+pts[1][2]+pts[2][2])/3];
+    let onx=(pts[1][1]-pts[0][1])*(pts[2][2]-pts[0][2])-(pts[1][2]-pts[0][2])*(pts[2][1]-pts[0][1]);
+    let ony=(pts[1][2]-pts[0][2])*(pts[2][0]-pts[0][0])-(pts[1][0]-pts[0][0])*(pts[2][2]-pts[0][2]);
+    let onz=(pts[1][0]-pts[0][0])*(pts[2][1]-pts[0][1])-(pts[1][1]-pts[0][1])*(pts[2][0]-pts[0][0]);
+    const onl=Math.hypot(onx,ony,onz)||1; onx/=onl;ony/=onl;onz/=onl;
+    if(onx*cc[0]+ony*cc[1]+onz*cc[2]<0){ onz=-onz; }
+    const front = onz>0, frontness=clamp(onz,0,1);
+    const proj=pts.map(p=>projPt(p,CX,CY,r3,f));
+    const ccp=projPt(cc,CX,CY,r3,f);
+    return {proj, az, front, frontness, fi:fa.fi, up:fa.up, sys:fa.sys, ccp}; }).sort((a,b)=>a.az-b.az);
+  lastProj = pls;
+
+  // crystal panes
+  for(const pl of pls){ const zN=clamp((pl.az+1)/2,0,1); const isAct=(pl.fi===activeFi);
+    const dimF = anyAct ? (isAct?1:0.55) : 1;
+    c.beginPath(); c.moveTo(pl.proj[0].x,pl.proj[0].y); c.lineTo(pl.proj[1].x,pl.proj[1].y); c.lineTo(pl.proj[2].x,pl.proj[2].y); c.closePath();
+    let fillA = (pl.front ? (0.045+zN*0.020) : (0.022+zN*0.012)) * dimF;
+    if(isAct) fillA += strong?0.075:0.042;
+    c.fillStyle='rgba('+INK+','+fillA.toFixed(3)+')'; c.fill();
+    if(isAct){ c.lineWidth=(0.7+zN*0.6)*sw*(strong?1.6:1.3); c.strokeStyle='rgba('+SHU+','+((strong?0.62:0.40)).toFixed(3)+')'; }
+    else { c.lineWidth=(0.5+zN*0.55)*sw; c.strokeStyle='rgba('+INK+','+((0.105+zN*0.420)*dimF).toFixed(3)+')'; }
+    c.stroke();
+    pl.proj.forEach((p,k)=>{ const isShu=(pl.up&&k===0);
+      c.beginPath(); c.arc(p.x,p.y,(1.1+zN*1.0)*sw,0,TAU);
+      c.fillStyle=isShu?'#a8392b':'rgba('+INK+','+((0.26+zN*0.46)*dimF).toFixed(3)+')'; c.fill(); });
+  }
+
+  // core + active spoke (face -> centre)
+  const coreA = anyAct ? (strong?0.5:0.34) : 0.15;
+  if(anyAct){ const af=pls.find(p=>p.fi===activeFi);
+    if(af){ c.beginPath(); c.moveTo(af.ccp.x,af.ccp.y); c.lineTo(CX,CY);
+      c.lineWidth=(strong?1.25:1.0)*sw; c.strokeStyle='rgba('+SHU+','+((strong?0.60:0.40)).toFixed(3)+')'; c.stroke(); }
+  }
+  c.beginPath(); c.arc(CX,CY,(anyAct?3.0:2.2)*sw,0,TAU);
+  c.fillStyle=anyAct?('rgba('+SHU+','+coreA.toFixed(3)+')'):('rgba('+INK+','+coreA.toFixed(3)+')'); c.fill();
+  if(anyAct){ c.beginPath(); c.arc(CX,CY,6.6*sw,0,TAU); c.lineWidth=0.8*sw; c.strokeStyle='rgba('+SHU+','+(coreA*0.55).toFixed(3)+')'; c.stroke(); }
+
+  // labels + outward leaders
+  const la=labelAmt||0;
+  if(la>0.01){
+    for(const pl of pls){ const isAct=(pl.fi===activeFi);
+      let baseA = la*(0.16+pl.frontness*0.52);
+      if(anyAct && !isAct) baseA *= 0.45;
+      const aa = isAct ? Math.max(baseA, strong?1:0.9) : baseA;
+      if(aa<0.035) continue;
+      let vx=pl.ccp.x-CX, vy=pl.ccp.y-CY; const vl=Math.hypot(vx,vy)||1; vx/=vl; vy/=vl;
+      const lx=pl.ccp.x+vx*(34*sw), ly=pl.ccp.y+vy*(34*sw);
+      c.beginPath(); c.moveTo(pl.ccp.x+vx*(5*sw), pl.ccp.y+vy*(5*sw)); c.lineTo(lx,ly);
+      c.lineWidth=(isAct?1.0:0.75)*sw; c.strokeStyle=isAct?('rgba('+SHU+','+aa.toFixed(3)+')'):('rgba('+INK+','+(aa*0.8).toFixed(3)+')'); c.stroke();
+      const right = vx>=0; c.textAlign=right?'left':'right'; const tx=lx+(right?4:-4)*sw; c.textBaseline='alphabetic';
+      c.fillStyle=isAct?('rgba('+SHU+','+aa.toFixed(3)+')'):('rgba('+INK+','+aa.toFixed(3)+')');
+      c.font='500 '+(13*sw)+'px "Zen Kaku Gothic New", sans-serif';
+      c.fillText(pl.sys.jp, tx, ly-1*sw);
+      c.fillStyle=isAct?('rgba('+SHU+','+(aa*0.85).toFixed(3)+')'):('rgba('+INK+','+(aa*0.6).toFixed(3)+')');
+      c.font='500 '+(8*sw)+'px Archivo, sans-serif';
+      let prevLS; try{prevLS=c.letterSpacing; c.letterSpacing=(1.2*sw)+'px';}catch(e){}
+      c.fillText(pl.sys.ro, tx, ly+9*sw);
+      try{c.letterSpacing=prevLS||'0px';}catch(e){}
+    }
+  }
+}
+
+function updateLeft(fi){
+  lensSpans.forEach(s=>{ const f=+s.dataset.fi; s.classList.toggle('act', fi!==null&&f===fi); s.classList.toggle('dim', fi!==null&&f!==fi); });
+  readBlock.style.opacity='0';
+  clearTimeout(leftTO);
+  leftTO=setTimeout(()=>{
+    if(fi===null){ readLab.textContent=''; readSys.innerHTML=''; readDesc.textContent=GENERAL_NOTE; }
+    else { const s=SYSTEMS[fi]; readLab.textContent='この観測が見ているもの / WHAT THIS LENS READS';
+      readSys.innerHTML=s.jp+'<span class="ro">'+s.ro+'</span>'; readDesc.textContent=s.desc; }
+    readBlock.style.opacity='1';
+  },150);
+}
+
+function loop(now){
+  if(t0===null){t0=now;lastT=now;}
+  const t=(now-t0)/1000, dt=Math.min(0.05,(now-lastT)/1000); lastT=now;
+  const G=P.G, convEnd=0.42*(G-1)+1.0, rotF=smooth(convEnd,convEnd+1.0,t), labelAmt=smooth(convEnd,convEnd+0.8,t);
+  const afterConv = t>convEnd;
+  if(hoveredFi!==null){ autoNext=null; }
+  else if(afterConv){
+    if(autoNext===null){ autoNext = t + (autoStarted?2.0:0.9); }
+    if(t>=autoNext){ if(!autoStarted){autoStarted=true; autoFi=0;} else {autoFi=(autoFi+1)%6;} autoNext=t+4.0; }
+  }
+  const activeFi = hoveredFi!==null ? hoveredFi : ((autoStarted&&afterConv)?autoFi:null);
+  const strong = hoveredFi!==null;
+  if(activeFi!==lastActive){ updateLeft(activeFi); lastActive=activeFi; }
+  const spin = (hoveredFi===null) ? 1 : 0.06;
+  ay += dt*0.22*rotF*spin; ax=0.42 + (afterConv?0.06*Math.sin((t-convEnd)*0.28):0);
+  ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
+  drawScene(ctx,cx,cy,R3,FOC,1,t,false,labelAmt,activeFi,strong);
+  raf=requestAnimationFrame(loop);
+}
+function stop(){ if(raf){cancelAnimationFrame(raf);raf=null;} }
+function restart(){ stop(); flightSeed++; seedFlight(flightSeed); t0=null; ay=0; ax=0.42; hoveredFi=null; autoFi=0; autoStarted=false; autoNext=null; lastActive='init'; raf=requestAnimationFrame(loop); }
+
+function exportPNG(){
+  const w=1200,h=1500, off=document.createElement('canvas'); off.width=w; off.height=h; const c=off.getContext('2d');
+  c.fillStyle='#e8e8e5'; c.fillRect(0,0,w,h);
+  const g=c.createRadialGradient(w/2,h*0.40,120,w/2,h*0.42,h*0.6); g.addColorStop(0,'rgba(252,252,251,0.25)'); g.addColorStop(1,'rgba(138,138,142,0.12)');
+  c.fillStyle=g; c.fillRect(0,0,w,h);
+  drawScene(c, w/2, h*0.40, 330, 330*4.4, 1.7, 999, true, 1, null, false);
+  c.textAlign='center'; c.fillStyle='#1f1f1d'; c.font='600 56px Archivo, sans-serif'; c.fillText('ALMANA', w/2-14, h*0.83);
+  const tw=c.measureText('ALMANA').width; c.beginPath(); c.arc(w/2-14+tw/2+26,h*0.83-5,7,0,TAU); c.fillStyle='#a8392b'; c.fill();
+  c.fillStyle='rgba(31,31,29,0.55)'; c.font='400 22px Archivo, sans-serif'; c.fillText('六観の収束 · SIX LENSES, ONE CORE', w/2, h*0.875);
+  off.toBlob(b=>{const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='almana_convergence_lp.png';a.click();setTimeout(()=>URL.revokeObjectURL(u),2000);},'image/png');
+}
+
+function pickFace(mx,my){ let best=null, bestZ=-Infinity;
+  for(const pl of lastProj){ if(!pl.front) continue;
+    if(ptInTri(mx,my,pl.proj[0],pl.proj[1],pl.proj[2])){ if(pl.az>bestZ){bestZ=pl.az;best=pl.fi;} } }
+  return best; }
+stageEl.addEventListener('mousemove',e=>{ const r=cvs.getBoundingClientRect(); hoveredFi=pickFace(e.clientX-r.left, e.clientY-r.top); });
+stageEl.addEventListener('mouseleave',()=>{ hoveredFi=null; });
+stageEl.addEventListener('touchstart',e=>{ const r=cvs.getBoundingClientRect(); const tch=e.touches[0];
+  const fi=pickFace(tch.clientX-r.left, tch.clientY-r.top); hoveredFi=(fi===hoveredFi)?null:fi; },{passive:true});
+
+document.getElementById('replayBtn').addEventListener('click',restart);
+document.getElementById('exportBtn').addEventListener('click',exportPNG);
+let rt=null; addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{fit();},160);});
+
+readDesc.textContent=GENERAL_NOTE;
+fit(); buildLP(); restart();
+</script>
+</body>
+</html>

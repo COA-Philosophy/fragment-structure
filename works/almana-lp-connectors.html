@@ -32,6 +32,8 @@
   .recog{ margin-top:36px; font-family:var(--mincho); font-weight:400;
     font-size:clamp(22px,3vw,36px); line-height:2.25; letter-spacing:.05em; color:var(--ink); }
   .recog span{ display:block; }
+  .recog-sub{ margin-top:30px; font-family:var(--jp); font-weight:300;
+    font-size:clamp(13px,1.2vw,15px); letter-spacing:.06em; line-height:2; color:var(--mid); }
 
   /* CV — 締め / grounded */
   .land{ font-family:var(--mincho); font-weight:400; font-size:clamp(28px,3.9vw,52px);
@@ -58,7 +60,13 @@
 
   @media (prefers-reduced-motion:reduce){ .rise,.js .rise{ opacity:1!important; transform:none!important; transition:none!important; } }
   @media (max-width:640px){ .inner{ padding:84px 26px; } }
+  /* ?s1 / ?cv — show a single section full-height (for through-line embedding) */
+  html.only-s1 .cv{ display:none!important; }
+  html.only-cv .s1{ display:none!important; }
+  html.only-s1 .band, html.only-cv .band{ min-height:100vh; border-top:0; }
+  html.only-s1 .inner, html.only-cv .inner{ padding-top:40px; padding-bottom:40px; }
 </style>
+<script>(function(){var q=location.search+location.hash;if(q.indexOf('cv')>-1)document.documentElement.classList.add('only-cv');else if(q.indexOf('s1')>-1)document.documentElement.classList.add('only-s1');})()</script>
 </head>
 <body>
 
@@ -67,17 +75,18 @@
   <div class="inner">
     <div class="eyebrow rise"><span class="mk">⊕</span><span>もし、こんな感覚があるなら</span></div>
     <p class="recog">
-      <span class="rise" style="--d:.0s">同じところで、いつも立ち止まる。</span>
+      <span class="rise" style="--d:.0s">いつも同じところで、立ち止まる。</span>
       <span class="rise" style="--d:.18s">もやもやを、うまく言葉にできない。</span>
       <span class="rise" style="--d:.36s">動けない理由が、まだ見えていない。</span>
     </p>
+    <p class="recog-sub rise" style="--d:.54s">その感覚は、弱さではなく、<br>まだ読まれていない構造かもしれません。</p>
   </div>
 </section>
 
 <!-- CV — 締め / grounded -->
 <section class="band cv">
   <div class="inner">
-    <div class="land rise">生きた跡は、やがて<br>ひとつの模様になる。</div>
+    <div class="land rise">日々の跡は、やがて<br>ひとつの模様になる。</div>
     <div class="bridge rise">まずは、あなたの構造から。</div>
     <div class="rise"><a class="cta" href="#">無料で診断する <span class="arw">→</span></a></div>
     <div class="micro rise">占うためではなく、読むために<span class="sep">·</span>約2分<span class="sep">·</span>登録不要</div>

@@ -920,7 +920,16 @@
       use: 'LP / Through-line',
       ja: 'LP通し順 — 6ビート通し',
       en: 'LP through-line — 6 beats',
-      file: 'works/almana-lp-throughline.html',
+      file: 'works/almana-lp-f046.html',
+      still: ''
+    },
+    {
+      no: 'F047', version: 'v1', status: 'current',
+      project: 'ALMANA',
+      use: 'LP / Through-line',
+      ja: 'LP通し順 — 6ビート統合',
+      en: 'LP through-line — integrated 6 beats',
+      file: 'works/almana-lp-f047.html',
       still: ''
     },
   ];
@@ -980,7 +989,9 @@
     'works/almana-lp-ending.html': { family: '枯山水・線画', tech: '枯山水砂紋に3画面を重ねるLP終景', how: '石を文字裏に寄せた枯山水フローフィールド背景に、対話→記録→パターンのperspective3画面をJSで右の空きに最大化して重ねる' },
     'works/almana-lp-ending-strata.html': { family: '地層標本', tech: 'ノイズ地層に3画面を重ねるLP終景', how: 'Perlinノイズ駆動の地層稜線を奥→手前へrake(点描＋かすれ)で重ね、対話→記録→パターンの3画面をperspectiveで右に重畳' },
     'works/almana-lp-connectors.html': { family: 'レイアウト研究', tech: '認識→締めの中央タイポ・セクション', how: '観察3行を中央セリフで沈める認識面＋創発型着地『跡は模様になる』と単一CVの締め面を、IntersectionObserverの段階フェードで構成' },
-    'works/almana-lp-throughline.html': { family: 'レイアウト研究', tech: '6ビートを縦積みiframeで通し再生', how: '登録済み6面を100vh(連結は54vh間奏)のiframeで順に縦積みし、ドットナビ＋IO現在地表示で一本のLP体験として通す' },
+    'works/almana-lp-throughline.html': { family: 'レイアウト研究', tech: '6ビートを縦積みiframeで通し再生', how: '登録済み6面を100vh(連結は54vh間奏)のiframeで順に縦積みし、ドットナビ＋IO現在地表示で一本のLP体験として通す（プレビュー用）' },
+    'works/almana-lp-f046.html': { family: 'レイアウト研究', tech: '6ビートを1 HTML に編集統合', how: 'Hero attractor・認識・結果カード・六観結晶・枯山水継続・締めを blanc DS で1ファイルに統合。各章のアート技法は維持し、ロゴ/FIG/余白/CTAのみ編集' },
+    'works/almana-lp-f047.html': { family: 'レイアウト研究', tech: '6ビート統合LP（blanc DS・完成版）', how: 'F046統合版を編集仕上げ。六観readblock連動・正式端末モック・SP横スワイプ継続・認識圧縮・CTA強化。生構造6体系（算命学〜西洋占術）で横断読解' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

@@ -932,6 +932,60 @@
       file: 'works/almana-lp-f047.html',
       still: ''
     },
+    {
+      no: 'F048', version: 'v1', status: 'current',
+      project: 'ALMANA',
+      use: '本体 / Now',
+      ja: '今 — 今日の山',
+      en: 'Now — Today\'s Mountain',
+      file: 'works/silas-blanc-home.html',
+      still: ''
+    },
+    {
+      no: 'F049', version: 'v1', status: 'current',
+      project: 'ALMANA',
+      use: '本体 / Relationships',
+      ja: '関係 — 一覧',
+      en: 'Relationships — Overview',
+      file: 'works/silas-blanc-relationships.html',
+      still: ''
+    },
+    {
+      no: 'F050', version: 'v1', status: 'current',
+      project: 'ALMANA',
+      use: '本体 / Relationships',
+      ja: '関係 — 詳細（重なり）',
+      en: 'Relationship — Detail',
+      file: 'works/silas-blanc-relationship-detail.html',
+      still: ''
+    },
+    {
+      no: 'F051', version: 'v1', status: 'current',
+      project: 'ALMANA',
+      use: '本体 / Relationships',
+      ja: '人物 — 詳細',
+      en: 'Person — Detail',
+      file: 'works/silas-blanc-person-detail.html',
+      still: ''
+    },
+    {
+      no: 'F052', version: 'v1', status: 'current',
+      project: 'ALMANA',
+      use: '本体 / Log',
+      ja: '記録 — Progress（進捗）',
+      en: 'Log — Progress',
+      file: 'works/silas-blanc-log-progress.html',
+      still: ''
+    },
+    {
+      no: 'F053', version: 'v1', status: 'current',
+      project: 'ALMANA',
+      use: '本体 / Log',
+      ja: '記録 — 入力',
+      en: 'Log — Input',
+      file: 'works/silas-blanc-log-input.html',
+      still: ''
+    },
   ];
 
   // ── 技法メタ（各作品のコードから命名 / works/<file> をキーに WORKS へマージ）──
@@ -992,6 +1046,12 @@
     'works/almana-lp-throughline.html': { family: 'レイアウト研究', tech: '6ビートを縦積みiframeで通し再生', how: '登録済み6面を100vh(連結は54vh間奏)のiframeで順に縦積みし、ドットナビ＋IO現在地表示で一本のLP体験として通す（プレビュー用）' },
     'works/almana-lp-f046.html': { family: 'レイアウト研究', tech: '6ビートを1 HTML に編集統合', how: 'Hero attractor・認識・結果カード・六観結晶・枯山水継続・締めを blanc DS で1ファイルに統合。各章のアート技法は維持し、ロゴ/FIG/余白/CTAのみ編集' },
     'works/almana-lp-f047.html': { family: 'レイアウト研究', tech: '6ビート統合LP（blanc DS・完成版）', how: 'F046統合版を編集仕上げ。六観readblock連動・正式端末モック・SP横スワイプ継続・認識圧縮・CTA強化。生構造6体系（算命学〜西洋占術）で横断読解' },
+    'works/silas-blanc-home.html': { family: 'ALMANA', tech: '種つき1D Perlinの水墨稜線', how: '文字列をseedにmulberry32+1D Perlin fbmで稜線を生成、奥→手前5層、前景はfeTurbulenceでかすれ' },
+    'works/silas-blanc-relationships.html': { family: 'ALMANA', tech: '相性リズムの記号マトリクス', how: '人物カードに2行×7日のgrid、◎○△×をフォントサイズ階調で強弱、当日列を朱washで強調' },
+    'works/silas-blanc-relationship-detail.html': { family: 'ALMANA', tech: '二者の墨暈ベン重なり図', how: '2つのradialGradient楕円をfeGaussianBlurで暈し左右に重ね、接合部に朱点で重なりを示す' },
+    'works/silas-blanc-person-detail.html': { family: 'ALMANA', tech: '人物フル鑑定の縦組み＋墨グリフ', how: '強み/注意の2分割罫、エネルギー3要素をradialGradient/螺旋pathの小墨グリフで象徴し朱点を一点' },
+    'works/silas-blanc-log-progress.html': { family: 'ALMANA', tech: 'ゴール錨つき進捗の節目リスト', how: '向かう先を朱の縦罫で錨に固定、NOW/Milestones/Friction/Nextの定型節、達成は塗り円で示す' },
+    'works/silas-blanc-log-input.html': { family: 'ALMANA', tech: '一タップ完結→展開の記録フォーム', how: '2×2方向選択+記録ボタンで最小完結、詳しく記録で睡眠/日光/運動/一言を段階展開' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

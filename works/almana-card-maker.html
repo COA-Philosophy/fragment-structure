@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALMANA — 引用カード・メーカー</title>
+<!--
+  Faithful standalone reproduction of ALMANA's card generation.
+  Real implementation is a Next.js route (server-side, next/og):
+    structure-designer-v3  src/app/api/og/quote/route.tsx  + src/components/content/CardMaker.tsx
+    live: https://www.almana.app/cards  /  /api/og/quote?text=...&format=square|portrait|pin|story|og
+  This HTML mirrors the exact card composition + the length-driven font scaling,
+  so the design can be browsed/grabbed from the catalog. Card geometry is in
+  full-resolution px (matching the route) then scaled to a preview field.
+-->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Lora:ital@1&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500&display=swap');
+:root{
+  --ground:#e8e8e5;--paper:#f7f7f5;--sumi:#222120;--sumi-soft:#3a3733;--sumi-mid:#6f6b64;
+  --sumi-faint:#a39e95;--sumi-pale:#cbc6bc;--hair:#e0ddd6;--hair-soft:#eae7e0;--shu:#a8392b;
+  --sans:'Satoshi',ui-sans-serif,system-ui,sans-serif;--serifjp:'Noto Serif JP',serif;--serif:'Lora',Georgia,serif;--mono:ui-monospace,Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--ground);color:var(--sumi);font-family:var(--sans);-webkit-font-smoothing:antialiased;}
+.wrap{max-width:920px;margin:0 auto;padding:56px 36px 90px;}
+.kicker{font-family:var(--sans);font-weight:300;font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--sumi-mid);}
+h1{font-family:var(--serifjp);font-weight:400;font-size:30px;letter-spacing:.02em;margin:14px 0 10px;}
+.sub{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--sumi-faint);}
+
+.lab{display:flex;gap:48px;justify-content:center;align-items:flex-start;flex-wrap:wrap;margin-top:44px;}
+
+/* left: live card preview */
+.left{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.stage{display:flex;align-items:center;justify-content:center;}
+.card{position:relative;overflow:hidden;box-shadow:0 1px 8px rgba(30,28,24,.12);}
+.card .inset{position:absolute;border:1px solid #dedbd3;}
+.card .col{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;}
+.card .dot{border-radius:50%;background:var(--shu);}
+.card .quote{font-family:var(--serifjp);font-weight:400;text-align:center;line-height:1.72;letter-spacing:.04em;color:#222120;}
+.card .markrow{display:flex;align-items:flex-start;}
+.card .mark{font-family:var(--serifjp);font-weight:700;color:#3a3733;}
+.card .markdot{border-radius:50%;background:var(--shu);}
+.card .micro{font-family:var(--serifjp);font-weight:400;color:#8d887f;text-transform:uppercase;}
+.fmtlbl{font-family:var(--mono);font-size:9.5px;color:var(--sumi-faint);letter-spacing:.06em;}
+
+/* right: controls */
+.right{width:330px;}
+.field label{display:block;font-family:var(--sans);font-weight:400;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--sumi-mid);margin-bottom:8px;}
+textarea{width:100%;font-family:var(--serifjp);font-weight:400;font-size:15px;line-height:1.8;color:var(--sumi);background:#fff;border:1px solid var(--sumi-pale);border-radius:4px;padding:12px 14px;resize:vertical;outline:none;}
+.fmts{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
+.fmt{cursor:pointer;font-family:var(--sans);font-weight:400;font-size:11.5px;letter-spacing:.08em;padding:8px 14px;border-radius:3px;border:1px solid var(--sumi-pale);background:transparent;color:var(--sumi-mid);transition:.15s;}
+.fmt.on{border-color:var(--sumi);background:var(--sumi);color:var(--ground);}
+.note{font-family:var(--serif);font-style:italic;font-size:12.5px;line-height:1.85;color:var(--sumi-faint);margin-top:24px;}
+.note b{font-style:normal;font-weight:400;color:var(--sumi-mid);font-family:var(--sans);font-size:11px;letter-spacing:.04em;}
+.spec{margin-top:18px;padding:14px 16px;border:1px solid var(--hair-soft);}
+.spec .k{font-family:var(--sans);font-weight:300;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--sumi-faint);margin-bottom:7px;}
+.spec .v{font-family:var(--mono);font-size:10.5px;color:var(--shu);line-height:1.7;word-break:break-all;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="kicker">ALMANA · quote card engine · /api/og/quote</div>
+<h1>引用カード・メーカー — 文章を打つと、カードになる</h1>
+<div class="sub">type a line — the card is the post. blanc field, one shu point, ALMANA seal.</div>
+
+<div class="lab">
+
+  <div class="left">
+    <div class="stage"><div class="card" id="card"></div></div>
+    <div class="fmtlbl" id="fmtlbl">square · 1080 × 1080</div>
+  </div>
+
+  <div class="right">
+    <div class="field">
+      <label>好きな文章を入力</label>
+      <textarea id="text" rows="4">占うためではなく、読むために。</textarea>
+    </div>
+    <div class="fmts" id="fmts"></div>
+
+    <div class="spec">
+      <div class="k">card spec (canonical)</div>
+      <div class="v" id="spec">—</div>
+    </div>
+
+    <div class="note">
+      <b>実装本体</b><br>
+      これは構図の再現。本物はサーバ側 next/og ルート
+      <span style="font-family:var(--mono);font-size:11px;color:var(--sumi-mid)">/api/og/quote?text=…&amp;format=…</span>
+      で、square / portrait / pin / story / og の5判型を 1080〜1920px の PNG に焼く。
+      フォントは文字数のしきい値（32 / 55 / 90字）で倍率が切り替わり、長文ほど縮む。
+      blanc 地 #e9e8e4・内枠の細罫・中央の朱点・下部に ALMANA 銘と
+      <span style="font-family:var(--mono);font-size:11px;color:var(--sumi-mid)">to read, not to predict</span>。
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  var MICRO='almana.app · to read, not to predict';
+
+  // format map — identical to src/lib/og/format.ts
+  var FORMATS={
+    square:  {w:1080,h:1080,label:'square · 1080 × 1080'},
+    portrait:{w:1080,h:1350,label:'portrait · 1080 × 1350 (IG縦)'},
+    pin:     {w:1000,h:1500,label:'pin · 1000 × 1500 (Pinterest)'},
+    story:   {w:1080,h:1920,label:'story · 1080 × 1920'},
+    og:      {w:1200,h:630, label:'og · 1200 × 630 (OGP)'}
+  };
+  var ORDER=['square','portrait','pin','story','og'];
+  var fmt='square';
+
+  // build format buttons
+  var fmts=$('fmts');
+  ORDER.forEach(function(k){
+    var b=document.createElement('button');
+    b.className='fmt'+(k===fmt?' on':'');b.textContent=k;b.dataset.k=k;
+    b.addEventListener('click',function(){
+      fmt=k;
+      Array.prototype.forEach.call(fmts.children,function(c){c.classList.toggle('on',c.dataset.k===fmt);});
+      render();
+    });
+    fmts.appendChild(b);
+  });
+
+  // length-driven quote size — identical formula to route.tsx
+  function quoteSize(text){
+    var wide=fmt==='og';
+    var base=wide?46:(fmt==='story'?60:(fmt==='pin'?52:54));
+    var len=Array.from(text).length;
+    return Math.round(len>90?base*0.6:(len>55?base*0.78:(len>32?base*0.92:base)));
+  }
+
+  function render(){
+    var F=FORMATS[fmt], wide=fmt==='og';
+    var raw=$('text').value;
+    var text=(raw.slice(0,240).trim())||'To read, not to predict.';
+
+    // preview render size: fit within a 430 x 620 box, keep aspect
+    var ar=F.h/F.w, renderW=430, renderH=renderW*ar;
+    if(renderH>620){renderH=620;renderW=renderH/ar;}
+    var scale=renderW/F.w; // full-res px -> preview px
+
+    var qsize=quoteSize(text);
+    var pad=(wide?110:96)*scale;
+    var insetOff=(wide?28:40)*scale;
+    var colW=(F.w-(wide?220:192))*scale;
+
+    var card=$('card');
+    card.style.width=renderW+'px';card.style.height=renderH+'px';
+    card.style.background='#e9e8e4';
+
+    card.innerHTML=''
+      +'<div class="inset" style="top:'+insetOff+'px;left:'+insetOff+'px;right:'+insetOff+'px;bottom:'+insetOff+'px;"></div>'
+      +'<div class="col" style="padding:0 '+pad+'px;">'
+        +'<div class="dot" style="width:'+(9*scale)+'px;height:'+(9*scale)+'px;margin-bottom:'+((wide?30:46)*scale)+'px;"></div>'
+        +'<div class="quote" style="font-size:'+(qsize*scale)+'px;max-width:'+colW+'px;">'+escapeHtml(text)+'</div>'
+        +'<div class="markrow" style="margin-top:'+((wide?36:58)*scale)+'px;">'
+          +'<div class="mark" style="font-size:'+(18*scale)+'px;letter-spacing:'+(10*scale)+'px;">ALMANA</div>'
+          +'<div class="markdot" style="width:'+(6*scale)+'px;height:'+(6*scale)+'px;margin-left:'+(6*scale)+'px;margin-top:'+(11*scale)+'px;"></div>'
+        +'</div>'
+        +'<div class="micro" style="font-size:'+(11.5*scale)+'px;letter-spacing:'+(5*scale)+'px;margin-top:'+(13*scale)+'px;">'+MICRO+'</div>'
+      +'</div>';
+
+    $('fmtlbl').textContent=F.label;
+    $('spec').textContent='format='+fmt+' · '+F.w+'×'+F.h+' · quote '+qsize+'px (len='+Array.from(text).length+') · bg #e9e8e4 · 朱 #a8392b';
+  }
+
+  function escapeHtml(s){return s.replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+  $('text').addEventListener('input',render);
+  if(document.fonts&&document.fonts.ready){document.fonts.ready.then(render);}
+  render();
+})();
+</script>
+</body>
+</html>

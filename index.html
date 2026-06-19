@@ -986,6 +986,24 @@
       file: 'works/silas-blanc-log-input.html',
       still: ''
     },
+    {
+      no: 'F054', version: 'v1', status: 'current',
+      project: 'ALMANA',
+      use: 'カード / Cards',
+      ja: '引用カード・メーカー',
+      en: 'Quote Card Maker',
+      file: 'works/almana-card-maker.html',
+      still: ''
+    },
+    {
+      no: 'F055', version: 'v1', status: 'current',
+      project: 'ALMANA',
+      use: 'カード / Cards',
+      ja: '紋＋言葉カード・工房',
+      en: 'Mark & Line Card Studio',
+      file: 'works/almana-mon-card-studio.html',
+      still: ''
+    },
   ];
 
   // ── 技法メタ（各作品のコードから命名 / works/<file> をキーに WORKS へマージ）──
@@ -1052,6 +1070,8 @@
     'works/silas-blanc-person-detail.html': { family: 'ALMANA', tech: '人物フル鑑定の縦組み＋墨グリフ', how: '強み/注意の2分割罫、エネルギー3要素をradialGradient/螺旋pathの小墨グリフで象徴し朱点を一点' },
     'works/silas-blanc-log-progress.html': { family: 'ALMANA', tech: 'ゴール錨つき進捗の節目リスト', how: '向かう先を朱の縦罫で錨に固定、NOW/Milestones/Friction/Nextの定型節、達成は塗り円で示す' },
     'works/silas-blanc-log-input.html': { family: 'ALMANA', tech: '一タップ完結→展開の記録フォーム', how: '2×2方向選択+記録ボタンで最小完結、詳しく記録で睡眠/日光/運動/一言を段階展開' },
+    'works/almana-card-maker.html': { family: 'レイアウト研究', tech: '文字数連動・余白中央の引用カード組版', how: '文字数しきい値(32/55/90)でフォント倍率を切替、blanc地+内枠罫+朱点+ALMANA銘を中央配置し5判型に焼く' },
+    'works/almana-mon-card-studio.html': { family: 'アトラクタ', tech: '紋（密度現像）＋言葉の二段カード組版', how: 'de Jong等の紋を上段に密度現像し、下段に文字数連動の一行、最下部にALMANA銘。紙/墨の二面で焼く' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

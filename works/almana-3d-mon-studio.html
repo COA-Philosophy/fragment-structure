@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>ALMANA — 3D紋章 動画工房</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!--
+  正典12タイプ(almana-12types-v2.html)の 2D de Jong を 3D レリーフ化:
+  正面シルエット = 焼付の紋と同一、z は密度起伏。黒地に白点(additive)。
+  10秒シーケンス = 累積生成(0-5s)→フェード(5-6.5s)→文(6.6-8.4s)→ALMANAロゴ(8.8-10s)。
+  WebGL を 2D canvas に毎フレーム合成し、文/ロゴを 2D で重ねて1枚を録画(WebM/9:16)。
+-->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;700&display=swap');
+:root{--ink:#e8e6e0;--mut:#8c887f;--line:rgba(232,230,224,.16);--shu:#c8503a;
+  --grot:"Archivo","Helvetica Neue",Helvetica,Arial,sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0c0b0a;color:var(--ink);font-family:var(--grot);display:flex;gap:30px;
+  justify-content:center;align-items:flex-start;flex-wrap:wrap;padding:28px 20px 70px;}
+.stage{display:flex;flex-direction:column;align-items:center;gap:12px;}
+#out{height:min(76vh,620px);width:auto;background:#000;border:1px solid var(--line);display:block;}
+.cap{font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.18em;color:var(--mut);text-transform:uppercase;}
+.panel{width:300px;}
+.h{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--mut);margin:0 0 16px;}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:20px;}
+.ty{text-align:left;background:transparent;border:1px solid var(--line);color:var(--ink);
+  font-family:var(--grot);font-size:11px;letter-spacing:.04em;padding:9px 10px;cursor:pointer;transition:.15s;}
+.ty .ja{display:block;font-size:8.5px;color:var(--mut);margin-top:2px;letter-spacing:0;}
+.ty.on{background:var(--ink);color:#0c0b0a;} .ty.on .ja{color:rgba(12,11,10,.6);}
+label{display:block;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut);margin:0 0 7px;}
+textarea{width:100%;background:#16140f;border:1px solid var(--line);color:var(--ink);
+  font-family:'Noto Serif JP',serif;font-size:14px;line-height:1.7;padding:11px 12px;resize:vertical;outline:none;}
+.btns{display:flex;gap:9px;margin-top:18px;}
+button.act{flex:1;background:transparent;border:1px solid var(--line);color:var(--ink);
+  font-family:var(--grot);font-size:10px;letter-spacing:.2em;text-transform:uppercase;padding:12px 0;cursor:pointer;transition:.15s;}
+button.act:hover{background:rgba(232,230,224,.07);}
+button.rec{border-color:var(--shu);color:var(--shu);} button.rec:hover{background:rgba(200,80,58,.12);}
+.note{font-family:'Noto Serif JP',serif;font-weight:300;font-size:12px;line-height:1.8;color:var(--mut);margin-top:18px;}
+.stat{font-family:ui-monospace,monospace;font-size:10px;color:var(--shu);letter-spacing:.1em;min-height:14px;margin-top:10px;}
+</style>
+</head>
+<body>
+  <div class="stage">
+    <canvas id="out" width="1080" height="1920"></canvas>
+    <div class="cap" id="cap">— · 9:16 · 10s</div>
+  </div>
+  <div class="panel">
+    <div class="h">ALMANA · 3D紋章 動画工房 · v1</div>
+    <div class="types" id="types"></div>
+    <label>締めの言葉（1〜2行）</label>
+    <textarea id="text" rows="3">占うためではなく、読むために。</textarea>
+    <div class="btns">
+      <button class="act" id="play">▶ 再生</button>
+      <button class="act rec" id="rec">● 録画 (WebM)</button>
+    </div>
+    <div class="stat" id="stat"></div>
+    <div class="note">黒地に白の3D de Jong紋章（正典12タイプ）が累積生成 → フェード → 締めの言葉 → ALMANA。
+      録画は1パス10秒を WebM で書き出し。IG は MP4 推奨なので、必要なら後で MP4 書き出しを追加。</div>
+  </div>
+
+<script>
+(function(){
+  var $=function(s){return document.getElementById(s);};
+  // --- canonical 12 types (almana-12types-v2.html の焼付 a,b,c,d,γ) ---
+  var TYPES=[
+    {code:'Architect',  ja:'静かな設計者', a:2.28,b:-0.86,c:0.65,d:1.22,g:0.78},
+    {code:'Weaver',     ja:'共感の紡ぎ手', a:-1.46,b:2.53,c:-0.67,d:1.05,g:0.74},
+    {code:'StormDancer',ja:'情熱の変革者', a:2.96,b:0.49,c:0.82,d:-2.12,g:0.44},
+    {code:'Sage',       ja:'理を織る賢者', a:1.63,b:-2.06,c:2.34,d:-1.39,g:0.40},
+    {code:'Artist',     ja:'自由な表現者', a:-1.46,b:2.53,c:-0.90,d:1.20,g:0.74},
+    {code:'Guardian',   ja:'礎を築く守護者',a:1.14,b:1.30,c:0.01,d:-2.91,g:0.84},
+    {code:'Seeker',     ja:'永遠の探求者', a:2.08,b:-1.36,c:2.20,d:-1.28,g:0.36},
+    {code:'Sovereign',  ja:'静かなる統治者',a:-0.12,b:1.28,c:0.15,d:-3.00,g:0.74},
+    {code:'FlowWalker', ja:'賢い旅人',     a:0.36,b:2.86,c:0.76,d:1.18,g:0.78},
+    {code:'Healer',     ja:'慈悲深き癒し手',a:1.99,b:-3.00,c:3.00,d:-3.00,g:0.74},
+    {code:'Foreseer',   ja:'鋭敏な夢見人', a:1.75,b:2.57,c:1.51,d:-0.43,g:0.74},
+    {code:'Alchemist',  ja:'錬金術師',     a:-2.92,b:2.25,c:1.52,d:-2.15,g:0.68}
+  ];
+  var W=1080,H=1920,DUR=10000,N=220000;
+  var cur=0, raf=0, t0=0, playing=false;
+
+  // --- offscreen WebGL (3D mon) ---
+  var glc=document.createElement('canvas'); glc.width=W; glc.height=H;
+  var renderer=new THREE.WebGLRenderer({canvas:glc,antialias:true,alpha:false,preserveDrawingBuffer:true});
+  renderer.setSize(W,H,false); renderer.setClearColor(0x000000,1);
+  var scene=new THREE.Scene();
+  var camera=new THREE.PerspectiveCamera(45,W/H,0.1,100); camera.position.set(0,0,4.2);
+  var geo=new THREE.BufferGeometry();
+  var mat=new THREE.PointsMaterial({size:1.7,sizeAttenuation:false,color:0xffffff,
+    transparent:true,opacity:0.5,blending:THREE.AdditiveBlending,depthWrite:false});
+  var pts=new THREE.Points(geo,mat); scene.add(pts);
+
+  // --- visible 2D composite (recorded) ---
+  var out=$('out'), ctx=out.getContext('2d');
+
+  function computeMon(ty){
+    var a=ty.a,b=ty.b,c=ty.c,d=ty.d,i,nx,ny;
+    var x=0.1,y=0.1,minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
+    for(i=0;i<20000;i++){ nx=Math.sin(a*y)-Math.cos(b*x); ny=Math.sin(c*x)-Math.cos(d*y); x=nx;y=ny;
+      if(i>300){ if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; } }
+    var G=256, dens=new Float32Array(G*G), pxA=new Float32Array(N), pyA=new Float32Array(N);
+    var spanX=(maxX-minX)||1, spanY=(maxY-minY)||1, span=Math.max(spanX,spanY);
+    x=0.1;y=0.1;
+    for(i=0;i<N;i++){ nx=Math.sin(a*y)-Math.cos(b*x); ny=Math.sin(c*x)-Math.cos(d*y); x=nx;y=ny;
+      pxA[i]=x; pyA[i]=y;
+      var gx=((x-minX)/spanX*(G-1))|0, gy=((y-minY)/spanY*(G-1))|0;
+      if(gx>=0&&gx<G&&gy>=0&&gy<G) dens[gy*G+gx]++; }
+    var maxD=0,v; for(i=0;i<dens.length;i++){ v=dens[i]; if(v>maxD)maxD=v; }
+    var ld=Math.log(1+maxD)||1, SC=1.4/span, cx=(minX+maxX)/2, cy=(minY+maxY)/2, depth=0.95;
+    var pos=new Float32Array(N*3);
+    for(i=0;i<N;i++){
+      var gx2=((pxA[i]-minX)/spanX*(G-1))|0, gy2=((pyA[i]-minY)/spanY*(G-1))|0;
+      var dv=dens[gy2*G+gx2]||1, zt=Math.log(1+dv)/ld;
+      pos[i*3]=(pxA[i]-cx)*SC; pos[i*3+1]=(pyA[i]-cy)*SC; pos[i*3+2]=(zt-0.5)*depth;
+    }
+    return pos;
+  }
+
+  function loadType(idx){
+    cur=idx;
+    var pos=computeMon(TYPES[idx]);
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+    geo.setDrawRange(0,1);
+    $('cap').textContent=TYPES[idx].code+' · 9:16 · 10s';
+    Array.prototype.forEach.call($('types').children,function(b,i){ b.classList.toggle('on',i===idx); });
+    start();
+  }
+
+  function easeOut(x){ return 1-Math.pow(1-x,3); }
+
+  function drawText(alpha){
+    var lines=($('text').value||'').split('\n').filter(function(s){return s.length;});
+    if(!lines.length) return;
+    ctx.save(); ctx.globalAlpha=alpha; ctx.fillStyle='#f4f2ec';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    var fs=Math.round(W*0.052); ctx.font='400 '+fs+'px "Noto Serif JP", serif';
+    if('letterSpacing' in ctx) ctx.letterSpacing='2px';
+    var lh=fs*1.7, y0=H*0.5-(lines.length-1)*lh/2, k;
+    for(k=0;k<lines.length;k++) ctx.fillText(lines[k], W/2, y0+k*lh);
+    if('letterSpacing' in ctx) ctx.letterSpacing='0px';
+    ctx.restore();
+  }
+  function drawLogo(alpha){
+    ctx.save(); ctx.globalAlpha=alpha; ctx.textAlign='center'; ctx.textBaseline='middle';
+    var af=Math.round(W*0.040); ctx.fillStyle='#f4f2ec'; ctx.font='700 '+af+'px "Noto Serif JP", serif';
+    if('letterSpacing' in ctx) ctx.letterSpacing=(0.42*af).toFixed(0)+'px';
+    ctx.fillText('ALMANA', W/2+af*0.21, H*0.49);
+    if('letterSpacing' in ctx) ctx.letterSpacing='0px';
+    var mf=Math.round(W*0.019); ctx.fillStyle='#8c887f'; ctx.font='300 '+mf+'px "Noto Serif JP", serif';
+    if('letterSpacing' in ctx) ctx.letterSpacing=(0.26*mf).toFixed(0)+'px';
+    ctx.fillText('TO READ, NOT TO PREDICT', W/2, H*0.49+af*1.4);
+    if('letterSpacing' in ctx) ctx.letterSpacing='0px';
+    ctx.restore();
+  }
+
+  function frame(t){
+    var acc=Math.min(1,t/5000), e=easeOut(acc);
+    geo.setDrawRange(0, Math.max(1,Math.floor(e*N)));
+    pts.rotation.x=0.22;
+    pts.rotation.y=-0.34 + 0.48*e + (t>5000?(t-5000)/1000*0.05:0);
+    renderer.render(scene,camera);
+
+    ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
+    var monA = t<=5000?1:Math.max(0,1-(t-5000)/1500);
+    if(monA>0){ ctx.globalAlpha=monA; ctx.drawImage(glc,0,0,W,H); ctx.globalAlpha=1; }
+    var textA = t>6600?Math.min(1,(t-6600)/1400):0; if(t>8400) textA=Math.max(0,1-(t-8400)/600);
+    if(textA>0) drawText(textA);
+    var logoA = t>8800?Math.min(1,(t-8800)/800):0;
+    if(logoA>0) drawLogo(logoA);
+  }
+
+  function loop(now){
+    if(!playing) return;
+    var t=now-t0;
+    if(t>=DUR){ frame(DUR); playing=false; if(onEnd){var f=onEnd;onEnd=null;f();} return; }
+    frame(t); raf=requestAnimationFrame(loop);
+  }
+  var onEnd=null;
+  function start(cb){ cancelAnimationFrame(raf); onEnd=cb||null; playing=true; t0=performance.now(); raf=requestAnimationFrame(loop); }
+
+  // --- record (WebM) ---
+  function record(){
+    if(playing && onEnd) return;
+    var stream=out.captureStream(30);
+    var mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')?'video/webm;codecs=vp9':'video/webm';
+    var rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:8000000});
+    var chunks=[]; rec.ondataavailable=function(ev){ if(ev.data.size)chunks.push(ev.data); };
+    rec.onstop=function(){
+      var blob=new Blob(chunks,{type:'video/webm'}); var a=document.createElement('a');
+      a.href=URL.createObjectURL(blob); a.download='almana_'+TYPES[cur].code.toLowerCase()+'_9x16.webm';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){URL.revokeObjectURL(a.href);},900);
+      $('stat').textContent='保存しました: '+a.download;
+    };
+    $('stat').textContent='録画中… 10s';
+    rec.start();
+    start(function(){ setTimeout(function(){ rec.stop(); },120); });
+  }
+
+  // --- UI ---
+  TYPES.forEach(function(ty,i){
+    var b=document.createElement('button'); b.className='ty';
+    b.innerHTML=ty.code+'<span class="ja">'+ty.ja+'</span>';
+    b.addEventListener('click',function(){ loadType(i); });
+    $('types').appendChild(b);
+  });
+  $('play').addEventListener('click',function(){ start(); });
+  $('rec').addEventListener('click',record);
+
+  if(document.fonts&&document.fonts.ready){ document.fonts.ready.then(function(){ loadType(0); }); }
+  loadType(0);
+})();
+</script>
+</body>
+</html>

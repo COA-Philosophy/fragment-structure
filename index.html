@@ -1013,6 +1013,15 @@
       file: 'works/almana-daily.html',
       still: ''
     },
+    {
+      no: 'F057', version: 'v1', status: 'current',
+      project: 'ALMANA',
+      use: 'ツール / 動画工房',
+      ja: '3D紋章 動画工房',
+      en: '3D Crest Reel Studio',
+      file: 'works/almana-3d-mon-studio.html',
+      still: ''
+    },
   ];
 
   // ── 技法メタ（各作品のコードから命名 / works/<file> をキーに WORKS へマージ）──
@@ -1082,6 +1091,7 @@
     'works/almana-card-maker.html': { family: 'レイアウト研究', tech: '文字数連動・余白中央の引用カード組版', how: '文字数しきい値(32/55/90)でフォント倍率を切替、blanc地+内枠罫+朱点+ALMANA銘を中央配置し5判型に焼く' },
     'works/almana-mon-card-studio.html': { family: 'アトラクタ', tech: '紋（密度現像）＋言葉の二段カード組版', how: 'de Jong等の紋を上段に密度現像し、下段に文字数連動の一行、最下部にALMANA銘。紙/墨の二面で焼く' },
     'works/almana-daily.html': { family: 'レイアウト研究', tech: '曜日駆動の投稿キット＋カードclient生成', how: '曜日(JST)→テーマで文面を決定的に提示し、ストラクチャーカードをcanvasでclient生成→保存。server不要' },
+    'works/almana-3d-mon-studio.html': { family: 'アトラクタ', tech: '正典12タイプの3Dレリーフ紋章・10秒動画', how: '正典2D de Jongをz=密度起伏で3Dレリーフ化、累積生成→フェード→文→ALMANAの10秒をThree.jsで描きWebM録画' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

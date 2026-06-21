@@ -1004,6 +1004,15 @@
       file: 'works/almana-mon-card-studio.html',
       still: ''
     },
+    {
+      no: 'F056', version: 'v1', status: 'current',
+      project: 'ALMANA',
+      use: 'ツール / Daily',
+      ja: 'デイリーキット',
+      en: 'Daily Kit',
+      file: 'works/almana-daily.html',
+      still: ''
+    },
   ];
 
   // ── 技法メタ（各作品のコードから命名 / works/<file> をキーに WORKS へマージ）──
@@ -1072,6 +1081,7 @@
     'works/silas-blanc-log-input.html': { family: 'ALMANA', tech: '一タップ完結→展開の記録フォーム', how: '2×2方向選択+記録ボタンで最小完結、詳しく記録で睡眠/日光/運動/一言を段階展開' },
     'works/almana-card-maker.html': { family: 'レイアウト研究', tech: '文字数連動・余白中央の引用カード組版', how: '文字数しきい値(32/55/90)でフォント倍率を切替、blanc地+内枠罫+朱点+ALMANA銘を中央配置し5判型に焼く' },
     'works/almana-mon-card-studio.html': { family: 'アトラクタ', tech: '紋（密度現像）＋言葉の二段カード組版', how: 'de Jong等の紋を上段に密度現像し、下段に文字数連動の一行、最下部にALMANA銘。紙/墨の二面で焼く' },
+    'works/almana-daily.html': { family: 'レイアウト研究', tech: '曜日駆動の投稿キット＋カードclient生成', how: '曜日(JST)→テーマで文面を決定的に提示し、ストラクチャーカードをcanvasでclient生成→保存。server不要' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

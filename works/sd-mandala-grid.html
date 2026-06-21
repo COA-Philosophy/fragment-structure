@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mandala Explorer — 24候補</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant:ital@1&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #f4f1ea; }
+  canvas { display: block; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+/* ════════════════════════════════════════════════
+   Mandala Explorer — 24候補。SILAS 12タイプの印を選ぶ用。
+   全候補を静止で並列表示。Maurer rose / Spirograph / Rose / Lissajous の混合。
+   ════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  const PALETTE = {
+    ground:     '#f4f1ea',
+    ink:        '43,41,37',
+    inkAlpha:   0.65,
+    label:      '43,41,37',
+    labelAlpha: 0.50,
+  };
+
+  /* 24 候補 — Maurer 12 / Spiro 6 / Rose 4 / Lissajous 2
+     下12は passes で回転重ね → 密度を上げて曼荼羅化 */
+  const CANDIDATES = [
+    // ── Maurer roses ──（密度の濃淡で12個）
+    { kind:'maurer', n:2,  d:39,  label:'M 2·39'  },
+    { kind:'maurer', n:3,  d:47,  label:'M 3·47'  },
+    { kind:'maurer', n:4,  d:23,  label:'M 4·23'  },
+    { kind:'maurer', n:5,  d:97,  label:'M 5·97'  },
+    { kind:'maurer', n:6,  d:71,  label:'M 6·71'  },
+    { kind:'maurer', n:7,  d:29,  label:'M 7·29'  },
+    { kind:'maurer', n:7,  d:19,  label:'M 7·19'  },
+    { kind:'maurer', n:8,  d:43,  label:'M 8·43'  },
+    { kind:'maurer', n:9,  d:67,  label:'M 9·67'  },   // ← M 9·31 を開いた版に
+    { kind:'maurer', n:10, d:73,  label:'M 10·73' },   // ← M 10·37 を開いた版に
+    { kind:'maurer', n:12, d:17,  label:'M 12·17' },
+    { kind:'maurer', n:14, d:61,  label:'M 14·61' },   // ← M 14·11 を開いた星形に
+    // ── Spirograph (hypotrochoid) — passes で回転重ね ──
+    { kind:'spiro',  R:5,  r:2, d:3, passes:8, label:'S 5·2·3'  },
+    { kind:'spiro',  R:7,  r:2, d:4, passes:5, label:'S 7·2·4'  },
+    { kind:'spiro',  R:11, r:3, d:7, passes:3, label:'S 11·3·7' },
+    { kind:'spiro',  R:13, r:5, d:8, passes:3, label:'S 13·5·8' },
+    { kind:'spiro',  R:7,  r:3, d:5, passes:6, label:'S 7·3·5'  },
+    { kind:'spiro',  R:11, r:4, d:6, passes:4, label:'S 11·4·6' },
+    // ── Rose curves r = cos(k·θ) — passes 重ね ──
+    { kind:'rose',   k:7,    passes:4, label:'R 7'   },
+    { kind:'rose',   k:11,   passes:3, label:'R 11'  },
+    { kind:'rose',   k:8/3,  passes:3, label:'R 8/3' },
+    { kind:'rose',   k:7/4,  passes:4, label:'R 7/4' },
+    // ── Lissajous knots — passes 重ね ──
+    { kind:'lissa',  a:7, b:6, phase: Math.PI/2, passes:3, label:'L 7·6' },
+    { kind:'lissa',  a:5, b:4, phase: Math.PI/2, passes:5, label:'L 5·4' },
+  ];
+
+  const COLS = 6, ROWS = 4;
+  const cv = document.getElementById('c');
+  const ctx = cv.getContext('2d');
+  let W, H, DPR;
+
+  function build() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = W * DPR; cv.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    render();
+  }
+
+  /* 有理数の分母を推定（rational k = p/q の q を返す） */
+  function denominator(x, tol = 0.0001) {
+    for (let q = 1; q <= 32; q++) {
+      if (Math.abs(x * q - Math.round(x * q)) < tol) return q;
+    }
+    return 16;
+  }
+
+  function drawMaurer(cx, cy, scale, n, dDeg) {
+    const dRad = dDeg * Math.PI / 180;
+    ctx.beginPath();
+    for (let i = 0; i <= 360; i++) {
+      const t = i * dRad;
+      const r = Math.sin(n * t);
+      const x = cx + r * Math.cos(t) * scale;
+      const y = cy + r * Math.sin(t) * scale;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  function drawSpiro(cx, cy, scale, R, r, d) {
+    const k = (R - r) / r;
+    const norm = (R - r) + d;
+    const q = denominator(k);
+    const tMax = 2 * Math.PI * q;
+    const steps = Math.min(6000, Math.max(1500, q * 400));
+    ctx.beginPath();
+    for (let i = 0; i <= steps; i++) {
+      const t = (i / steps) * tMax;
+      const x = cx + ((R - r) * Math.cos(t) + d * Math.cos(k * t)) / norm * scale;
+      const y = cy + ((R - r) * Math.sin(t) - d * Math.sin(k * t)) / norm * scale;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  function drawRose(cx, cy, scale, k) {
+    const q = denominator(k);
+    const tMax = q > 1 ? 2 * Math.PI * q : Math.PI;
+    const steps = Math.min(6000, Math.max(2000, q * 500));
+    ctx.beginPath();
+    for (let i = 0; i <= steps; i++) {
+      const t = (i / steps) * tMax;
+      const r = Math.cos(k * t);
+      const x = cx + r * Math.cos(t) * scale;
+      const y = cy + r * Math.sin(t) * scale;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  function drawLissa(cx, cy, scale, a, b, phase) {
+    const steps = 2500;
+    ctx.beginPath();
+    for (let i = 0; i <= steps; i++) {
+      const t = (i / steps) * 2 * Math.PI;
+      const x = cx + Math.sin(a * t) * scale;
+      const y = cy + Math.sin(b * t + phase) * scale;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  function drawOne(c, cx, cy, scale) {
+    ctx.strokeStyle = `rgba(${PALETTE.ink},${PALETTE.inkAlpha})`;
+    ctx.lineWidth = 0.55;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    const passes = c.passes || 1;
+    for (let p = 0; p < passes; p++) {
+      if (p > 0) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate((p / passes) * Math.PI * 2);
+        ctx.translate(-cx, -cy);
+      }
+      if (c.kind === 'maurer') drawMaurer(cx, cy, scale, c.n, c.d);
+      else if (c.kind === 'spiro') drawSpiro(cx, cy, scale, c.R, c.r, c.d);
+      else if (c.kind === 'rose')  drawRose(cx, cy, scale, c.k);
+      else if (c.kind === 'lissa') drawLissa(cx, cy, scale, c.a, c.b, c.phase);
+      if (p > 0) ctx.restore();
+    }
+  }
+
+  function render() {
+    ctx.fillStyle = PALETTE.ground;
+    ctx.fillRect(0, 0, W, H);
+
+    const cellW = W / COLS;
+    const cellH = H / ROWS;
+    const labelH = 18;
+    const drawArea = cellH - labelH;
+    const scale = Math.min(cellW, drawArea) * 0.40;
+
+    ctx.font = `italic 11px 'Cormorant', serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    for (let i = 0; i < CANDIDATES.length; i++) {
+      const col = i % COLS;
+      const row = Math.floor(i / COLS);
+      const cx = col * cellW + cellW / 2;
+      const cy = row * cellH + drawArea / 2;
+      drawOne(CANDIDATES[i], cx, cy, scale);
+      ctx.fillStyle = `rgba(${PALETTE.label},${PALETTE.labelAlpha})`;
+      ctx.fillText(CANDIDATES[i].label, cx, row * cellH + cellH - labelH / 2);
+    }
+  }
+
+  build();
+  window.addEventListener('resize', build);
+})();
+</script>
+</body>
+</html>

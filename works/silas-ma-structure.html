@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>間 — structure forming</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant:ital@1&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #F0ECE4; }
+  canvas { display: block; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+(() => {
+  'use strict';
+
+  /* ─────────────────────────────────────────────
+     ▼ PALETTE — 禅的抑制（"イソップ"）。地が明/暗どちらでも
+       ここだけ差し替えれば成立する。今は紙地に墨。
+  ───────────────────────────────────────────── */
+  const PALETTE = {
+    bgTop:  '#F5F2EB',          // 紙（上）
+    bgBot:  '#EAE5DC',          // 紙（下）— ごく淡い沈み
+    ink:    '43,41,37',         // 墨（点・線・銘）RGB
+    accent: '124,138,134',      // 共鳴のひとさじ（くすんだ青磁）RGB
+  };
+
+  const N = 10;                 // 点の数（少なく・疎に）
+  const cv = document.getElementById('c');
+  const ctx = cv.getContext('2d');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const ink  = (a) => `rgba(${PALETTE.ink},${a})`;
+  const acc  = (a) => `rgba(${PALETTE.accent},${a})`;
+
+  let W, H, DPR, M, pts;
+
+  function build() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = W * DPR; cv.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    M = Math.min(W, H) * 0.16;                 // 余白（間）
+    const amp = Math.min(W, H) * 0.13;         // ゆらぎの幅（点がはっきり漂う）
+    pts = Array.from({ length: N }, () => ({
+      bx: rnd(M, W - M), by: rnd(M, H - M),
+      fx: rnd(0.10, 0.24), fy: rnd(0.10, 0.24),
+      px: rnd(0, Math.PI * 2), py: rnd(0, Math.PI * 2),
+      bph: rnd(0, Math.PI * 2),                // 呼吸の位相
+      amp,
+    }));
+  }
+  build();
+  window.addEventListener('resize', build);
+
+  let t = 0;
+  function frame() {
+    t += reduce ? 0 : 0.013;
+
+    // 地（紙）
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, PALETTE.bgTop);
+    g.addColorStop(1, PALETTE.bgBot);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+    // 点の現在位置
+    const P = pts.map(p => ({
+      x: p.bx + Math.sin(t * p.fx + p.px) * p.amp,
+      y: p.by + Math.cos(t * p.fy + p.py) * p.amp,
+      breath: 0.5 + 0.5 * Math.sin(t * 0.7 + p.bph),
+    }));
+
+    // つながりの閾値が呼吸する → 構造が立ち上がっては解ける
+    const D = Math.min(W, H) * (0.30 + 0.14 * Math.sin(t * 0.17));
+
+    // 共鳴の所在（ゆっくり点々を巡る）
+    const active = (t * 0.11) % N;
+    const reso = i => {
+      let d = Math.abs(active - i);
+      d = Math.min(d, N - d);            // 円環距離
+      return Math.max(0, 1 - d / 1.3);
+    };
+
+    // 線（ためらいの接続）
+    for (let i = 0; i < N; i++) {
+      for (let j = i + 1; j < N; j++) {
+        const dx = P[i].x - P[j].x, dy = P[i].y - P[j].y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > D) continue;
+        const closeness = 1 - dist / D;            // 0..1
+        const r = Math.max(reso(i), reso(j));
+        const a = closeness * 0.22 + r * closeness * 0.30;
+        ctx.strokeStyle = r > 0.15
+          ? acc(a)                                  // 共鳴中は青磁
+          : ink(a * 0.9);
+        ctx.lineWidth = 0.6 + closeness * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(P[i].x, P[i].y);
+        ctx.lineTo(P[j].x, P[j].y);
+        ctx.stroke();
+      }
+    }
+
+    // 点
+    for (let i = 0; i < N; i++) {
+      const p = P[i], r = reso(i);
+      const rad = 2.0 + p.breath * 1.1;
+      // 共鳴のにじみ
+      if (r > 0.02) {
+        const halo = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rad * 7);
+        halo.addColorStop(0, acc(0.16 * r));
+        halo.addColorStop(1, acc(0));
+        ctx.fillStyle = halo;
+        ctx.beginPath(); ctx.arc(p.x, p.y, rad * 7, 0, Math.PI * 2); ctx.fill();
+      }
+      // 呼吸の輪
+      ctx.strokeStyle = ink(0.12 + p.breath * 0.10);
+      ctx.lineWidth = 0.6;
+      ctx.beginPath(); ctx.arc(p.x, p.y, rad + 3 + p.breath * 2, 0, Math.PI * 2); ctx.stroke();
+      // 核
+      ctx.fillStyle = ink(0.62 + r * 0.3);
+      ctx.beginPath(); ctx.arc(p.x, p.y, rad, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // 銘
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = ink(0.40);
+    ctx.font = `italic ${Math.max(11, Math.min(W, H) * 0.018)}px 'Cormorant', serif`;
+    ctx.fillText('ma · structure forming', W / 2, H - M * 0.55);
+
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+</script>
+</body>
+</html>

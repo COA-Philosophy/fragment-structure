@@ -1022,6 +1022,15 @@
       file: 'works/almana-3d-mon-studio.html',
       still: ''
     },
+    {
+      no: 'F058', version: 'v1', status: 'current',
+      project: 'STUDIES',
+      use: '習作 / Study',
+      ja: '墨・苔・鉱物 — 枯山水の波紋',
+      en: 'Ink Moss Mineral — Slow Karesansui Ripple',
+      file: 'works/ink_moss_mineral_karesansui_ripple_v2.html',
+      still: ''
+    },
   ];
 
   // ── 技法メタ（各作品のコードから命名 / works/<file> をキーに WORKS へマージ）──
@@ -1092,6 +1101,7 @@
     'works/almana-mon-card-studio.html': { family: 'アトラクタ', tech: '紋（密度現像）＋言葉の二段カード組版', how: 'de Jong等の紋を上段に密度現像し、下段に文字数連動の一行、最下部にALMANA銘。紙/墨の二面で焼く' },
     'works/almana-daily.html': { family: 'レイアウト研究', tech: '曜日駆動の投稿キット＋カードclient生成', how: '曜日(JST)→テーマで文面を決定的に提示し、ストラクチャーカードをcanvasでclient生成→保存。server不要' },
     'works/almana-3d-mon-studio.html': { family: 'アトラクタ', tech: '正典12タイプの3Dレリーフ紋章・10秒動画', how: '正典2D de Jongをz=密度起伏で3Dレリーフ化、累積生成→フェード→文→ALMANAの10秒をThree.jsで描きWebM録画' },
+    'works/ink_moss_mineral_karesansui_ripple_v2.html': { family: '枯山水・線画', tech: 'インク滴と砂紋の同心波紋', how: '波源から半径拡大する同心リングを sin(a×4) でゆらぎ、楕円stretchとzone偏向で砂紋化しmultiply合成' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

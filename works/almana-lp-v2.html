@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALMANA — 自己理解のための構造診断</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;1,400&family=Noto+Serif+JP:wght@200;300;400;500&family=Lora:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+<style>
+  :root{
+    /* ── one palette ── */
+    --ground:#e9e8e4; --paper:#f7f7f5;
+    --sumi:#222120; --sumi-soft:#3a3733; --sumi-mid:#6f6b64; --sumi-faint:#8d887f; --sumi-pale:#cbc6bc;
+    --hair:#dedbd3; --shu:#a8392b;
+    /* ── one type system ── */
+    --logo:'Spectral',Georgia,serif; --serifjp:'Noto Serif JP',serif;
+    --sans:'Satoshi',ui-sans-serif,system-ui,sans-serif; --serif:'Lora',Georgia,serif;
+    /* ── one scale (strength comes from spacing + presence, never bespoke sizes) ── */
+    --fs-wordmark:clamp(44px,6vw,84px);
+    --fs-h1:clamp(31px,4.3vw,56px);
+    --fs-h2:clamp(26px,3.4vw,44px);
+    --fs-lead:clamp(15px,1.5vw,18px);
+    --fs-body:clamp(15px,1.4vw,17.5px);
+    --fs-label:11px;
+    --fs-cta:16px;
+    --fs-micro:10.5px;
+    /* ── one rhythm ── */
+    --pad-x:clamp(24px,6vw,80px);
+    --maxw:1180px;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; }
+  html,body{ background:var(--ground); color:var(--sumi);
+    font-family:var(--sans); -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  body{ overflow-x:hidden; }
+  a{ color:inherit; text-decoration:none; }
+  img{ display:block; max-width:100%; }
+
+  /* ════════ shared chrome ════════ */
+  /* the single persistent brand anchor — quiet, fades in only after the hero wordmark scrolls away */
+  .topbar{ position:fixed; top:0; left:0; right:0; z-index:40;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px var(--pad-x); pointer-events:none;
+    opacity:0; transform:translateY(-6px); transition:opacity .5s, transform .5s; }
+  .topbar.show{ opacity:1; transform:none; }
+  .topbar .wm{ font-family:var(--logo); font-weight:400; font-size:15px; letter-spacing:.34em;
+    text-transform:uppercase; color:var(--sumi); pointer-events:auto; }
+  .topbar .wm i{ display:inline-block; width:.13em; height:.13em; border-radius:50%;
+    background:var(--shu); margin-left:.34em; vertical-align:.12em; }
+  .topbar .mini{ pointer-events:auto; font-family:var(--sans); font-weight:500; font-size:11px;
+    letter-spacing:.16em; color:var(--sumi); border-bottom:1px solid var(--sumi-pale); padding-bottom:3px;
+    transition:border-color .3s; }
+  .topbar .mini:hover{ border-color:var(--sumi); }
+  /* hair-thin scroll-progress line — the only page indicator */
+  .prog{ position:fixed; top:0; left:0; height:2px; width:100%; z-index:50; pointer-events:none; }
+  .prog i{ display:block; height:100%; transform:scaleX(0); transform-origin:0 50%;
+    background:var(--shu); transition:transform .12s linear; }
+
+  /* ════════ section frame ════════ */
+  .sec{ position:relative; z-index:1; width:100%; }
+  .wrap{ width:100%; max-width:var(--maxw); margin:0 auto; padding-left:var(--pad-x); padding-right:var(--pad-x); }
+  .eyebrow{ font-family:var(--sans); font-weight:500; font-size:var(--fs-label); letter-spacing:.3em;
+    text-transform:uppercase; color:var(--sumi-faint); display:inline-flex; align-items:center; gap:11px; }
+  .eyebrow .mk{ color:var(--shu); }
+  .eyebrow .ln{ width:28px; height:1px; background:var(--sumi-pale); display:inline-block; }
+  .eyebrow .jp{ font-family:var(--serifjp); font-weight:400; letter-spacing:.14em; text-transform:none;
+    color:var(--sumi-mid); }
+
+  h1,h2{ font-family:var(--serifjp); font-weight:400; letter-spacing:.03em; color:var(--sumi); }
+  h1{ font-size:var(--fs-h1); line-height:1.5; }
+  h2{ font-size:var(--fs-h2); line-height:1.55; }
+  .lead{ font-family:var(--serifjp); font-weight:300; font-size:var(--fs-lead); line-height:2.0;
+    letter-spacing:.05em; color:var(--sumi-soft); }
+  .body{ font-family:var(--serifjp); font-weight:300; font-size:var(--fs-body); line-height:2.05;
+    letter-spacing:.05em; color:var(--sumi-mid); }
+  .body + .body{ margin-top:1.2em; }
+
+  /* ════════ CTAs — three temperatures ════════ */
+  .cta{ display:inline-flex; align-items:center; gap:14px; font-family:var(--serifjp); font-weight:400;
+    font-size:var(--fs-cta); letter-spacing:.14em; color:var(--sumi); border:1px solid var(--sumi);
+    padding:16px 32px; background:transparent; transition:background .32s,color .32s,gap .32s; }
+  .cta .arw{ color:var(--shu); transition:color .32s,transform .32s; }
+  .cta:hover{ background:var(--sumi); color:var(--ground); gap:19px; }
+  .cta:hover .arw{ color:var(--ground); transform:translateX(2px); }
+  .micro{ font-family:var(--sans); font-weight:400; font-size:var(--fs-micro); letter-spacing:.2em;
+    text-transform:uppercase; color:var(--sumi-faint); }
+  .micro .sep{ margin:0 9px; color:var(--sumi-pale); }
+  .ghost{ display:inline-flex; align-items:center; gap:12px; font-family:var(--serifjp); font-weight:400;
+    font-size:clamp(16px,1.8vw,20px); letter-spacing:.06em; color:var(--sumi);
+    padding-bottom:6px; border-bottom:1px solid var(--sumi-pale); transition:border-color .3s,gap .3s; }
+  .ghost .arw{ color:var(--shu); }
+  .ghost:hover{ border-color:var(--sumi); gap:16px; }
+
+  /* ════════ device (product shot — the app, in a phone) ════════ */
+  .device{ position:relative; flex:0 0 auto; border-radius:var(--dr,42px); padding:var(--dp,11px);
+    background:linear-gradient(150deg,#e7e5df 0%,#c9c6be 40%,#dad7d0 66%,#bebbb3 100%);
+    box-shadow:0 46px 84px -44px rgba(34,33,31,.5), 0 0 0 1px rgba(34,33,31,.06),
+      inset 0 0 0 1px rgba(255,255,255,.32); }
+  .device .screen{ position:relative; width:var(--sw); height:var(--sh); border-radius:var(--sr,32px);
+    overflow:hidden; background:var(--paper); }
+  .device iframe{ position:absolute; top:0; left:0; width:360px; height:780px; border:0; background:transparent;
+    transform:scale(var(--sc)); transform-origin:top left; }
+  .device .island{ position:absolute; top:13px; left:50%; transform:translateX(-50%);
+    width:30%; height:5.5%; max-height:26px; border-radius:14px; background:#16150f; z-index:3; }
+
+  /* ════════ 01 HERO ════════ */
+  /* ════════ 01 HERO — exact reproduction of almana-hero-attractor.html (only FIG chrome dropped, CTA wired) ════════ */
+  .hero{ position:relative; min-height:100svh; overflow:hidden; }
+  #heroBg{ position:absolute; inset:0; z-index:0; pointer-events:none; }
+  #heroBg canvas{ display:block; pointer-events:none; }
+  .hero .veil{ position:absolute; inset:0; z-index:1; pointer-events:none;
+    background:
+      linear-gradient(90deg, var(--ground) 0%, rgba(232,232,229,.55) 30%, rgba(232,232,229,0) 56%),
+      radial-gradient(125% 95% at 68% 50%, rgba(232,232,229,0) 38%, var(--ground) 100%); }
+  .hero .wrap{ position:relative; z-index:2; min-height:100svh; max-width:1240px; margin:0 auto;
+    display:grid; grid-template-columns:minmax(0,1fr) minmax(330px,390px);
+    gap:clamp(24px,2.2vw,40px); align-items:center;
+    padding:clamp(40px,6vh,90px) clamp(34px,5.5vw,64px); }
+  .hero .copy{ max-width:780px; margin-left:-40px; }
+  .hero .eyebrow{ display:flex; align-items:center; gap:13px; font-family:var(--sans); font-weight:500;
+    font-size:10.5px; letter-spacing:.32em; text-transform:uppercase; color:var(--sumi-mid);
+    margin-bottom:clamp(20px,2.4vw,30px); }
+  .hero .eyebrow .ln{ width:30px; height:1px; background:var(--sumi-pale); }
+  .hero .wordmark{ font-family:var(--logo); font-weight:400; font-size:clamp(34px,4.6vw,62px);
+    line-height:1; letter-spacing:.38em; text-transform:uppercase; color:var(--sumi);
+    white-space:nowrap; margin-bottom:clamp(22px,2.8vw,34px); }
+  .hero .wordmark::after{ content:""; display:inline-block; width:.12em; height:.12em; border-radius:50%;
+    background:var(--shu); margin-left:.3em; vertical-align:.12em; }
+  .hero .headline{ font-family:var(--serifjp); font-weight:500; color:var(--sumi);
+    font-size:clamp(26px,3.7vw,50px); line-height:1.46; letter-spacing:.03em; }
+  .hero .headline .l{ display:block; }
+  .hero .headline .mbr{ display:none; }
+  .hero .lede{ font-family:var(--serifjp); font-weight:300; color:var(--sumi-soft);
+    font-size:clamp(13.5px,1.25vw,16px); line-height:2.0; letter-spacing:.05em; margin-top:clamp(24px,2.8vw,34px); }
+  .hero .lede-en{ font-family:var(--serif); font-style:italic; font-weight:400; color:var(--sumi-faint);
+    font-size:clamp(13px,1.15vw,15px); line-height:1.7; margin-top:14px; }
+  .hero .cta-row{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; margin-top:clamp(34px,4vw,48px); }
+  .hero .btn{ display:inline-flex; align-items:center; gap:16px; font-family:var(--sans); font-weight:500;
+    font-size:12px; letter-spacing:.18em; color:var(--sumi); text-decoration:none; border:1px solid var(--sumi);
+    padding:16px 30px; border-radius:2px; background:transparent; cursor:pointer;
+    transition:background .35s,color .35s,gap .35s; }
+  .hero .btn:hover{ background:var(--sumi); color:var(--ground); gap:22px; }
+  .hero .btn .arw{ color:var(--shu); }
+  .hero .btn-note{ font-family:var(--sans); font-size:11px; letter-spacing:.08em; color:var(--sumi-mid); }
+  .hero .stage{ position:relative; display:flex; align-items:center; justify-content:center; }
+  /* realistic iPhone (exact) — native-res app screen clipped into the frame */
+  .hero .iphone{ position:relative; width:344px; height:724px; border-radius:54px; padding:13px;
+    background:linear-gradient(150deg,#e7e5df 0%,#c9c6be 38%,#dad7d0 64%,#bebbb3 100%);
+    box-shadow:0 54px 96px -46px rgba(34,33,31,.5), 0 0 0 1px rgba(34,33,31,.07), inset 0 0 0 1px rgba(255,255,255,.35);
+    zoom:var(--ds,1.05); }
+  .hero .iphone .screen{ position:relative; width:318px; height:698px; border-radius:42px; overflow:hidden; background:var(--paper); }
+  .hero .iphone iframe{ display:block; width:360px; height:760px; border:0; background:transparent; margin:-22px 0 0 -21px; }
+  .hero .iphone .island{ position:absolute; top:17px; left:50%; transform:translateX(-50%);
+    width:98px; height:28px; border-radius:16px; background:#16150f; z-index:3; }
+  .hero .iphone .island::after{ content:""; position:absolute; top:50%; right:13px; transform:translateY(-50%);
+    width:7px; height:7px; border-radius:50%; background:#23211a; box-shadow:inset 0 0 0 1px rgba(120,150,170,.35); }
+  /* six-facet faint labels — exact positions from the source */
+  .hero .facets{ position:absolute; inset:0; z-index:2; pointer-events:none; }
+  .hero .facet{ position:absolute; font-family:var(--sans); font-weight:400; font-size:9px; letter-spacing:.24em;
+    text-transform:uppercase; color:var(--sumi-faint); line-height:1.55; opacity:.62; }
+  .hero .facet b{ display:block; font-family:var(--serifjp); font-weight:300; font-size:11px; letter-spacing:.12em;
+    text-transform:none; color:var(--sumi-mid); margin-top:2px; }
+  .hero .facet.f-essence { top:9%;  left:1%; }
+  .hero .facet.f-emotion { top:20%; right:2%; text-align:right; }
+  .hero .facet.f-thought { top:45%; left:-3%; }
+  .hero .facet.f-relation{ top:55%; right:0;  text-align:right; }
+  .hero .facet.f-action  { bottom:18%; left:1%; }
+  .hero .facet.f-flow    { bottom:8%; right:5%; text-align:right; }
+
+  /* ════════ 02 RECOGNITION — quiet, airy ════════ */
+  .recog{ min-height:84svh; display:flex; align-items:center; }
+  .recog .wrap{ max-width:880px; text-align:center;
+    padding-top:clamp(80px,14vh,160px); padding-bottom:clamp(80px,14vh,160px); }
+  .recog .lines{ margin-top:clamp(30px,4.5vh,52px); }
+  .recog .lines h2{ font-weight:300; line-height:2.25; }
+  .recog .lines h2 span{ display:block; }
+  .recog .body{ margin-top:clamp(28px,3.6vh,40px); }
+
+  /* ════════ 03 RESULT CARD — faithful card cluster (the subject) ════════ */
+  .card-sec{ padding-top:clamp(72px,11vh,128px); padding-bottom:clamp(64px,9vh,104px); }
+  .card-sec .wrap{ max-width:1040px; text-align:center; }
+  .card-sec .copy{ max-width:30em; margin:0 auto; }
+  .card-sec .eyebrow{ justify-content:center; }
+  .card-sec h2{ margin-top:14px; }
+  .card-sec .body{ margin-top:clamp(18px,2.4vw,26px); }
+  /* card cluster — ported verbatim from almana-lp-cards.html, scoped; centred showcase, scaled to fit width */
+  .card-sec .stage{ position:relative; display:flex; justify-content:center; margin:clamp(44px,6vw,80px) auto 0; }
+  .card-sec .cluster{ position:relative; width:700px; height:760px; transform-origin:top center; flex:0 0 auto; }
+  .card-sec .card{ position:absolute; width:300px; height:430px; background:var(--paper);
+    border:1px solid var(--hair); border-radius:15px; padding:26px 24px 22px;
+    box-shadow:0 36px 70px -34px rgba(34,33,31,.5), 0 8px 20px -14px rgba(34,33,31,.3);
+    display:flex; flex-direction:column; transition:box-shadow .35s; }
+  .card-sec .card:hover{ box-shadow:0 46px 86px -34px rgba(34,33,31,.6),0 10px 24px -14px rgba(34,33,31,.34); z-index:9; }
+  .card-sec .br-c{ position:absolute; width:13px; height:13px; color:var(--sumi-pale); }
+  .card-sec .br-c::before,.card-sec .br-c::after{ content:""; position:absolute; background:currentColor; }
+  .card-sec .br-c::before{ width:11px; height:1px; } .card-sec .br-c::after{ width:1px; height:11px; }
+  .card-sec .br-c.c1{ left:14px; top:14px; } .card-sec .br-c.c1::before{ left:0; top:0; } .card-sec .br-c.c1::after{ left:0; top:0; }
+  .card-sec .br-c.c2{ right:14px; top:14px; } .card-sec .br-c.c2::before{ right:0; top:0; } .card-sec .br-c.c2::after{ right:0; top:0; }
+  .card-sec .br-c.c3{ left:14px; bottom:14px; } .card-sec .br-c.c3::before{ left:0; bottom:0; } .card-sec .br-c.c3::after{ left:0; bottom:0; }
+  .card-sec .br-c.c4{ right:14px; bottom:14px; } .card-sec .br-c.c4::before{ right:0; bottom:0; } .card-sec .br-c.c4::after{ right:0; bottom:0; }
+  .card-sec .card .top{ display:flex; justify-content:space-between; align-items:flex-start; }
+  .card-sec .type-lab{ font-family:var(--sans); font-weight:500; font-size:9px; letter-spacing:.3em; color:var(--sumi-faint); text-transform:uppercase; }
+  .card-sec .type-no{ font-family:var(--logo); font-weight:300; font-size:38px; letter-spacing:.02em; color:var(--sumi); line-height:.8; margin-top:6px; }
+  .card-sec .role{ font-family:var(--sans); font-weight:500; font-size:10px; letter-spacing:.26em; color:var(--sumi-mid); text-transform:uppercase; margin-top:5px; }
+  .card-sec .markwrap{ position:relative; flex:1; display:flex; align-items:center; justify-content:center; margin:6px 0; }
+  .card-sec .ring{ position:relative; width:168px; height:168px; border:1px solid var(--hair); border-radius:50%; display:flex; align-items:center; justify-content:center; }
+  .card-sec .ring img{ width:138px; height:138px; object-fit:contain; opacity:0; transition:opacity .8s ease; mix-blend-mode:multiply; }
+  .card-sec .ring img.in{ opacity:1; }
+  .card-sec .ring .pl{ position:absolute; color:var(--sumi-pale); font-family:var(--sans); font-size:11px; line-height:1; }
+  .card-sec .ring .pl.n{ top:-6px; left:50%; transform:translateX(-50%); }
+  .card-sec .ring .pl.s{ bottom:-6px; left:50%; transform:translateX(-50%); }
+  .card-sec .ring .pl.w{ left:-6px; top:50%; transform:translateY(-50%); }
+  .card-sec .ring .pl.e{ right:-6px; top:50%; transform:translateY(-50%); }
+  .card-sec .struct-lab{ font-family:var(--sans); font-weight:500; font-size:9px; letter-spacing:.26em; color:var(--shu); text-transform:uppercase; margin-bottom:9px; }
+  .card-sec .struct{ font-family:var(--serifjp); font-weight:400; font-size:14px; letter-spacing:.02em; line-height:1.75; color:var(--sumi); }
+  .card-sec .card .foot{ display:flex; justify-content:space-between; align-items:flex-end; margin-top:14px; }
+  .card-sec .fig{ font-family:var(--sans); font-weight:400; font-size:8.5px; letter-spacing:.18em; color:var(--sumi-faint); text-transform:uppercase; }
+  .card-sec .card.c-art{ z-index:6; right:120px; top:150px; transform:rotate(-4deg); }
+  .card-sec .card.c-grd{ z-index:4; right:-6px; top:8px; transform:rotate(6.5deg); }
+  .card-sec .card.c-for{ z-index:5; right:18px; top:392px; transform:rotate(4deg); }
+  .card-sec .card.c-sek{ z-index:3; right:392px; top:404px; transform:rotate(-8deg); }
+  .card-sec .card.c-str{ z-index:2; right:300px; top:-26px; transform:rotate(7deg); }
+
+  /* ════════ mid pause — a breath, not a poster ════════ */
+  .pause{ display:flex; justify-content:center; text-align:center;
+    padding-top:clamp(48px,8vh,88px); padding-bottom:clamp(48px,8vh,88px); }
+  .pause .lab{ font-family:var(--sans); font-weight:400; font-size:var(--fs-label); letter-spacing:.3em;
+    text-transform:uppercase; color:var(--sumi-faint); margin-bottom:20px; }
+
+  /* ════════ 04 SIX LENSES ════════ */
+  .lens-sec{ padding-top:clamp(72px,11vh,128px); padding-bottom:clamp(72px,11vh,128px); }
+  .lens-sec .wrap{ display:grid; grid-template-columns:minmax(0,1fr) minmax(300px,46%); gap:clamp(28px,5vw,64px);
+    align-items:center; }
+  .lens-sec .copy{ max-width:26em; }
+  .lens-sec h2{ margin-top:14px; }
+  .lens-sec .body{ margin-top:clamp(18px,2.4vw,26px); }
+  .lens-list{ margin-top:clamp(22px,3vw,32px); font-family:var(--serifjp); font-weight:400;
+    font-size:clamp(13.5px,1.3vw,16px); line-height:2.1; letter-spacing:.06em; color:var(--sumi-soft); }
+  .lens-list .sep{ color:var(--sumi-pale); margin:0 .5em; }
+  .lens-fig{ position:relative; width:100%; aspect-ratio:1/1; max-width:520px; margin:0 auto; }
+  .lens-fig canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .lens-fig .figlab{ position:absolute; bottom:6px; left:0; right:0; text-align:center;
+    font-family:var(--sans); font-weight:500; font-size:9px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--sumi-faint); }
+  .lens-fig .figlab .mk{ color:var(--shu); }
+
+  /* ════════ 05 CONTINUITY — the late peak ════════ */
+  .cont{ position:relative; overflow:hidden;
+    padding-top:clamp(88px,13vh,150px); padding-bottom:clamp(88px,13vh,150px); }
+  #flowBg{ position:absolute; inset:0; z-index:0; pointer-events:none; }
+  #flowBg canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .cont .veil{ position:absolute; inset:0; z-index:1; pointer-events:none;
+    background:linear-gradient(180deg, var(--ground) 0%, rgba(233,232,228,.45) 18%, rgba(233,232,228,.45) 82%, var(--ground) 100%); }
+  .cont .wrap{ position:relative; z-index:2; text-align:center; }
+  .cont h2{ margin-top:14px; }
+  .cont .body-wrap{ margin-top:clamp(18px,2.4vw,26px); }
+  .cont .flow{ margin-top:clamp(28px,3.6vw,42px); display:inline-flex; align-items:center; gap:clamp(12px,1.6vw,22px);
+    font-family:var(--serifjp); font-weight:400; font-size:clamp(15px,1.5vw,19px); letter-spacing:.12em; color:var(--sumi); }
+  .cont .flow i{ color:var(--shu); font-style:normal; }
+  .cont .flow .en{ display:block; font-family:var(--sans); font-weight:400; font-size:8px; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--sumi-faint); margin-top:4px; }
+  .phones{ margin-top:clamp(40px,6vw,72px); display:flex; justify-content:center; align-items:flex-end;
+    gap:clamp(14px,2.4vw,38px); flex-wrap:nowrap; }
+  .phones .device{ --sw:208px; --sh:440px; --sc:.5778; --dr:30px; --dp:8px; --sr:23px; }
+  .phones .pcol{ display:flex; flex-direction:column; align-items:center; }
+  .phones .plabel{ margin-top:16px; font-family:var(--sans); font-weight:500; font-size:9.5px;
+    letter-spacing:.22em; text-transform:uppercase; color:var(--sumi-mid); }
+  .phones .device:nth-child(odd){ }
+
+  /* ════════ 06 CLOSE — 余韻 ════════ */
+  .close{ min-height:88svh; display:flex; align-items:center; text-align:center; }
+  .close .wrap{ max-width:760px; padding-top:clamp(96px,15vh,180px); padding-bottom:clamp(64px,10vh,120px); }
+  .close h2{ font-weight:300; line-height:1.55; }
+  .close .body{ margin-top:clamp(20px,2.6vh,28px); }
+  .close .cta{ margin-top:clamp(34px,4.6vh,48px); }
+  .close .micro{ margin-top:18px; }
+  .close .endmark{ margin-top:clamp(64px,10vh,104px); }
+  .close .endmark svg{ height:16px; width:auto; opacity:.7; }
+  .close .foot{ margin-top:18px; font-family:var(--sans); font-weight:400; font-size:9px; letter-spacing:.26em;
+    text-transform:uppercase; color:var(--sumi-pale); }
+
+  /* ════════ reveal ════════ */
+  .rise{ opacity:1; transform:none; }
+  .js .rise{ opacity:0; transform:translateY(13px);
+    transition:opacity 1s cubic-bezier(.22,.61,.36,1), transform 1s cubic-bezier(.22,.61,.36,1); }
+  .js .rise.in{ opacity:1; transform:none; }
+  .js .lines h2 span.rise{ transition-delay:var(--d,0s); }
+
+  /* ════════ responsive ════════ */
+  @media (max-width:900px){
+    .hero .wrap{ grid-template-columns:1fr; gap:0; min-height:0; padding:17vw 8vw 15vw; }
+    .hero .copy{ order:1; max-width:none; margin-left:0; }
+    .hero .stage{ order:2; margin-top:13vw; }
+    .hero .iphone{ --ds:.62; }
+    .hero .facets{ display:none; }
+    .hero .headline .mbr{ display:inline; }
+    .lens-sec .wrap{ grid-template-columns:1fr; }
+    .lens-sec .copy{ max-width:none; text-align:center; margin:0 auto; }
+    .lens-sec .eyebrow{ justify-content:center; }
+    .lens-fig{ margin-top:clamp(28px,7vw,48px); }
+    .lens-list{ text-align:center; }
+  }
+  @media (max-width:680px){
+    .phones{ gap:14px; }
+    .phones .device{ --sw:150px; --sh:318px; --sc:.4167; --dr:24px; --dp:6px; --sr:18px; }
+    .phones .plabel{ font-size:8.5px; letter-spacing:.16em; }
+  }
+  @media (max-width:480px){
+    .phones{ flex-wrap:wrap; }
+    .phones .pcol{ width:100%; }
+    .phones .device{ --sw:208px; --sh:440px; --sc:.5778; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{ scroll-behavior:auto; }
+    .rise,.js .rise{ opacity:1!important; transform:none!important; transition:none!important; }
+    .cta,.ghost,.topbar{ transition:none; }
+  }
+</style>
+</head>
+<body>
+<div class="prog"><i id="progBar"></i></div>
+
+<header class="topbar" id="topbar">
+  <a class="wm" href="#top">ALMANA<i></i></a>
+  <a class="mini" href="#cta-final">構造診断をはじめる</a>
+</header>
+
+<main id="top">
+
+  <!-- ══════════ 01 HERO — 入口 ══════════ -->
+  <section class="sec hero" id="hero">
+    <div id="heroBg"></div>
+    <div class="veil"></div>
+    <div class="facets" aria-hidden="true">
+      <div class="facet f-essence">Essence<b>本質</b></div>
+      <div class="facet f-emotion">Emotion<b>感情</b></div>
+      <div class="facet f-thought">Thought<b>思考</b></div>
+      <div class="facet f-relation">Relation<b>関係性</b></div>
+      <div class="facet f-action">Action<b>行動</b></div>
+      <div class="facet f-flow">Flow<b>流れ</b></div>
+    </div>
+    <div class="wrap">
+      <div class="copy">
+        <div class="eyebrow rise"><span>Almana — Structure Diagnosis</span><span class="ln"></span></div>
+        <h1 class="wordmark rise">ALMANA</h1>
+        <div class="headline">
+          <span class="l rise">あなたは、</span>
+          <span class="l rise">どんな構造で<br class="mbr">動いているのか。</span>
+        </div>
+        <p class="lede rise">生年月日と日々の記録から、<br>思考・感情・行動のパターンを静かに読み解く、<br>生成型セルフポートレート。</p>
+        <p class="lede-en rise">A generative self-portrait for your inner structure.</p>
+        <div class="cta-row rise">
+          <a class="btn" href="#cta-final">構造診断をはじめる <span class="arw">→</span></a>
+          <span class="btn-note">3分で完了、登録不要</span>
+        </div>
+      </div>
+      <div class="stage rise">
+        <div class="iphone">
+          <div class="island"></div>
+          <div class="screen"><iframe loading="eager" scrolling="no" title="ALMANA app — structure" src="silas-blanc-profile-crystal.html?hero"></iframe></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 02 RECOGNITION — 認識（静） ══════════ -->
+  <section class="sec recog" id="recognition">
+    <div class="wrap">
+      <div class="eyebrow rise" style="justify-content:center"><span class="mk">⊕</span><span>もし、こんな感覚があるなら</span></div>
+      <div class="lines">
+        <h2>
+          <span class="rise" style="--d:.0s">いつも同じところで、立ち止まる。</span>
+          <span class="rise" style="--d:.16s">もやもやを、うまく言葉にできない。</span>
+          <span class="rise" style="--d:.32s">動けない理由が、まだ見えていない。</span>
+        </h2>
+      </div>
+      <p class="body rise" style="--d:.5s; max-width:30em; margin-left:auto; margin-right:auto;">その感覚は、弱さではなく、まだ読まれていない構造かもしれません。</p>
+    </div>
+  </section>
+
+  <!-- ══════════ 03 RESULT CARD — カード ══════════ -->
+  <section class="sec card-sec" id="result">
+    <div class="wrap">
+      <div class="copy">
+        <div class="eyebrow rise"><span class="mk">⊕</span><span>Result</span><span class="jp">診断結果</span></div>
+        <h2 class="rise">あなたの構造を、<br>一枚のカードにする。</h2>
+        <p class="body rise">性格診断ではなく、あなたの内側の動き方を読み解くセルフポートレート。</p>
+        <p class="body rise">完璧さ、迷い、衝動、慎重さ。ばらばらに見える性質を、ひとつの輪郭として描き出します。</p>
+      </div>
+      <div class="stage rise">
+        <div class="cluster">
+        <article class="card c-art">
+          <span class="br-c c1"></span><span class="br-c c2"></span><span class="br-c c3"></span><span class="br-c c4"></span>
+          <div class="top"><div><div class="type-lab">Type</div><div class="type-no">05</div></div><div class="role">Artist</div></div>
+          <div class="markwrap"><div class="ring">
+            <span class="pl n">+</span><span class="pl s">+</span><span class="pl w">+</span><span class="pl e">+</span>
+            <img src="almana-plate-05.png" alt="Type 05 Artist 構造プレート">
+          </div></div>
+          <div class="struct-lab">Structure</div>
+          <div class="struct">完璧な形を求めながら、<br>次々と新しい線を<br>繋がずにはいられない人</div>
+          <div class="foot"><div class="fig">Fig.05 · 構造 / Six Facets</div></div>
+        </article>
+        <article class="card c-grd">
+          <span class="br-c c1"></span><span class="br-c c2"></span><span class="br-c c3"></span><span class="br-c c4"></span>
+          <div class="top"><div><div class="type-lab">Type</div><div class="type-no">06</div></div><div class="role">Guardian</div></div>
+          <div class="markwrap"><div class="ring">
+            <span class="pl n">+</span><span class="pl s">+</span><span class="pl w">+</span><span class="pl e">+</span>
+            <img src="almana-plate-06.png" alt="Type 06 Guardian 構造プレート">
+          </div></div>
+          <div class="struct-lab">Structure</div>
+          <div class="struct">大切なものを守るために、<br>静かに壁をつくり、<br>土台を整えていく人</div>
+          <div class="foot"><div class="fig">Fig.06 · 構造 / Six Facets</div></div>
+        </article>
+        <article class="card c-for">
+          <span class="br-c c1"></span><span class="br-c c2"></span><span class="br-c c3"></span><span class="br-c c4"></span>
+          <div class="top"><div><div class="type-lab">Type</div><div class="type-no">11</div></div><div class="role">Foreseer</div></div>
+          <div class="markwrap"><div class="ring">
+            <span class="pl n">+</span><span class="pl s">+</span><span class="pl w">+</span><span class="pl e">+</span>
+            <img src="almana-plate-11.png" alt="Type 11 Foreseer 構造プレート">
+          </div></div>
+          <div class="struct-lab">Structure</div>
+          <div class="struct">全体を見渡し、<br>流れを読みながら、<br>先の道筋を照らす人</div>
+          <div class="foot"><div class="fig">Fig.11 · 構造 / Six Facets</div></div>
+        </article>
+        <article class="card c-sek">
+          <span class="br-c c1"></span><span class="br-c c2"></span><span class="br-c c3"></span><span class="br-c c4"></span>
+          <div class="top"><div><div class="type-lab">Type</div><div class="type-no">07</div></div><div class="role">Seeker</div></div>
+          <div class="markwrap"><div class="ring">
+            <span class="pl n">+</span><span class="pl s">+</span><span class="pl w">+</span><span class="pl e">+</span>
+            <img src="almana-plate-07.png" alt="Type 07 Seeker 構造プレート">
+          </div></div>
+          <div class="struct-lab">Structure</div>
+          <div class="struct">まだ見ぬ可能性を信じて、<br>答えよりも問いを<br>抱き続ける人</div>
+          <div class="foot"><div class="fig">Fig.07 · 構造 / Six Facets</div></div>
+        </article>
+        <article class="card c-str">
+          <span class="br-c c1"></span><span class="br-c c2"></span><span class="br-c c3"></span><span class="br-c c4"></span>
+          <div class="top"><div><div class="type-lab">Type</div><div class="type-no">03</div></div><div class="role">Storm Dancer</div></div>
+          <div class="markwrap"><div class="ring">
+            <span class="pl n">+</span><span class="pl s">+</span><span class="pl w">+</span><span class="pl e">+</span>
+            <img src="almana-plate-03.png" alt="Type 03 Storm Dancer 構造プレート">
+          </div></div>
+          <div class="struct-lab">Structure</div>
+          <div class="struct">波風が立つほど目が冴え、<br>渦の中心で動くことを<br>選ばずにはいられない人</div>
+          <div class="foot"><div class="fig">Fig.03 · 構造 / Six Facets</div></div>
+        </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- mid pause -->
+  <section class="sec pause">
+    <div class="wrap">
+      <div class="lab rise">あなたの構造を</div>
+      <a class="ghost rise" href="#cta-final"><span>自分のカードを見てみる</span><span class="arw">→</span></a>
+    </div>
+  </section>
+
+  <!-- ══════════ 04 SIX LENSES — 六観（理解） ══════════ -->
+  <section class="sec lens-sec" id="lenses">
+    <div class="wrap">
+      <div class="copy">
+        <div class="eyebrow rise"><span class="mk">⊕</span><span>Six lenses, one structure</span><span class="jp">六つの視点、ひとつの構造</span></div>
+        <h2 class="rise">言い当てるためではなく、読むために。</h2>
+        <p class="body rise">ひとつの視点だけでは、人の構造は見えてきません。</p>
+        <p class="body rise">ALMANA は、複数の観測レンズを重ねながら、あなたを動かしている構造を読み解きます。</p>
+        <div class="lens-list rise">算命学<span class="sep">/</span>九星気学<span class="sep">/</span>四柱推命<span class="sep">/</span>数秘<span class="sep">/</span>西洋占星術<span class="sep">/</span>日々の記録</div>
+      </div>
+      <div class="lens-fig rise" id="lensFig">
+        <canvas id="lensCv"></canvas>
+        <div class="figlab"><span class="mk">⊕</span> FIG · 構造 / 5 頂点 · 9 稜 · 6 面</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 05 CONTINUITY — 継続（後半の山） ══════════ -->
+  <section class="sec cont" id="continuity">
+    <div id="flowBg"></div>
+    <div class="veil"></div>
+    <div class="wrap">
+      <div class="eyebrow rise" style="justify-content:center"><span class="mk">⊕</span><span>Continuity</span><span class="jp">継続</span></div>
+      <h2 class="rise">診断のあとも、続いていく。</h2>
+      <div class="body-wrap">
+        <p class="body rise" style="max-width:30em;margin:0 auto;">対話で、その日の状態をことばにする。記録が、日々静かに積もっていく。やがて、自分のパターンが見えてくる。</p>
+      </div>
+      <div class="flow rise">
+        <span>対話<span class="en">Dialogue</span></span><i>→</i>
+        <span>記録<span class="en">Streams</span></span><i>→</i>
+        <span>パターン<span class="en">Patterns</span></span>
+      </div>
+      <div class="phones rise">
+        <div class="pcol"><div class="device"><div class="screen"><iframe loading="lazy" scrolling="no" title="ALMANA — Dialogue" src="silas-blanc-dialogue-dark.html?hero"></iframe></div></div><div class="plabel">Dialogue</div></div>
+        <div class="pcol"><div class="device"><div class="screen"><iframe loading="lazy" scrolling="no" title="ALMANA — Streams" src="silas-blanc-log-streams.html?hero"></iframe></div></div><div class="plabel">Streams</div></div>
+        <div class="pcol"><div class="device"><div class="screen"><iframe loading="lazy" scrolling="no" title="ALMANA — Patterns" src="almana-patterns.html?hero"></iframe></div></div><div class="plabel">Patterns</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 06 CLOSE — 締め（余韻） ══════════ -->
+  <section class="sec close" id="cta-final">
+    <div class="wrap">
+      <h2 class="rise">日々の跡は、やがて<br>ひとつの模様になる。</h2>
+      <p class="body rise">まずは、あなたの構造から。</p>
+      <div class="rise"><a class="cta" href="#">無料で診断する <span class="arw">→</span></a></div>
+      <div class="micro rise">占うためではなく、読むために<span class="sep">·</span>約2分<span class="sep">·</span>登録不要</div>
+      <div class="endmark rise">
+        <svg viewBox="9.0 -689.0 7095.0 718.0" aria-label="ALMANA"><g transform="scale(1,-1)">
+          <path d="M33 0V16L97 49L353 665H398L650 52L717 16V0H469V16L557 50L482 235H239L165 50L249 16V0ZM262 290H460L361 536Z" fill="#222120"/>
+          <path d="M1195 0V16L1275 56V604L1195 644V660H1455V644L1365 604V55H1608L1676 222H1692V0Z" fill="#222120"/>
+          <path d="M2202 0V16L2281 56L2302 603L2216 644V660H2401L2632 128L2862 660H3038V644L2954 604L2971 56L3041 16V0H2811V16L2885 55L2875 548L2636 -5H2591L2356 541L2343 55L2424 16V0Z" fill="#222120"/>
+          <path d="M3514 0V16L3578 49L3834 665H3879L4131 52L4198 16V0H3950V16L4038 50L3963 235H3720L3646 50L3730 16V0ZM3743 290H3941L3842 536Z" fill="#222120"/>
+          <path d="M4671 0V16L4751 56V602L4672 644V660H4819L5201 180V606L5101 644V660H5350V644L5271 605V-5H5234L4821 516V55L4921 16V0Z" fill="#222120"/>
+          <path d="M5823 0V16L5887 49L6143 665H6188L6440 52L6507 16V0H6259V16L6347 50L6272 235H6029L5955 50L6039 16V0ZM6052 290H6250L6151 536Z" fill="#222120"/>
+          <circle cx="7025.0" cy="55.0" r="55.0" fill="#a8392b"/>
+        </g></svg>
+      </div>
+      <div class="foot rise">ALMANA.APP<span class="sep" style="margin:0 10px;color:var(--sumi-pale)">·</span>The Modern Zen Archive</div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+'use strict';
+document.documentElement.classList.add('js');
+
+/* ── reveal-on-scroll ── */
+(function(){
+  const rises=document.querySelectorAll('.rise');
+  if(!('IntersectionObserver' in window)){ rises.forEach(el=>el.classList.add('in')); return; }
+  const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:0.18});
+  rises.forEach(el=>io.observe(el));
+  setTimeout(()=>rises.forEach(el=>el.classList.add('in')),1900);
+})();
+
+/* ── result cards : fade plates in + scale the cluster to fit narrow columns (ported from source) ── */
+(function(){
+  const stage=document.querySelector('.card-sec .stage'),cluster=document.querySelector('.card-sec .cluster');
+  if(!stage||!cluster)return;
+  document.querySelectorAll('.card-sec .ring img').forEach(img=>{const show=()=>img.classList.add('in');if(img.complete&&img.naturalWidth)show();else img.addEventListener('load',show);});
+  const DESIGN_W=700,DESIGN_H=760;
+  function fit(){
+    cluster.style.transform='none'; stage.style.height='';
+    const avail=stage.clientWidth;
+    const k=Math.min(1, avail/DESIGN_W);                       // full size when the column is wide enough, scale down to fit otherwise
+    cluster.style.transform='scale('+k+')';
+    stage.style.height=(DESIGN_H*k)+'px';
+  }
+  addEventListener('resize',fit,{passive:true});addEventListener('load',fit);fit();
+})();
+
+/* ── topbar shows only after the hero wordmark leaves ── */
+(function(){
+  const bar=document.getElementById('topbar'), hero=document.getElementById('hero');
+  if(!('IntersectionObserver' in window)){ return; }
+  new IntersectionObserver(es=>{ bar.classList.toggle('show', !es[0].isIntersecting); },{threshold:0.15}).observe(hero);
+})();
+
+/* ── scroll-progress hairline ── */
+(function(){
+  const bar=document.getElementById('progBar'); let t=false;
+  function up(){ const s=document.documentElement,m=s.scrollHeight-s.clientHeight,p=m>0?Math.min(1,s.scrollTop/m):0;
+    bar.style.transform='scaleX('+p.toFixed(4)+')'; t=false; }
+  addEventListener('scroll',()=>{if(!t){t=true;requestAnimationFrame(up);}},{passive:true});
+  addEventListener('resize',up); up();
+})();
+
+/* ════════════════════════════════════════════════════════════
+   ART 01 — HERO structure line (strange-attractor, sumi one-stroke)
+   ported from almana-hero-attractor.html · density/scale tuned for LP backdrop
+   ════════════════════════════════════════════════════════════ */
+(function(){
+  const ATTR={
+    aizawa:{a:.95,b:.7,c:.6,d:3.5,e:.25,f:.1,scale:150,dt:.01,seed:[.1,.1,.1]},
+    lorenz:{sigma:10,rho:28,beta:8/3,scale:7,dt:.006,seed:[.1,.1,.1]},
+    halvorsen:{a:1.4,scale:22,dt:.004,seed:[.1,.1,.1]},
+    newtonLeipnik:{a:.4,b:.175,scale:260,dt:.008,seed:[.1,.1,.1]},
+    chen:{a:35,b:3,c:28,scale:4.5,dt:.004,seed:[.1,.1,.1]},
+  };
+  const ORDER=['aizawa','lorenz','halvorsen','newtonLeipnik','chen'];
+  const INK=[34,33,32], INK_A=30, BIG=1.5;
+  const FADE_MS=2600,MIN_DRAW_MS=6000,STABLE_MS=3000,CELL=14,HOLD_MS=4200,SAFETY_MS=30000;
+  const sketch=(p)=>{
+    let sys,trail,scaleK,kind,phaseStart,angle=0,visited,coverageMark,lastMarkAt,lastGrowAt,readyAt,reduce=false,W=0,H=0,paused=false;
+    let staticMode=false,freezeAt=0,frozen=false,MAXT=16000;
+    const isMobile=()=>matchMedia('(max-width:900px)').matches;
+    function host(){return document.getElementById('heroBg');}
+    function reseed(k){kind=k;const P=ATTR[k];scaleK=P.scale;const s=P.seed;sys={x:s[0],y:s[1],z:s[2]};trail=[];phaseStart=p.millis();visited=new Set();coverageMark=0;lastMarkAt=phaseStart;lastGrowAt=phaseStart;readyAt=0;}
+    function step(){const P=ATTR[kind],dt=P.dt;let{x,y,z}=sys,dx,dy,dz;
+      switch(kind){
+        case 'aizawa':dx=(z-P.b)*x-P.d*y;dy=P.d*x+(z-P.b)*y;dz=P.c+P.a*z-(z*z*z)/3-(x*x+y*y)*(1+P.e*z)+P.f*z*x*x*x;break;
+        case 'lorenz':dx=P.sigma*(y-x);dy=x*(P.rho-z)-y;dz=x*y-P.beta*z;break;
+        case 'halvorsen':dx=-P.a*x-4*y-4*z-y*y;dy=-P.a*y-4*z-4*x-z*z;dz=-P.a*z-4*x-4*y-x*x;break;
+        case 'newtonLeipnik':dx=-P.a*x+y+10*y*z;dy=-x-0.4*y+5*x*z;dz=P.b*z-5*x*y;break;
+        case 'chen':dx=P.a*(y-x);dy=(P.c-P.a)*x-x*z+P.c*y;dz=x*y-P.b*z;break;
+      }
+      sys.x+=dx*dt;sys.y+=dy*dt;sys.z+=dz*dt;}
+    p.setup=function(){const el=host();W=el.clientWidth||innerWidth;H=el.clientHeight||innerHeight;
+      const c=p.createCanvas(W,H,p.WEBGL);c.parent('heroBg');
+      reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;const mob=isMobile();
+      staticMode=mob||reduce;MAXT=mob?9000:16000;p.pixelDensity(mob?1:Math.min(2,window.devicePixelRatio||1));
+      if(staticMode)p.frameRate(30);reseed(ORDER[0]);if(reduce)prefill();
+      new IntersectionObserver(es=>{paused=!es[0].isIntersecting;},{threshold:0.02}).observe(host());};
+    function prefill(){for(let i=0;i<MAXT;i++){step();if(!isFinite(sys.x)||!isFinite(sys.y)||!isFinite(sys.z)||Math.abs(sys.x)>1e5)break;trail.push([sys.x*scaleK,sys.y*scaleK,sys.z*scaleK]);}if(trail.length>MAXT)trail.splice(0,trail.length-MAXT);readyAt=phaseStart;}
+    p.windowResized=function(){const el=host();W=el.clientWidth;H=el.clientHeight;p.resizeCanvas(W,H);if(frozen)p.redraw();};
+    p.draw=function(){
+      if(paused){p.clear();return;}
+      p.clear();const now=p.millis();
+      if(!reduce){for(let i=0;i<16;i++){step();if(!isFinite(sys.x)||!isFinite(sys.y)||!isFinite(sys.z)||Math.abs(sys.x)>1e5){reseed(ORDER[(ORDER.indexOf(kind)+1)%ORDER.length]);return;}const px=sys.x*scaleK,py=sys.y*scaleK,pz=sys.z*scaleK;trail.push([px,py,pz]);visited.add((px/CELL|0)+','+(py/CELL|0)+','+(pz/CELL|0));}
+        if(trail.length>MAXT)trail.splice(0,trail.length-MAXT);
+        if(now-lastMarkAt>800){if(visited.size-coverageMark>6)lastGrowAt=now;coverageMark=visited.size;lastMarkAt=now;}
+        if(readyAt===0&&((now-lastGrowAt>STABLE_MS&&now-phaseStart>MIN_DRAW_MS)||now-phaseStart>(staticMode?7000:SAFETY_MS)))readyAt=now;}
+      let fade;
+      if(readyAt===0){fade=Math.min(1,(now-phaseStart)/FADE_MS);}
+      else if(staticMode){fade=1;if(!freezeAt)freezeAt=now;}
+      else{const held=now-readyAt;if(held>HOLD_MS+FADE_MS){reseed(ORDER[(ORDER.indexOf(kind)+1)%ORDER.length]);return;}fade=held<HOLD_MS?1:1-(held-HOLD_MS)/FADE_MS;}
+      if(!reduce&&!frozen)angle+=0.0016;
+      const f=BIG*((W<H)?W/640:Math.min(W,H)/860);
+      p.push();p.rotateY(angle);p.rotateX(-0.20+Math.sin(angle*0.7)*0.10);p.scale(f);
+      p.stroke(INK[0],INK[1],INK[2],INK_A*fade);p.strokeWeight(0.65);p.noFill();
+      p.beginShape();for(const pt of trail)p.vertex(pt[0],pt[1],pt[2]);p.endShape();p.pop();
+      if(staticMode&&freezeAt&&(now-freezeAt)>=(reduce?0:700)){frozen=true;p.noLoop();}};
+  };
+  new p5(sketch);
+})();
+
+/* ════════════════════════════════════════════════════════════
+   ART 04 — SIX LENSES crystal (triangular bipyramid, six faces)
+   ported from almana-convergence-lp-v2.html · chrome/panel/buttons removed,
+   off-screen pause added. The figure is the subject; words live in the LP.
+   ════════════════════════════════════════════════════════════ */
+(function(){
+  const INK='34,33,32', SHU='168,57,43';
+  function hashStr(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+  function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+  const TAU=Math.PI*2,clamp=(v,a,b)=>v<a?a:v>b?b:v,smooth=(e0,e1,x)=>{const t=clamp((x-e0)/(e1-e0),0,1);return t*t*(3-2*t);};
+  function rotAxis(v,k,ang){const c=Math.cos(ang),s=Math.sin(ang),d=k[0]*v[0]+k[1]*v[1]+k[2]*v[2];
+    const cx=k[1]*v[2]-k[2]*v[1],cy=k[2]*v[0]-k[0]*v[2],cz=k[0]*v[1]-k[1]*v[0];
+    return[v[0]*c+cx*s+k[0]*d*(1-c),v[1]*c+cy*s+k[1]*d*(1-c),v[2]*c+cz*s+k[2]*d*(1-c)];}
+  function ptInTri(px,py,a,b,c){const d=(b.y-c.y)*(a.x-c.x)+(c.x-b.x)*(a.y-c.y);if(Math.abs(d)<1e-6)return false;
+    const u=((b.y-c.y)*(px-c.x)+(c.x-b.x)*(py-c.y))/d,v=((c.y-a.y)*(px-c.x)+(a.x-c.x)*(py-c.y))/d;return u>=0&&v>=0&&u+v<=1;}
+  const SYSTEMS=[
+    {jp:'算命学',ro:'SANMEIGAKU'},{jp:'九星気学',ro:'KYUSEI-KIGAKU'},{jp:'四柱推命',ro:'SHICHU-SUIMEI'},
+    {jp:'干支',ro:'KANSHI'},{jp:'数秘',ro:'SUHI'},{jp:'西洋占術',ro:'SEIYO-SENJUTSU'},
+  ];
+  const cvs=document.getElementById('lensCv'),stageEl=document.getElementById('lensFig');
+  if(!cvs||!stageEl)return;
+  const ctx=cvs.getContext('2d');
+  let W=0,H=0,DPR=1,cx=0,cy=0,R3=0,FOC=0;
+  let P=null,ax=0.42,ay=0,raf=null,t0=null,lastT=0,flightSeed=1,hoveredFi=null,lastProj=[];
+  let autoFi=0,autoStarted=false,autoNext=null,visible=false;
+  function fit(){const r=stageEl.getBoundingClientRect();DPR=Math.min(window.devicePixelRatio||1,2);
+    W=Math.round(r.width);H=Math.round(r.height);cvs.width=Math.round(W*DPR);cvs.height=Math.round(H*DPR);
+    cx=W/2;cy=H/2;R3=Math.min(W,H)*0.27;FOC=R3*4.4;}
+  function buildLP(){const T=[0,1.28,0],B=[0,-1.28,0],rho=0.96;
+    const e=[90,210,330].map(a=>{const r=a*Math.PI/180;return[rho*Math.cos(r),0,rho*Math.sin(r)];});
+    const verts=[T,B,e[0],e[1],e[2]];
+    const fdef=[{idx:[0,2,3],up:true},{idx:[0,3,4],up:true},{idx:[0,4,2],up:true},{idx:[1,3,2],up:false},{idx:[1,4,3],up:false},{idx:[1,2,4],up:false}];
+    const faces=fdef.map((d,fi)=>{const hp=d.idx.map(i=>verts[i]);
+      const c=[(hp[0][0]+hp[1][0]+hp[2][0])/3,(hp[0][1]+hp[1][1]+hp[2][1])/3,(hp[0][2]+hp[1][2]+hp[2][2])/3];
+      return{hp,c,up:d.up,fi,sys:SYSTEMS[fi]};});
+    P={verts,faces,G:6};seedFlight(flightSeed);}
+  function seedFlight(seed){P.faces.forEach((f,fi)=>{const r=mulberry32(hashStr('almana-lp~'+seed+'~'+fi));
+    let dx=r()*2-1,dy=r()*2-1,dz=r()*2-1;let L=Math.hypot(dx,dy,dz)||1;dx/=L;dy/=L;dz/=L;
+    let kx=r()*2-1,ky=r()*2-1,kz=r()*2-1;let L2=Math.hypot(kx,ky,kz)||1;kx/=L2;ky/=L2;kz/=L2;
+    f.dir=[dx,dy,dz];f.dist=1.25+r()*1.0;f.axis=[kx,ky,kz];f.amt=TAU*(0.5+r()*0.8);f.g=fi;});}
+  function rot(p){const ca=Math.cos(ax),sa=Math.sin(ax),cb=Math.cos(ay),sb=Math.sin(ay);
+    let y1=p[1]*ca-p[2]*sa,z1=p[1]*sa+p[2]*ca,x1=p[0];return[x1*cb+z1*sb,y1,-x1*sb+z1*cb];}
+  function facePoints(f,t,forced){const dur=1.0,delay=0.42;
+    const pp=forced?1:smooth(0,1,clamp((t-f.g*delay)/dur,0,1));
+    const k=1-pp,off=[f.dir[0]*f.dist*k,f.dir[1]*f.dist*k,f.dir[2]*f.dist*k];
+    const s=0.55+0.45*pp,ang=f.amt*k;
+    return f.hp.map(Hp=>{const rel=[(Hp[0]-f.c[0])*s,(Hp[1]-f.c[1])*s,(Hp[2]-f.c[2])*s];
+      const rr=rotAxis(rel,f.axis,ang);return rot([f.c[0]+off[0]+rr[0],f.c[1]+off[1]+rr[1],f.c[2]+off[2]+rr[2]]);});}
+  function projPt(p,CX,CY,r3,f){const denom=Math.max(r3*0.5,f-p[2]*r3);const fac=f/denom;return{x:CX+p[0]*r3*fac,y:CY-p[1]*r3*fac};}
+  function drawScene(c,CX,CY,r3,f,sw,t,forced,labelAmt,activeFi,strong){
+    const anyAct=activeFi!==null&&activeFi!==undefined;
+    const pls=P.faces.map(fa=>{const pts=facePoints(fa,t,forced);const az=(pts[0][2]+pts[1][2]+pts[2][2])/3;
+      const cc=[(pts[0][0]+pts[1][0]+pts[2][0])/3,(pts[0][1]+pts[1][1]+pts[2][1])/3,(pts[0][2]+pts[1][2]+pts[2][2])/3];
+      let onx=(pts[1][1]-pts[0][1])*(pts[2][2]-pts[0][2])-(pts[1][2]-pts[0][2])*(pts[2][1]-pts[0][1]);
+      let ony=(pts[1][2]-pts[0][2])*(pts[2][0]-pts[0][0])-(pts[1][0]-pts[0][0])*(pts[2][2]-pts[0][2]);
+      let onz=(pts[1][0]-pts[0][0])*(pts[2][1]-pts[0][1])-(pts[1][1]-pts[0][1])*(pts[2][0]-pts[0][0]);
+      const onl=Math.hypot(onx,ony,onz)||1;onx/=onl;ony/=onl;onz/=onl;
+      if(onx*cc[0]+ony*cc[1]+onz*cc[2]<0){onz=-onz;}
+      const front=onz>0,frontness=clamp(onz,0,1);
+      const proj=pts.map(p=>projPt(p,CX,CY,r3,f));const ccp=projPt(cc,CX,CY,r3,f);
+      return{proj,az,front,frontness,fi:fa.fi,up:fa.up,sys:fa.sys,ccp};}).sort((a,b)=>a.az-b.az);
+    lastProj=pls;
+    for(const pl of pls){const zN=clamp((pl.az+1)/2,0,1);const isAct=(pl.fi===activeFi);
+      const dimF=anyAct?(isAct?1:0.55):1;
+      c.beginPath();c.moveTo(pl.proj[0].x,pl.proj[0].y);c.lineTo(pl.proj[1].x,pl.proj[1].y);c.lineTo(pl.proj[2].x,pl.proj[2].y);c.closePath();
+      let fillA=(pl.front?(0.045+zN*0.020):(0.022+zN*0.012))*dimF;if(isAct)fillA+=strong?0.075:0.042;
+      c.fillStyle='rgba('+INK+','+fillA.toFixed(3)+')';c.fill();
+      if(isAct){c.lineWidth=(0.7+zN*0.6)*sw*(strong?1.6:1.3);c.strokeStyle='rgba('+SHU+','+((strong?0.62:0.40)).toFixed(3)+')';}
+      else{c.lineWidth=(0.5+zN*0.55)*sw;c.strokeStyle='rgba('+INK+','+((0.105+zN*0.420)*dimF).toFixed(3)+')';}
+      c.stroke();
+      pl.proj.forEach((p,k)=>{const isShu=(pl.up&&k===0);c.beginPath();c.arc(p.x,p.y,(1.1+zN*1.0)*sw,0,TAU);
+        c.fillStyle=isShu?'#a8392b':'rgba('+INK+','+((0.26+zN*0.46)*dimF).toFixed(3)+')';c.fill();});}
+    const coreA=anyAct?(strong?0.5:0.34):0.15;
+    if(anyAct){const af=pls.find(p=>p.fi===activeFi);
+      if(af){c.beginPath();c.moveTo(af.ccp.x,af.ccp.y);c.lineTo(CX,CY);c.lineWidth=(strong?1.25:1.0)*sw;c.strokeStyle='rgba('+SHU+','+((strong?0.60:0.40)).toFixed(3)+')';c.stroke();}}
+    c.beginPath();c.arc(CX,CY,(anyAct?3.0:2.2)*sw,0,TAU);
+    c.fillStyle=anyAct?('rgba('+SHU+','+coreA.toFixed(3)+')'):('rgba('+INK+','+coreA.toFixed(3)+')');c.fill();
+    if(anyAct){c.beginPath();c.arc(CX,CY,6.6*sw,0,TAU);c.lineWidth=0.8*sw;c.strokeStyle='rgba('+SHU+','+(coreA*0.55).toFixed(3)+')';c.stroke();}
+    const la=labelAmt||0;
+    if(la>0.01){for(const pl of pls){const isAct=(pl.fi===activeFi);
+      let baseA=la*(0.16+pl.frontness*0.52);if(anyAct&&!isAct)baseA*=0.45;
+      const aa=isAct?Math.max(baseA,strong?1:0.9):baseA;if(aa<0.035)continue;
+      let vx=pl.ccp.x-CX,vy=pl.ccp.y-CY;const vl=Math.hypot(vx,vy)||1;vx/=vl;vy/=vl;
+      const lx=pl.ccp.x+vx*(34*sw),ly=pl.ccp.y+vy*(34*sw);
+      c.beginPath();c.moveTo(pl.ccp.x+vx*(5*sw),pl.ccp.y+vy*(5*sw));c.lineTo(lx,ly);
+      c.lineWidth=(isAct?1.0:0.75)*sw;c.strokeStyle=isAct?('rgba('+SHU+','+aa.toFixed(3)+')'):('rgba('+INK+','+(aa*0.8).toFixed(3)+')');c.stroke();
+      const right=vx>=0;c.textAlign=right?'left':'right';const tx=lx+(right?4:-4)*sw;c.textBaseline='alphabetic';
+      c.fillStyle=isAct?('rgba('+SHU+','+aa.toFixed(3)+')'):('rgba('+INK+','+aa.toFixed(3)+')');
+      c.font='500 '+(13*sw)+'px "Noto Serif JP", serif';c.fillText(pl.sys.jp,tx,ly-1*sw);
+      c.fillStyle=isAct?('rgba('+SHU+','+(aa*0.85).toFixed(3)+')'):('rgba('+INK+','+(aa*0.6).toFixed(3)+')');
+      c.font='500 '+(8*sw)+'px Satoshi, sans-serif';
+      let prevLS;try{prevLS=c.letterSpacing;c.letterSpacing=(1.2*sw)+'px';}catch(e){}
+      c.fillText(pl.sys.ro,tx,ly+9*sw);try{c.letterSpacing=prevLS||'0px';}catch(e){}}}
+  }
+  function loop(now){
+    if(!visible){raf=null;return;}
+    if(t0===null){t0=now-(0.42*5+1.0+0.9)*1000;lastT=now;}  /* start past the fly-in → calm assembled crystal, no scatter */
+    const t=(now-t0)/1000,dt=Math.min(0.05,(now-lastT)/1000);lastT=now;
+    const G=P.G,convEnd=0.42*(G-1)+1.0,rotF=smooth(convEnd,convEnd+1.0,t),labelAmt=smooth(convEnd,convEnd+0.8,t);
+    const afterConv=t>convEnd;
+    if(hoveredFi!==null){autoNext=null;}
+    else if(afterConv){if(autoNext===null){autoNext=t+(autoStarted?2.0:0.9);}
+      if(t>=autoNext){if(!autoStarted){autoStarted=true;autoFi=0;}else{autoFi=(autoFi+1)%6;}autoNext=t+4.0;}}
+    const activeFi=hoveredFi!==null?hoveredFi:((autoStarted&&afterConv)?autoFi:null);
+    const strong=hoveredFi!==null;
+    const spin=(hoveredFi===null)?1:0.06;
+    ay+=dt*0.22*rotF*spin;ax=0.42+(afterConv?0.06*Math.sin((t-convEnd)*0.28):0);
+    ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);
+    drawScene(ctx,cx,cy,R3,FOC,1,t,false,labelAmt,activeFi,strong);
+    raf=requestAnimationFrame(loop);}
+  function start(){if(!raf)raf=requestAnimationFrame(loop);}
+  function pickFace(mx,my){let best=null,bestZ=-Infinity;
+    for(const pl of lastProj){if(!pl.front)continue;if(ptInTri(mx,my,pl.proj[0],pl.proj[1],pl.proj[2])){if(pl.az>bestZ){bestZ=pl.az;best=pl.fi;}}}return best;}
+  stageEl.addEventListener('mousemove',e=>{const r=cvs.getBoundingClientRect();hoveredFi=pickFace(e.clientX-r.left,e.clientY-r.top);});
+  stageEl.addEventListener('mouseleave',()=>{hoveredFi=null;});
+  stageEl.addEventListener('touchstart',e=>{const r=cvs.getBoundingClientRect();const tch=e.touches[0];
+    const fi=pickFace(tch.clientX-r.left,tch.clientY-r.top);hoveredFi=(fi===hoveredFi)?null:fi;},{passive:true});
+  function staticDraw(){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);drawScene(ctx,cx,cy,R3,FOC,1,999,true,1,(autoStarted?autoFi:null),false);}
+  const reducedX=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  let rt=null;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{fit();if(raf===null)staticDraw();},160);});
+  fit();buildLP();
+  staticDraw();   /* never blank — paint the assembled crystal immediately (robust if rAF is slow / paused) */
+  if(!reducedX){ new IntersectionObserver(es=>{visible=es[0].isIntersecting;if(visible)start();},{threshold:0.04}).observe(stageEl); }
+})();
+
+/* ════════════════════════════════════════════════════════════
+   ART 05 — CONTINUITY flow-field (karesansui, horizontal raking)
+   ported from almana-lp-ending.html · density lowered for a backdrop,
+   stones re-placed for a centred section, rake plays once on first view.
+   ════════════════════════════════════════════════════════════ */
+(function(){
+  const host=document.querySelector('.cont'),mount=document.getElementById('flowBg');
+  if(!host||!mount)return;
+  const SEED='almana',ACCENT_INK='34,33,32';
+  const STONES_F=[{fx:0.18,fy:0.60,fr:0.072},{fx:0.82,fy:0.40,fr:0.052},{fx:0.50,fy:0.80,fr:0.028}];
+  const FLOW_DEG=2,SPACING=7,REP=1.7,BAND=[0.05,0.95];
+  function hashStr(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+  function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+  function buildPerlin(rand){const perm=[...Array(256).keys()];
+    for(let i=255;i>0;i--){const j=(rand()*(i+1))|0;[perm[i],perm[j]]=[perm[j],perm[i]];}
+    const p=new Int16Array(512);for(let i=0;i<512;i++)p[i]=perm[i&255];
+    const fade=t=>t*t*t*(t*(t*6-15)+10),lerp=(a,b,t)=>a+t*(b-a),grad=(h,x,y)=>((h&1)?-x:x)+((h&2)?-y:y);
+    return(x,y)=>{const X=Math.floor(x)&255,Y=Math.floor(y)&255;x-=Math.floor(x);y-=Math.floor(y);
+      const u=fade(x),v=fade(y),aa=p[p[X]+Y],ab=p[p[X]+Y+1],ba=p[p[X+1]+Y],bb=p[p[X+1]+Y+1];
+      return lerp(lerp(grad(aa,x,y),grad(ba,x-1,y),u),lerp(grad(ab,x,y-1),grad(bb,x-1,y-1),u),v);};}
+  const clamp=(v,a,b)=>v<a?a:v>b?b:v,smooth=(e0,e1,x)=>{const t=clamp((x-e0)/(e1-e0),0,1);return t*t*(3-2*t);};
+  const cv=document.createElement('canvas');cv.style.cssText='position:absolute;inset:0;width:100%;height:100%;display:block;';mount.appendChild(cv);
+  const ctx=cv.getContext('2d');
+  let W=0,H=0,DPR=1,stones=[],lines=[],noise=null,anim=null;
+  function buildStones(){const md=Math.min(W,H);return STONES_F.map(s=>({x:s.fx*W,y:s.fy*H,r:s.fr*md}));}
+  function flowAngle(x,y){const base=FLOW_DEG*Math.PI/180+noise(x*0.0014,y*0.0014)*0.18;
+    let vx=Math.cos(base),vy=Math.sin(base);const STR=8.0;
+    for(const s of stones){const dx=x-s.x,dy=y-s.y,d=Math.hypot(dx,dy)||1e-4,band=s.r*(1.2+REP);
+      if(d>s.r+band)continue;const w=smooth(s.r+band,s.r,d),tx=-dy/d,ty=dx/d;vx+=tx*w*STR;vy+=ty*w*STR;}
+    return Math.atan2(vy,vx);}
+  const stoneHit=(x,y)=>{for(const s of stones)if(Math.hypot(x-s.x,y-s.y)<=s.r+0.6)return true;return false;};
+  function buildLines(rand){const dsep=SPACING,dtest=dsep*0.5,step=clamp(dsep*0.42,1.2,3);
+    const maxSteps=Math.min(2600,Math.ceil((W+H)/step)*2),cell=dsep;
+    const grid=new Map(),key=(x,y)=>((x/cell)|0)+','+((y/cell)|0);
+    const add=(x,y)=>{const k=key(x,y);let a=grid.get(k);if(!a){a=[];grid.set(k,a);}a.push(x,y);};
+    const near=(x,y,md)=>{const gx=(x/cell)|0,gy=(y/cell)|0,m2=md*md;
+      for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){const a=grid.get((gx+i)+','+(gy+j));if(!a)continue;
+        for(let p=0;p<a.length;p+=2){const ddx=x-a[p],ddy=y-a[p+1];if(ddx*ddx+ddy*ddy<m2)return true;}}return false;};
+    const yMin=BAND[0]*H,yMax=BAND[1]*H;
+    function integrate(sx,sy){if(sx<0||sy<0||sx>W||sy>H||stoneHit(sx,sy)||near(sx,sy,dtest))return null;
+      const fwd=[],bwd=[];
+      for(const dir of[1,-1]){let x=sx,y=sy;const arr=(dir===1?fwd:bwd);
+        for(let n=0;n<maxSteps;n++){const a=flowAngle(x,y),mx=x+Math.cos(a)*step*0.5*dir,my=y+Math.sin(a)*step*0.5*dir,a2=flowAngle(mx,my);
+          const nx=x+Math.cos(a2)*step*dir,ny=y+Math.sin(a2)*step*dir;
+          if(nx<0||ny<0||nx>W||ny>H)break;if(ny<yMin-H*0.04||ny>yMax+H*0.04)break;if(stoneHit(nx,ny))break;if(near(nx,ny,dtest))break;
+          if(n>12&&Math.hypot(nx-sx,ny-sy)<step*1.1){arr.push(nx,ny);break;}arr.push(nx,ny);x=nx;y=ny;}}
+      const pts=[];for(let i=bwd.length-2;i>=0;i-=2)pts.push(bwd[i],bwd[i+1]);
+      pts.push(sx,sy);for(let i=0;i<fwd.length;i+=2)pts.push(fwd[i],fwd[i+1]);
+      if(pts.length<6)return null;for(let i=0;i<pts.length;i+=2)add(pts[i],pts[i+1]);return pts;}
+    const out=[],queue=[];queue.push([W*0.5,(yMin+yMax)/2]);
+    for(const s of stones)queue.push([s.x+(s.r+dsep*1.2),s.y]);
+    let guard=0;
+    while(queue.length&&guard++<26000){const[qx,qy]=queue.shift();const pts=integrate(qx,qy);if(!pts)continue;
+      let ay=0;for(let i=1;i<pts.length;i+=2)ay+=pts[i];ay/=(pts.length/2);
+      const edge=Math.min(smooth(yMin,yMin+H*0.10,ay),1-smooth(yMax-H*0.10,yMax,ay));
+      const alpha=(0.15+rand()*0.11)*clamp(edge,0.06,1);
+      out.push({pts,alpha,width:0.5+rand()*0.3});
+      for(let i=0;i<pts.length-2;i+=4){const ax=pts[i],ayy=pts[i+1],bx=pts[i+2],by=pts[i+3];
+        let nx=-(by-ayy),ny=(bx-ax);const L=Math.hypot(nx,ny)||1;nx/=L;ny/=L;
+        for(const sg of[1,-1]){const cx=ax+nx*sg*dsep,cy=ayy+ny*sg*dsep;
+          if(cx<0||cy<0||cx>W||cy>H)continue;if(stoneHit(cx,cy))continue;if(near(cx,cy,dsep*0.92))continue;queue.push([cx,cy]);}}}
+    return out;}
+  function compute(){const rand=mulberry32(hashStr(SEED));noise=buildPerlin(mulberry32(hashStr(SEED+'~n')));stones=buildStones();lines=buildLines(rand);}
+  function strokeLine(c,line,sw){const p=line.pts;c.lineWidth=line.width*sw;c.strokeStyle='rgba('+ACCENT_INK+','+line.alpha+')';
+    c.beginPath();c.moveTo(p[0],p[1]);for(let i=2;i<p.length;i+=2)c.lineTo(p[i],p[i+1]);c.stroke();}
+  function cancelAnim(){if(anim){cancelAnimationFrame(anim);anim=null;}}
+  function renderStatic(){cancelAnim();ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);ctx.lineCap='round';ctx.lineJoin='round';for(const l of lines)strokeLine(ctx,l,1);}
+  function playRake(){cancelAnim();ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);ctx.lineCap='round';ctx.lineJoin='round';
+    const total=lines.reduce((s,l)=>s+l.pts.length/2,0);const perFrame=Math.max(55,Math.ceil(total/230));let li=0,pi=0;
+    (function frame(){let b=perFrame;
+      while(b>0&&li<lines.length){const line=lines[li],p=line.pts;ctx.lineWidth=line.width;ctx.strokeStyle='rgba('+ACCENT_INK+','+line.alpha+')';
+        const start=Math.max(0,pi-1),end=Math.min(p.length/2,pi+b);
+        if(end-start>=2){ctx.beginPath();ctx.moveTo(p[start*2],p[start*2+1]);for(let k=start+1;k<end;k++)ctx.lineTo(p[k*2],p[k*2+1]);ctx.stroke();}
+        b-=(end-pi);pi=end;if(pi>=p.length/2){li++;pi=0;}}
+      if(li<lines.length)anim=requestAnimationFrame(frame);else anim=null;})();}
+  function fit(){const r=host.getBoundingClientRect();DPR=Math.min(window.devicePixelRatio||1,2);W=Math.round(r.width);H=Math.round(r.height);cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);}
+  const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  fit();compute();renderStatic();
+  let played=false;
+  new IntersectionObserver(es=>{if(es[0].isIntersecting&&!played){played=true;if(!reduced)playRake();}},{threshold:0.12}).observe(host);
+  let rt=null;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{fit();compute();renderStatic();},180);});
+})();
+</script>
+</body>
+</html>

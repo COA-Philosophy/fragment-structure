@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALMANA — LP connectors study (S1 認識 / CV 締め)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@300;400;500&family=Shippori+Mincho:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --washi:#e8e8e5; --paper:#f2f1ee; --ink:#1f1f1d; --shu:#a8392b;
+    --mid:rgba(31,31,29,0.6); --faint:rgba(31,31,29,0.42); --pale:rgba(31,31,29,0.26);
+    --hair:rgba(31,31,29,0.18);
+    --grot:"Archivo","Helvetica Neue",sans-serif;
+    --jp:"Zen Kaku Gothic New",sans-serif;
+    --mincho:"Shippori Mincho",serif;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ background:var(--washi); color:var(--ink); font-family:var(--jp);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+
+  /* study chrome */
+  .studyhead{ text-align:center; padding:54px 24px 8px; }
+  .studyhead .wm{ font-family:var(--mincho); font-weight:500; font-size:16px; letter-spacing:.4em; }
+  .studyhead .wm .dot{ display:inline-block; width:.16em; height:.16em; border-radius:50%; background:var(--shu); margin-left:.34em; vertical-align:.1em; }
+  .studyhead .kick{ font-family:var(--grot); font-weight:500; font-size:10px; letter-spacing:.32em; text-transform:uppercase; color:var(--mid); margin-top:14px; }
+  .seclabel{ max-width:1180px; margin:48px auto 0; padding:0 40px;
+    font-family:var(--grot); font-weight:600; font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--faint);
+    border-bottom:1px solid var(--hair); padding-bottom:10px; }
+  .seclabel .jp{ font-family:var(--mincho); letter-spacing:.1em; text-transform:none; color:var(--mid); margin-left:10px; }
+
+  /* a band = one full-width LP-section variant */
+  .band{ position:relative; min-height:500px; display:flex; align-items:center;
+    border-bottom:1px solid var(--hair); overflow:hidden; }
+  .band:nth-child(even){ background:linear-gradient(180deg,#eceae6,#e8e8e5); }
+  .vtag{ position:absolute; top:18px; left:40px; font-family:var(--grot); font-weight:500;
+    font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--pale); z-index:2; }
+  .vtag b{ color:var(--shu); font-weight:600; margin-right:8px; }
+  .inner{ width:100%; max-width:1180px; margin:0 auto; padding:96px 40px 72px; }
+
+  .eyebrow{ font-family:var(--grot); font-size:10.5px; letter-spacing:.32em; text-transform:uppercase;
+    color:var(--faint); display:inline-flex; align-items:center; gap:10px; }
+  .eyebrow .mk{ color:var(--shu); }
+  .eyebrow .ln{ width:30px; height:1px; background:var(--hair); display:inline-block; }
+
+  /* ===== S1 · A — 静かな中央 ===== */
+  .s1a .inner{ text-align:center; }
+  .s1a .recog{ margin-top:34px; font-family:var(--mincho); font-weight:400;
+    font-size:clamp(22px,2.9vw,34px); line-height:2.2; letter-spacing:.05em; color:var(--ink); }
+  .s1a .recog span{ display:block; }
+
+  /* ===== S1 · B — 台帳 / ledger ===== */
+  .s1b .ledger{ list-style:none; margin-top:36px; max-width:760px; }
+  .s1b .ledger li{ display:flex; align-items:baseline; gap:22px; padding:22px 0; border-top:1px solid var(--hair);
+    font-family:var(--mincho); font-size:clamp(18px,2vw,24px); letter-spacing:.04em; }
+  .s1b .ledger li:last-child{ border-bottom:1px solid var(--hair); }
+  .s1b .ledger .no{ font-family:var(--grot); font-weight:500; font-size:12px; letter-spacing:.2em; color:var(--shu); flex:0 0 auto; }
+
+  /* ===== S1 · C — 冷 / 余白で断つ ===== */
+  .s1c .inner{ max-width:1180px; }
+  .s1c .frame{ max-width:480px; }
+  .s1c .recog{ margin-top:26px; font-family:var(--mincho); font-weight:400;
+    font-size:clamp(17px,1.7vw,21px); line-height:2.15; letter-spacing:.04em; color:var(--ink); }
+  .s1c .recog span{ display:block; }
+  .s1c .tick{ position:absolute; right:13%; top:50%; width:16px; height:16px; color:var(--pale); }
+  .s1c .tick::before,.s1c .tick::after{ content:""; position:absolute; background:currentColor; }
+  .s1c .tick::before{ left:50%; top:0; width:1px; height:100%; } .s1c .tick::after{ top:50%; left:0; height:1px; width:100%; }
+
+  /* ===== CV · A — 中央・接地 ===== */
+  .cva .inner{ text-align:center; }
+  .land{ font-family:var(--mincho); font-weight:400; font-size:clamp(28px,3.8vw,50px);
+    line-height:1.5; letter-spacing:.05em; color:var(--ink); }
+  .bridge{ margin-top:22px; font-family:var(--jp); font-weight:300; font-size:clamp(13px,1.2vw,15px);
+    letter-spacing:.08em; color:var(--mid); }
+  .cta{ display:inline-flex; align-items:center; gap:14px; margin-top:34px;
+    font-family:var(--jp); font-weight:500; font-size:15px; letter-spacing:.14em; color:var(--ink);
+    border:1px solid var(--ink); padding:16px 30px; text-decoration:none; background:transparent;
+    transition:background .3s,color .3s,gap .3s; }
+  .cta .arw{ color:var(--shu); }
+  .cta:hover{ background:var(--ink); color:var(--washi); gap:19px; }
+  .cta:hover .arw{ color:var(--washi); }
+  .micro{ margin-top:18px; font-family:var(--grot); font-weight:400; font-size:10px;
+    letter-spacing:.2em; text-transform:uppercase; color:var(--faint); }
+  .micro .sep{ margin:0 10px; color:var(--pale); }
+
+  /* ===== CV · B — 紋ドット添え ===== */
+  .cvb .inner{ text-align:center; }
+  .cvb .seal{ width:13px; height:13px; border-radius:50%; background:var(--shu); margin:0 auto 30px;
+    box-shadow:0 0 0 6px rgba(168,57,43,0.08); }
+  .cvb .land{ font-size:clamp(26px,3.4vw,44px); }
+  .cvb .cta{ background:var(--ink); color:var(--washi); }
+  .cvb .cta .arw{ color:var(--washi); }
+  .cvb .cta:hover{ background:transparent; color:var(--ink); }
+  .cvb .cta:hover .arw{ color:var(--shu); }
+
+  /* ===== CV · C — 余白主導 / 左接地 ===== */
+  .cvc .inner{ display:flex; align-items:flex-end; justify-content:space-between; gap:40px; flex-wrap:wrap; }
+  .cvc .land{ font-size:clamp(24px,3vw,40px); max-width:620px; }
+  .cvc .right{ text-align:right; }
+  .cvc .micro{ margin-top:0; margin-bottom:16px; }
+
+  .studyfoot{ text-align:center; padding:34px 24px 60px; font-family:var(--grot);
+    font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--pale); }
+
+  @media (max-width:640px){
+    .inner{ padding:84px 26px 60px; }
+    .cvc .inner{ flex-direction:column; align-items:flex-start; }
+    .cvc .right{ text-align:left; }
+    .s1c .tick{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="studyhead">
+  <div class="wm">ALMANA<span class="dot"></span></div>
+  <div class="kick">LP connectors — S1 認識 / CV 締め · variants</div>
+</header>
+
+<!-- ============ S1 認識 ============ -->
+<div class="seclabel">S1 — Recognition <span class="jp">認識・自分事化（煽らず「これは私のことだ」を起こす）</span></div>
+
+<!-- S1 · A -->
+<section class="band s1a">
+  <div class="vtag"><b>S1·A</b>静かな中央 / quiet center</div>
+  <div class="inner">
+    <div class="eyebrow"><span class="mk">⊕</span><span>もし、こんな感覚があるなら</span></div>
+    <p class="recog">
+      <span>同じところで、いつも立ち止まる。</span>
+      <span>もやもやを、うまく言葉にできない。</span>
+      <span>動けない理由が、まだ見えていない。</span>
+    </p>
+  </div>
+</section>
+
+<!-- S1 · B -->
+<section class="band s1b">
+  <div class="vtag"><b>S1·B</b>台帳 / ledger</div>
+  <div class="inner">
+    <div class="eyebrow"><span>Recognition</span><span class="ln"></span><span>認識</span></div>
+    <ol class="ledger">
+      <li><span class="no">01</span>同じところで、いつも立ち止まる。</li>
+      <li><span class="no">02</span>もやもやを、うまく言葉にできない。</li>
+      <li><span class="no">03</span>動けない理由が、まだ見えていない。</li>
+    </ol>
+  </div>
+</section>
+
+<!-- S1 · C -->
+<section class="band s1c">
+  <div class="vtag"><b>S1·C</b>冷・余白で断つ / margiela</div>
+  <span class="tick"></span>
+  <div class="inner">
+    <div class="frame">
+      <div class="eyebrow"><span class="mk">⊕</span><span>こんな時に</span></div>
+      <p class="recog">
+        <span>同じところで、いつも立ち止まる。</span>
+        <span>もやもやを、うまく言葉にできない。</span>
+        <span>動けない理由が、まだ見えていない。</span>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CV 締め ============ -->
+<div class="seclabel">CV — Close <span class="jp">締め・着地一行 ＋ 単一CV（生年月日30秒・無料）</span></div>
+
+<!-- CV · A -->
+<section class="band cva">
+  <div class="vtag"><b>CV·A</b>中央・接地 / grounded</div>
+  <div class="inner">
+    <div class="land">生きた跡は、やがて<br>ひとつの模様になる。</div>
+    <div class="bridge">まずは、あなたの構造から。</div>
+    <a class="cta" href="#">無料で診断する <span class="arw">→</span></a>
+    <div class="micro">占うためではなく、読むために<span class="sep">·</span>約2分<span class="sep">·</span>登録不要</div>
+  </div>
+</section>
+
+<!-- CV · B -->
+<section class="band cvb">
+  <div class="vtag"><b>CV·B</b>紋ドット添え / mark</div>
+  <div class="inner">
+    <div class="seal"></div>
+    <div class="land">生きた跡は、やがてひとつの模様になる。</div>
+    <div class="bridge">まずは、あなたの構造から。</div>
+    <a class="cta" href="#">無料で診断する <span class="arw">→</span></a>
+    <div class="micro">生年月日30秒で、あなたの紋が立ち上がる</div>
+  </div>
+</section>
+
+<!-- CV · C -->
+<section class="band cvc">
+  <div class="vtag"><b>CV·C</b>余白主導・左接地 / asymmetric</div>
+  <div class="inner">
+    <div class="land">生きた跡は、やがて<br>ひとつの模様になる。</div>
+    <div class="right">
+      <div class="micro">占うためではなく、読むために<span class="sep">·</span>約2分<span class="sep">·</span>登録不要</div>
+      <a class="cta" href="#">無料で診断する <span class="arw">→</span></a>
+    </div>
+  </div>
+</section>
+
+<div class="studyfoot">ALMANA · LP connectors study · sumi #1f1f1d / shu #a8392b</div>
+
+</body>
+</html>

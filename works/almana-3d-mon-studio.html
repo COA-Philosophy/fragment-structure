@@ -29,10 +29,6 @@ body{background:#0c0b0a;color:var(--ink);font-family:var(--grot);display:flex;ga
   font-family:var(--grot);font-size:11px;letter-spacing:.04em;padding:9px 10px;cursor:pointer;transition:.15s;}
 .ty .ja{display:block;font-size:8.5px;color:var(--mut);margin-top:2px;letter-spacing:0;}
 .ty.on{background:var(--ink);color:#0c0b0a;} .ty.on .ja{color:rgba(12,11,10,.6);}
-.modes{display:flex;gap:7px;margin-bottom:4px;}
-.md{flex:1;background:transparent;border:1px solid var(--line);color:var(--ink);font-family:var(--grot);
-  font-size:10px;letter-spacing:.08em;padding:10px 0;cursor:pointer;transition:.15s;}
-.md.on{background:var(--ink);color:#0c0b0a;}
 label{display:block;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut);margin:0 0 7px;}
 textarea{width:100%;background:#16140f;border:1px solid var(--line);color:var(--ink);
   font-family:'Noto Serif JP',serif;font-size:14px;line-height:1.7;padding:11px 12px;resize:vertical;outline:none;}
@@ -55,11 +51,6 @@ button.rec{border-color:var(--shu);color:var(--shu);} button.rec:hover{backgroun
     <div class="types" id="types"></div>
     <label>締めの言葉（1〜2行）</label>
     <textarea id="text" rows="3">占うためではなく、読むために。</textarea>
-    <label style="margin-top:16px;">出だし（毎回ゆらぎは変化）</label>
-    <div class="modes" id="modes">
-      <button class="md on" data-m="0">波 リサジュー</button>
-      <button class="md" data-m="1">はじける</button>
-    </div>
     <div class="btns">
       <button class="act" id="play">▶ 再生</button>
       <button class="act rec" id="rec">● 録画 (WebM)</button>
@@ -98,23 +89,19 @@ button.rec{border-color:var(--shu);color:var(--shu);} button.rec:hover{backgroun
   var camera=new THREE.PerspectiveCamera(45,W/H,0.1,100); camera.position.set(0,0,4.2);
   var geo=new THREE.BufferGeometry();
   var mat=new THREE.ShaderMaterial({
-    uniforms:{ uProgress:{value:0}, uTime:{value:0}, uSize:{value:1.7}, uMode:{value:0}, uShift:{value:0} },
+    uniforms:{ uProgress:{value:0}, uTime:{value:0}, uSize:{value:1.7}, uShift:{value:0} },
     transparent:true, blending:THREE.AdditiveBlending, depthWrite:false,
     vertexShader:[
       'attribute float aSeed;',
-      'uniform float uProgress; uniform float uTime; uniform float uSize; uniform float uMode; uniform float uShift;',
+      'uniform float uProgress; uniform float uTime; uniform float uSize; uniform float uShift;',
       'void main(){',
       '  float ph = aSeed * 6.2831853;',
-      '  vec3 wave = vec3(',                              // 0: リサジュー波動(uShiftで毎回変わる)
+      '  vec3 wave = vec3(',                              // リサジュー波動(uShiftで毎回変わる)
       '    sin(uTime*0.9 + ph*3.0 + uShift) * 1.0,',
       '    sin(uTime*0.7 + ph*2.0 + 1.5708 + uShift) * 1.0,',
       '    sin(uTime*1.1 + ph*5.0) * 0.5);',
-      '  vec3 dir = normalize(vec3(sin(ph*7.0), cos(ph*11.0+1.3), sin(ph*13.0+2.1)) + 0.0001);',
-      '  float r = (1.0 - exp(-uTime*3.5)) * 1.5 + 0.08*sin(uTime*18.0 + ph*9.0);', // 1: はじける(中心から爆発)
-      '  vec3 burst = dir * r;',
-      '  vec3 startP = mix(wave, burst, uMode);',
-      '  float m = smoothstep(0.0, 1.0, uProgress);',     // 出だし → 紋章へ収束(立ち上がる)
-      '  vec3 p = mix(startP, position, m);',
+      '  float m = smoothstep(0.0, 1.0, uProgress);',     // 波 → 紋章へ収束(立ち上がる)
+      '  vec3 p = mix(wave, position, m);',
       '  gl_Position = projectionMatrix * modelViewMatrix * vec4(p,1.0);',
       '  gl_PointSize = uSize;',
       '}'
@@ -250,12 +237,6 @@ button.rec{border-color:var(--shu);color:var(--shu);} button.rec:hover{backgroun
   });
   $('play').addEventListener('click',function(){ start(); });
   $('rec').addEventListener('click',record);
-  Array.prototype.forEach.call(document.querySelectorAll('.md'),function(b){
-    b.addEventListener('click',function(){
-      document.querySelectorAll('.md').forEach(function(x){x.classList.remove('on');});
-      b.classList.add('on'); mat.uniforms.uMode.value=parseFloat(b.dataset.m); start();
-    });
-  });
 
   if(document.fonts&&document.fonts.ready){ document.fonts.ready.then(function(){ loadType(0); }); }
   loadType(0);

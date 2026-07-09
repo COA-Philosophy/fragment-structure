@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>This Is Not A Rock — study v4</title>
+<style>
+  :root{ --ground:#e8e8e5; --sumi:#222120; --shu:#a8392b; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{ background:var(--ground); font-family:'Courier New',monospace; overflow:hidden; width:100vw; height:100vh; }
+  #codewall{
+    position:fixed; inset:0; color:rgba(34,33,32,.12);
+    font-size:10px; line-height:1.55; letter-spacing:.4px;
+    white-space:pre-wrap; word-break:break-all;
+    padding:24px; user-select:none; pointer-events:none; overflow:hidden;
+  }
+  #stage{position:fixed; inset:0; cursor:grab;}
+  #stage.grabbing{cursor:grabbing;}
+  #shadow{
+    position:fixed; left:50%; top:72%;
+    width:300px; height:46px; transform:translateX(-50%);
+    background:radial-gradient(ellipse at center, rgba(34,33,32,.58) 0%, rgba(34,33,32,.30) 36%, rgba(34,33,32,.09) 60%, rgba(34,33,32,0) 78%);
+    pointer-events:none;
+  }
+  #hud{ position:fixed; left:28px; bottom:24px; color:var(--sumi); font-size:11px; letter-spacing:.18em; }
+  #hud .seed{opacity:.55;} #hud .dot{color:var(--shu);} #hud .smp{opacity:.35; margin-left:12px;}
+  #reroll{
+    position:fixed; right:28px; bottom:22px;
+    background:none; border:1px solid rgba(34,33,32,.35); color:var(--sumi);
+    font-family:inherit; font-size:11px; letter-spacing:.22em;
+    padding:8px 18px; cursor:pointer; transition:all .25s;
+  }
+  #reroll:hover{border-color:var(--sumi); background:rgba(34,33,32,.04);}
+  #title{ position:fixed; left:28px; top:24px; color:var(--sumi); font-size:11px; letter-spacing:.3em; }
+</style>
+</head>
+<body>
+<div id="codewall"></div>
+<div id="shadow"></div>
+<div id="stage"></div>
+<div id="title">THIS IS NOT A ROCK <span style="color:var(--shu)">·</span> STUDY V</div>
+<div id="hud"><span class="dot">●</span> <span class="seed" id="seedlabel"></span><span class="smp" id="smp"></span></div>
+<button id="reroll">REROLL</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ================= seeded RNG ================= */
+function makeSeedHex(){
+  let s='0x'; for(let i=0;i<16;i++) s+=Math.floor(Math.random()*16).toString(16);
+  return s;
+}
+function mulberry32(a){
+  return function(){
+    a|=0; a=a+0x6D2B79F5|0;
+    let t=Math.imul(a^a>>>15,1|a);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296;
+  };
+}
+function hashToInt(hex){
+  let h=0; for(let i=2;i<hex.length;i++){h=(h*31+hex.charCodeAt(i))|0;} return h;
+}
+
+/* ================= CPU simplex (geometry) ================= */
+function SimplexNoise(rand){
+  const grad3=[[1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],[1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],[0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]];
+  const p=[]; for(let i=0;i<256;i++)p[i]=i;
+  for(let i=255;i>0;i--){const n=Math.floor(rand()*(i+1));[p[i],p[n]]=[p[n],p[i]];}
+  const perm=[],pm12=[];
+  for(let i=0;i<512;i++){perm[i]=p[i&255];pm12[i]=perm[i]%12;}
+  const F3=1/3,G3=1/6;
+  this.noise=function(xin,yin,zin){
+    let n0,n1,n2,n3;
+    const s=(xin+yin+zin)*F3;
+    const i=Math.floor(xin+s),j=Math.floor(yin+s),k=Math.floor(zin+s);
+    const t=(i+j+k)*G3;
+    const x0=xin-(i-t),y0=yin-(j-t),z0=zin-(k-t);
+    let i1,j1,k1,i2,j2,k2;
+    if(x0>=y0){
+      if(y0>=z0){i1=1;j1=0;k1=0;i2=1;j2=1;k2=0;}
+      else if(x0>=z0){i1=1;j1=0;k1=0;i2=1;j2=0;k2=1;}
+      else{i1=0;j1=0;k1=1;i2=1;j2=0;k2=1;}
+    }else{
+      if(y0<z0){i1=0;j1=0;k1=1;i2=0;j2=1;k2=1;}
+      else if(x0<z0){i1=0;j1=1;k1=0;i2=0;j2=1;k2=1;}
+      else{i1=0;j1=1;k1=0;i2=1;j2=1;k2=0;}
+    }
+    const x1=x0-i1+G3,y1=y0-j1+G3,z1=z0-k1+G3;
+    const x2=x0-i2+2*G3,y2=y0-j2+2*G3,z2=z0-k2+2*G3;
+    const x3=x0-1+3*G3,y3=y0-1+3*G3,z3=z0-1+3*G3;
+    const ii=i&255,jj=j&255,kk=k&255;
+    let t0=0.6-x0*x0-y0*y0-z0*z0;
+    if(t0<0)n0=0;else{t0*=t0;const g=grad3[pm12[ii+perm[jj+perm[kk]]]];n0=t0*t0*(g[0]*x0+g[1]*y0+g[2]*z0);}
+    let t1=0.6-x1*x1-y1*y1-z1*z1;
+    if(t1<0)n1=0;else{t1*=t1;const g=grad3[pm12[ii+i1+perm[jj+j1+perm[kk+k1]]]];n1=t1*t1*(g[0]*x1+g[1]*y1+g[2]*z1);}
+    let t2=0.6-x2*x2-y2*y2-z2*z2;
+    if(t2<0)n2=0;else{t2*=t2;const g=grad3[pm12[ii+i2+perm[jj+j2+perm[kk+k2]]]];n2=t2*t2*(g[0]*x2+g[1]*y2+g[2]*z2);}
+    let t3=0.6-x3*x3-y3*y3-z3*z3;
+    if(t3<0)n3=0;else{t3*=t3;const g=grad3[pm12[ii+1+perm[jj+1+perm[kk+1]]]];n3=t3*t3*(g[0]*x3+g[1]*y3+g[2]*z3);}
+    return 32*(n0+n1+n2+n3);
+  };
+}
+function fbmJ(nz,x,y,z,oct,lac,gain){
+  let a=0.5,f=1,sum=0,norm=0;
+  for(let o=0;o<oct;o++){sum+=a*nz.noise(x*f,y*f,z*f);norm+=a;a*=gain;f*=lac;}
+  return sum/norm;
+}
+function ridgedJ(nz,x,y,z,oct,lac,gain){
+  let a=0.5,f=1,sum=0,norm=0;
+  for(let o=0;o<oct;o++){const n=1-Math.abs(nz.noise(x*f,y*f,z*f));sum+=a*n*n;norm+=a;a*=gain;f*=lac;}
+  return sum/norm;
+}
+
+/* ================= palettes ================= */
+const PALETTES = [
+  {base:'#6b6154', mid:'#242019', vein:'#cfc5b0', acc:'#8a7a5f'},
+  {base:'#3d4a3e', mid:'#12180f', vein:'#b3c2aa', acc:'#5c705a'},
+  {base:'#63404f', mid:'#1c1016', vein:'#d3aebf', acc:'#a06a55'},
+  {base:'#31505f', mid:'#0d181f', vein:'#a9ccd8', acc:'#4a7284'},
+  {base:'#8a8474', mid:'#39352c', vein:'#e4dfcf', acc:'#a89e86'},
+  {base:'#5d4436', mid:'#1e130c', vein:'#d8b184', acc:'#7e9a8f'}
+];
+
+/* ================= rock shaders ================= */
+const VERT = `
+varying vec3 vObj;
+varying vec3 vNormalW;
+varying vec3 vPosW;
+void main(){
+  vObj = position;
+  vNormalW = normalize(mat3(modelMatrix) * normal);
+  vec4 wp = modelMatrix * vec4(position,1.0);
+  vPosW = wp.xyz;
+  gl_Position = projectionMatrix * viewMatrix * wp;
+}
+`;
+
+const FRAG = `
+precision highp float;
+varying vec3 vObj;
+varying vec3 vNormalW;
+varying vec3 vPosW;
+uniform vec3 uBase; uniform vec3 uMid; uniform vec3 uVein; uniform vec3 uAcc;
+uniform float uSeedOff;
+uniform float uVeinAmt;
+uniform float uGrain;
+uniform float uWarp;
+uniform float uGloss;
+uniform vec3 uCam;
+uniform vec3 uL1;
+uniform vec3 uRand;
+
+vec3 mod289(vec3 x){return x - floor(x*(1.0/289.0))*289.0;}
+vec4 mod289(vec4 x){return x - floor(x*(1.0/289.0))*289.0;}
+vec4 permute(vec4 x){return mod289(((x*34.0)+1.0)*x);}
+vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314*r;}
+float snoise(vec3 v){
+  const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+  const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+  vec3 i = floor(v + dot(v, C.yyy));
+  vec3 x0 = v - i + dot(i, C.xxx);
+  vec3 g = step(x0.yzx, x0.xyz);
+  vec3 l = 1.0 - g;
+  vec3 i1 = min(g.xyz, l.zxy);
+  vec3 i2 = max(g.xyz, l.zxy);
+  vec3 x1 = x0 - i1 + C.xxx;
+  vec3 x2 = x0 - i2 + C.yyy;
+  vec3 x3 = x0 - D.yyy;
+  i = mod289(i);
+  vec4 p = permute(permute(permute(i.z + vec4(0.0,i1.z,i2.z,1.0)) + i.y + vec4(0.0,i1.y,i2.y,1.0)) + i.x + vec4(0.0,i1.x,i2.x,1.0));
+  float n_ = 0.142857142857;
+  vec3 ns = n_ * D.wyz - D.xzx;
+  vec4 j = p - 49.0*floor(p*ns.z*ns.z);
+  vec4 x_ = floor(j*ns.z);
+  vec4 y_ = floor(j - 7.0*x_);
+  vec4 x = x_*ns.x + ns.yyyy;
+  vec4 y = y_*ns.x + ns.yyyy;
+  vec4 h = 1.0 - abs(x) - abs(y);
+  vec4 b0 = vec4(x.xy, y.xy);
+  vec4 b1 = vec4(x.zw, y.zw);
+  vec4 s0 = floor(b0)*2.0 + 1.0;
+  vec4 s1 = floor(b1)*2.0 + 1.0;
+  vec4 sh = -step(h, vec4(0.0));
+  vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
+  vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+  vec3 p0 = vec3(a0.xy, h.x);
+  vec3 p1 = vec3(a0.zw, h.y);
+  vec3 p2 = vec3(a1.xy, h.z);
+  vec3 p3 = vec3(a1.zw, h.w);
+  vec4 norm = taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
+  p0*=norm.x; p1*=norm.y; p2*=norm.z; p3*=norm.w;
+  vec4 m = max(0.6 - vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)), 0.0);
+  m = m*m;
+  return 42.0*dot(m*m, vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
+}
+float fbm(vec3 p){
+  float a=0.5, s=0.0, n=0.0;
+  for(int i=0;i<7;i++){ s += a*snoise(p); n += a; a*=0.52; p*=2.15; }
+  return s/n;
+}
+float ridge(vec3 p){
+  float a=0.5, s=0.0, n=0.0;
+  for(int i=0;i<5;i++){ float v=1.0-abs(snoise(p)); s+=a*v*v; n+=a; a*=0.5; p*=2.2; }
+  return s/n;
+}
+float bumpH(vec3 p){
+  return fbm(p*7.0) * 0.55 + ridge(p*11.0) * 0.45;
+}
+float hash12(vec2 p){
+  vec3 p3 = fract(vec3(p.xyx) * .1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
+
+/* procedural studio environment */
+vec3 envLight(vec3 d, float rough){
+  vec3 sky = vec3(0.95,0.96,1.00);
+  vec3 hor = vec3(0.84,0.82,0.79);
+  vec3 flo = vec3(0.34,0.33,0.32);
+  vec3 col = mix(flo, hor, smoothstep(-0.65, 0.05, d.y));
+  col = mix(col, sky, smoothstep(0.05, 0.85, d.y));
+  float sharp = 1.0 - rough;
+  float k = max(dot(d, uL1), 0.0);
+  col += vec3(1.0,0.965,0.90) * pow(k, mix(5.0, 110.0, sharp)) * mix(0.9, 4.2, sharp);
+  vec3 rimDir = normalize(vec3(-0.72, 0.22, -0.62));
+  float r2 = max(dot(d, rimDir), 0.0);
+  col += vec3(0.72,0.80,0.95) * pow(r2, mix(7.0, 140.0, sharp)) * mix(0.35, 1.8, sharp);
+  return col;
+}
+
+void main(){
+  vec3 p = vObj + vec3(uSeedOff);
+  vec3 Ng = normalize(vNormalW);
+
+  vec3 w = vec3(fbm(p*1.6), fbm(p*1.6 + 5.2), fbm(p*1.6 + 9.7));
+  vec3 q = p + uWarp * w;
+
+  float e = 0.010;
+  float h  = bumpH(q);
+  float hx = bumpH(q + vec3(e,0.0,0.0));
+  float hy = bumpH(q + vec3(0.0,e,0.0));
+  float hz = bumpH(q + vec3(0.0,0.0,e));
+  vec3 grad = vec3(hx-h, hy-h, hz-h)/e;
+  grad = grad - Ng*dot(grad,Ng);
+  vec3 N = normalize(Ng - grad*uGrain);
+
+  float cav = smoothstep(0.05, 0.62, h);
+  float ao = mix(0.24, 1.0, cav);
+  float macro = fbm(p*1.1 + 3.3);
+  ao *= (0.76 + 0.32*smoothstep(-0.6, 0.6, macro));
+
+  /* top-lit occlusion: downward faces see no sky */
+  float skyVis = clamp(N.y*0.5 + 0.5, 0.0, 1.0);
+  ao *= mix(0.30, 1.0, pow(skyVis, 0.85));
+  /* vertical falloff: light pools on top, drains below */
+  ao *= mix(0.55, 1.0, smoothstep(-1.7, 1.1, vPosW.y));
+
+  float body = fbm(q*2.2);
+  float t = clamp(0.5 + 0.5*body, 0.0, 1.0);
+  vec3 col = mix(uMid, uBase, smoothstep(0.12, 0.88, t));
+  float mineral = fbm(q*4.2 + 13.1);
+  col = mix(col, uAcc, smoothstep(0.3, 0.8, 0.5+0.5*mineral)*0.4);
+  float vr = ridge(q*3.0 + 7.7);
+  float vein = smoothstep(0.78, 0.96, vr);
+  col = mix(col, uVein, vein*uVeinAmt);
+  float micro = fbm(q*22.0);
+  col *= (0.90 + 0.16*micro);
+
+  float gl = smoothstep(0.45, 0.85, 0.5 + 0.5*fbm(q*2.6 + 2.2));
+  gl = max(gl, vein*0.9);
+  gl *= uGloss;
+  float rough = 1.0 - gl;
+
+  /* per-pixel per-frame random */
+  float r1 = hash12(gl_FragCoord.xy + uRand.xy*817.0);
+  float r2 = hash12(gl_FragCoord.yx + uRand.yz*311.0);
+  float r3 = hash12(gl_FragCoord.xy*1.7 + uRand.zx*631.0);
+  vec3 rnd = vec3(r1,r2,r3)*2.0 - 1.0;
+
+  /* soft key light: jitter direction per sample */
+  vec3 L = normalize(uL1 + rnd*0.10);
+  float d1 = max(dot(N,L),0.0);
+  d1 = pow(d1, 1.30);
+
+  vec3 V = normalize(uCam - vPosW);
+  vec3 R = reflect(-V, N);
+  /* glossy blur: jitter reflection lobe by roughness */
+  vec3 Rj = normalize(R + rnd*(0.03 + rough*0.42));
+
+  float ndv = max(dot(N,V),0.0);
+  float fres = pow(1.0-ndv, 5.0);
+  float F0 = mix(0.030, 0.075, gl);
+  float F = F0 + (1.0-F0)*fres;
+
+  /* diffuse: direct soft key + env(N) */
+  vec3 diffEnv = envLight(normalize(N + rnd*0.25), 1.0);
+  vec3 diff = col * (0.42*diffEnv + 1.15*d1*vec3(1.0,0.96,0.90));
+  diff *= ao;
+
+  /* specular: env reflection, glossy-blurred */
+  vec3 specEnv = envLight(Rj, rough);
+  vec3 spec = specEnv * F * mix(0.15, 1.35, gl);
+  spec *= mix(ao, 1.0, 0.45);
+
+  vec3 lit = diff + spec;
+
+  gl_FragColor = vec4(lit, 1.0);
+}
+`;
+
+/* ================= accumulation shaders ================= */
+const QUAD_VERT = `
+varying vec2 vUv;
+void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
+`;
+const ACCUM_FRAG = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D tPrev;
+uniform sampler2D tNew;
+uniform float uSample;
+void main(){
+  vec4 prev = texture2D(tPrev, vUv);
+  vec4 cur  = texture2D(tNew, vUv);
+  gl_FragColor = mix(prev, cur, 1.0/uSample);
+}
+`;
+const DISPLAY_FRAG = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D tAccum;
+vec3 aces(vec3 x){
+  return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0);
+}
+void main(){
+  vec4 a = texture2D(tAccum, vUv);
+  vec3 c = a.rgb;
+  c = aces(c*0.95);
+  c = pow(c, vec3(0.4545));
+  gl_FragColor = vec4(c*a.a, a.a);
+}
+`;
+
+/* ================= setup ================= */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({antialias:false, alpha:true, premultipliedAlpha:true});
+const DPR = Math.min(window.devicePixelRatio, 1.5);
+renderer.setPixelRatio(DPR);
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x000000, 0);
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(34, window.innerWidth/window.innerHeight, 0.1, 100);
+camera.position.set(0, 0.15, 6.2);
+
+/* render targets */
+function makeRT(){
+  return new THREE.WebGLRenderTarget(
+    Math.floor(window.innerWidth*DPR), Math.floor(window.innerHeight*DPR),
+    { type: THREE.HalfFloatType, format: THREE.RGBAFormat,
+      minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: true }
+  );
+}
+let rtSample = makeRT();
+let rtA = makeRT();
+let rtB = makeRT();
+
+const quadScene = new THREE.Scene();
+const quadCam = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+const accumMat = new THREE.ShaderMaterial({
+  vertexShader: QUAD_VERT, fragmentShader: ACCUM_FRAG,
+  uniforms:{ tPrev:{value:null}, tNew:{value:null}, uSample:{value:1} }
+});
+const quad = new THREE.Mesh(new THREE.PlaneBufferGeometry(2,2), accumMat);
+quadScene.add(quad);
+
+const dispScene = new THREE.Scene();
+const dispMat = new THREE.ShaderMaterial({
+  vertexShader: QUAD_VERT, fragmentShader: DISPLAY_FRAG,
+  uniforms:{ tAccum:{value:null} }, transparent:true
+});
+dispScene.add(new THREE.Mesh(new THREE.PlaneBufferGeometry(2,2), dispMat));
+
+/* ================= rock ================= */
+let rock=null;
+const MAX_SAMPLES = 600;
+let sampleCount = 0;
+
+function resetAccum(){ sampleCount = 0; }
+
+function buildRock(seedHex){
+  if(rock){ scene.remove(rock); rock.geometry.dispose(); rock.material.dispose(); }
+
+  const rand = mulberry32(hashToInt(seedHex));
+  const nz = new SimplexNoise(rand);
+  const nz2 = new SimplexNoise(rand);
+
+  const lump   = 0.16 + rand()*0.14;
+  const ridgeA = 0.10 + rand()*0.12;
+  const bFreq  = 0.8 + rand()*0.7;
+  const rFreq  = 1.0 + rand()*1.0;
+  const squash = 0.88 + rand()*0.30;
+
+  const geo = new THREE.IcosahedronGeometry(1.35, 6);
+  const pos = geo.attributes.position;
+  const v = new THREE.Vector3();
+  for(let i=0;i<pos.count;i++){
+    v.fromBufferAttribute(pos,i).normalize();
+    const body = fbmJ(nz, v.x*bFreq, v.y*bFreq, v.z*bFreq, 3, 2.0, 0.5);
+    const rd = ridgedJ(nz2, v.x*rFreq, v.y*rFreq, v.z*rFreq, 3, 2.0, 0.5);
+    let r = 1.35*(1 + lump*body + ridgeA*(rd-0.45));
+    pos.setXYZ(i, v.x*r, v.y*r*squash, v.z*r);
+  }
+  geo.computeVertexNormals();
+
+  const pal = PALETTES[Math.floor(rand()*PALETTES.length)];
+  const jitter = c => {
+    const col = new THREE.Color(c);
+    const hsl = {}; col.getHSL(hsl);
+    col.setHSL((hsl.h + (rand()-0.5)*0.04 + 1)%1,
+      Math.min(Math.max(hsl.s + (rand()-0.5)*0.10,0),1),
+      Math.min(Math.max(hsl.l + (rand()-0.5)*0.05,0),1));
+    return col;
+  };
+
+  const mat = new THREE.ShaderMaterial({
+    vertexShader: VERT,
+    fragmentShader: FRAG,
+    uniforms:{
+      uBase:{value: jitter(pal.base)},
+      uMid:{value: jitter(pal.mid)},
+      uVein:{value: jitter(pal.vein)},
+      uAcc:{value: jitter(pal.acc)},
+      uSeedOff:{value: rand()*100},
+      uVeinAmt:{value: 0.45 + rand()*0.45},
+      uGrain:{value: 0.30 + rand()*0.28},
+      uWarp:{value: 0.55 + rand()*0.85},
+      uGloss:{value: 0.40 + rand()*0.50},
+      uCam:{value: camera.position.clone()},
+      uL1:{value: new THREE.Vector3(0.35,5.6,1.05).normalize()},
+      uRand:{value: new THREE.Vector3()}
+    }
+  });
+
+  rock = new THREE.Mesh(geo, mat);
+  rock.rotation.set(rand()*0.5-0.25, rand()*Math.PI*2, rand()*0.3-0.15);
+  scene.add(rock);
+
+  document.getElementById('seedlabel').textContent = seedHex;
+  resetAccum();
+}
+
+/* ================= interaction: drag to rotate ================= */
+let dragging=false, px=0, py=0;
+stage.addEventListener('pointerdown', e=>{
+  dragging=true; px=e.clientX; py=e.clientY;
+  stage.classList.add('grabbing');
+});
+window.addEventListener('pointermove', e=>{
+  if(!dragging || !rock) return;
+  const dx=(e.clientX-px)/window.innerWidth;
+  const dy=(e.clientY-py)/window.innerHeight;
+  px=e.clientX; py=e.clientY;
+  rock.rotation.y += dx*3.2;
+  rock.rotation.x += dy*2.2;
+  resetAccum();
+});
+window.addEventListener('pointerup', ()=>{ dragging=false; stage.classList.remove('grabbing'); });
+
+/* ================= code wall ================= */
+function fillCodeWall(){
+  const src = document.querySelectorAll('script')[1].textContent.replace(/\s+/g,' ').trim();
+  let out=''; while(out.length<14000) out += src + '  ';
+  document.getElementById('codewall').textContent = out;
+}
+
+let seed = makeSeedHex();
+buildRock(seed);
+fillCodeWall();
+
+document.getElementById('reroll').addEventListener('click', ()=>{
+  seed = makeSeedHex();
+  buildRock(seed);
+});
+
+window.addEventListener('resize', ()=>{
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  rtSample.dispose(); rtA.dispose(); rtB.dispose();
+  rtSample = makeRT(); rtA = makeRT(); rtB = makeRT();
+  resetAccum();
+});
+
+/* ================= progressive loop ================= */
+const smpLabel = document.getElementById('smp');
+
+function renderSample(){
+  sampleCount++;
+
+  /* sub-pixel camera jitter for AA */
+  const jx = (Math.random()-0.5), jy = (Math.random()-0.5);
+  const w = Math.floor(window.innerWidth*DPR), hgt = Math.floor(window.innerHeight*DPR);
+  camera.setViewOffset(w, hgt, jx, jy, w, hgt);
+  camera.updateProjectionMatrix();
+
+  rock.material.uniforms.uRand.value.set(Math.random(), Math.random(), Math.random());
+  rock.material.uniforms.uCam.value.copy(camera.position);
+
+  /* 1) render rock sample */
+  renderer.setRenderTarget(rtSample);
+  renderer.clear();
+  renderer.render(scene, camera);
+
+  /* 2) accumulate into rtB from rtA */
+  accumMat.uniforms.tPrev.value = rtA.texture;
+  accumMat.uniforms.tNew.value = rtSample.texture;
+  accumMat.uniforms.uSample.value = sampleCount;
+  renderer.setRenderTarget(rtB);
+  renderer.render(quadScene, quadCam);
+
+  /* 3) display */
+  dispMat.uniforms.tAccum.value = rtB.texture;
+  renderer.setRenderTarget(null);
+  renderer.clear();
+  renderer.render(dispScene, quadCam);
+
+  /* swap */
+  const tmp = rtA; rtA = rtB; rtB = tmp;
+
+  camera.clearViewOffset();
+}
+
+(function animate(){
+  requestAnimationFrame(animate);
+  if(!rock) return;
+  if(sampleCount < MAX_SAMPLES){
+    renderSample();
+    smpLabel.textContent = 'S ' + sampleCount + '/' + MAX_SAMPLES;
+  }
+})();
+</script>
+</body>
+</html>

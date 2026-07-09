@@ -1031,6 +1031,60 @@
       file: 'works/ink_moss_mineral_karesansui_ripple_v2.html',
       still: ''
     },
+    {
+      no: 'F059', version: 'v2', status: 'current',
+      project: 'ALMANA',
+      use: 'ツール / 動画工房',
+      ja: '3D紋章 動画工房 v2 — 呼吸するホールド',
+      en: '3D Crest Reel Studio v2',
+      file: 'works/almana-3d-mon-studio-v2.html',
+      still: ''
+    },
+    {
+      no: 'F060', version: 'v1', status: 'current',
+      project: 'ALMANA',
+      use: '本体 / Flow',
+      ja: 'Flow ダッシュボード — 世界×あなた',
+      en: 'Flow Dashboard — World x You',
+      file: 'works/almana-flow-dashboard.html',
+      still: ''
+    },
+    {
+      no: 'F061', version: 'v1', status: 'current',
+      project: 'STUDIES',
+      use: '鑑賞 / Standalone',
+      ja: 'これは岩ではない — 習作VI（静止）',
+      en: 'This Is Not A Rock — Study VI (Still)',
+      file: 'works/this-is-not-a-rock-study-vi.html',
+      still: ''
+    },
+    {
+      no: 'F062', version: 'v1', status: 'current',
+      project: 'STUDIES',
+      use: '鑑賞 / Standalone',
+      ja: 'これは岩ではない — 習作V（可動）',
+      en: 'This Is Not A Rock — Study V (Interactive)',
+      file: 'works/this-is-not-a-rock-study-v.html',
+      still: ''
+    },
+    {
+      no: 'F063', version: 'v1', status: 'current',
+      project: 'STUDIES',
+      use: '鑑賞 / Standalone',
+      ja: 'これは岩ではない — 習作VII（鉱物）',
+      en: 'This Is Not A Rock — Study VII (Mineral)',
+      file: 'works/this-is-not-a-rock-study-vii-mineral.html',
+      still: ''
+    },
+    {
+      no: 'F064', version: 'v1', status: 'current',
+      project: 'STUDIES',
+      use: '鑑賞 / Standalone',
+      ja: 'これは岩ではない — 習作VII（地衣）',
+      en: 'This Is Not A Rock — Study VII (Lichen)',
+      file: 'works/this-is-not-a-rock-study-vii-lichen.html',
+      still: ''
+    },
   ];
 
   // ── 技法メタ（各作品のコードから命名 / works/<file> をキーに WORKS へマージ）──
@@ -1102,6 +1156,12 @@
     'works/almana-daily.html': { family: 'レイアウト研究', tech: '曜日駆動の投稿キット＋カードclient生成', how: '曜日(JST)→テーマで文面を決定的に提示し、ストラクチャーカードをcanvasでclient生成→保存。server不要' },
     'works/almana-3d-mon-studio.html': { family: 'アトラクタ', tech: '正典12タイプの3Dレリーフ紋章・10秒動画', how: '正典2D de Jongをz=密度起伏で3Dレリーフ化、累積生成→フェード→文→ALMANAの10秒をThree.jsで描きWebM録画' },
     'works/ink_moss_mineral_karesansui_ripple_v2.html': { family: '枯山水・線画', tech: 'インク滴と砂紋の同心波紋', how: '波源から半径拡大する同心リングを sin(a×4) でゆらぎ、楕円stretchとzone偏向で砂紋化しmultiply合成' },
+    'works/almana-3d-mon-studio-v2.html': { family: 'アトラクタ', tech: '3D de Jongレリーフ（密度→z起伏）', how: 'de Jong写像の到達密度をlogでz起伏化し白点を加算合成、波から紋へ収束させる' },
+    'works/almana-flow-dashboard.html': { family: 'レイアウト研究', tech: '墨セグメント計器の三層組版', how: 'ヘアライン罫で世界/自分/交差点を三層に区切り、5分割の墨セグメント計器と◎○ー△×の字譜で量を静かに示す' },
+    'works/this-is-not-a-rock-study-vi.html': { family: '3D多面体', tech: '隆起ノイズ変位の擬岩を累積現像', how: '正20面体をfbm＋リッジノイズで変位し、自己影レイマーチとカメラジッター累積でスタジオ撮影する' },
+    'works/this-is-not-a-rock-study-v.html': { family: '3D多面体', tech: 'ドラッグで回す隆起ノイズの擬岩', how: '正20面体をfbm＋リッジで変位し、ドラッグ回転のたび累積リセットしてスタジオ現像する' },
+    'works/this-is-not-a-rock-study-vii-mineral.html': { family: '3D多面体', tech: '劈開面と表面下散乱の擬似結晶', how: '正20面体を切断面で劈開させ、voronoiで面法線を割り、表面下散乱で結晶を累積現像する' },
+    'works/this-is-not-a-rock-study-vii-lichen.html': { family: '3D多面体', tech: '苔と地衣が生態遷移する擬岩', how: '擬岩の窪みに水を溜め湿った陰に苔を、voronoiの円で地衣を乾いた露出面に生やす' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

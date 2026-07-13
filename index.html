@@ -1085,6 +1085,15 @@
       file: 'works/this-is-not-a-rock-study-vii-lichen.html',
       still: ''
     },
+    {
+      no: 'F000', version: 'v1', status: 'current',
+      project: 'JINEN',
+      use: '検体 / Specimen',
+      ja: '錆の庭',
+      en: 'Rust Garden - Aging DLA',
+      file: 'works/rust-garden.html',
+      still: ''
+    },
   ];
 
   // ── 技法メタ（各作品のコードから命名 / works/<file> をキーに WORKS へマージ）──
@@ -1162,6 +1171,7 @@
     'works/this-is-not-a-rock-study-v.html': { family: '3D多面体', tech: 'ドラッグで回す隆起ノイズの擬岩', how: '正20面体をfbm＋リッジで変位し、ドラッグ回転のたび累積リセットしてスタジオ現像する' },
     'works/this-is-not-a-rock-study-vii-mineral.html': { family: '3D多面体', tech: '劈開面と表面下散乱の擬似結晶', how: '正20面体を切断面で劈開させ、voronoiで面法線を割り、表面下散乱で結晶を累積現像する' },
     'works/this-is-not-a-rock-study-vii-lichen.html': { family: '3D多面体', tech: '苔と地衣が生態遷移する擬岩', how: '擬岩の窪みに水を溜め湿った陰に苔を、voronoiの円で地衣を乾いた露出面に生やす' },
+    'works/rust-garden.html': { family: '自己組織化', tech: '拡散律速凝集（経年DLA）', how: '乱歩粒子がMoore近傍接触で確率付着し樹枝状に凝集。訪問ごとの成長をlocalStorageへ永続' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

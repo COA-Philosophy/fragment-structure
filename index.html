@@ -1094,6 +1094,24 @@
       file: 'works/rust-garden.html',
       still: ''
     },
+    {
+      no: 'F065', version: 'v1', status: 'current',
+      project: 'JINEN',
+      use: '検体 No.001 / Specimen',
+      ja: '貫入',
+      en: 'Kannyu - Fired Crackle',
+      file: 'works/kannyu.html',
+      still: ''
+    },
+    {
+      no: 'F066', version: 'v1', status: 'current',
+      project: 'JINEN',
+      use: '検体 No.002 / Specimen',
+      ja: '梅花皮',
+      en: 'Kairagi - Long-form Crackle Kiln',
+      file: 'works/kairagi.html',
+      still: ''
+    },
   ];
 
   // ── 技法メタ（各作品のコードから命名 / works/<file> をキーに WORKS へマージ）──
@@ -1172,6 +1190,8 @@
     'works/this-is-not-a-rock-study-vii-mineral.html': { family: '3D多面体', tech: '劈開面と表面下散乱の擬似結晶', how: '正20面体を切断面で劈開させ、voronoiで面法線を割り、表面下散乱で結晶を累積現像する' },
     'works/this-is-not-a-rock-study-vii-lichen.html': { family: '3D多面体', tech: '苔と地衣が生態遷移する擬岩', how: '擬岩の窪みに水を溜め湿った陰に苔を、voronoiの円で地衣を乾いた露出面に生やす' },
     'works/rust-garden.html': { family: '自己組織化', tech: '拡散律速凝集（経年DLA）', how: '乱歩粒子がMoore近傍接触で確率付着し樹枝状に凝集。訪問ごとの成長をlocalStorageへ永続' },
+    'works/kannyu.html': { family: '自己組織化', tech: '応力テンソル場の逐次クラック伝播', how: 'σx・σy・τxyの張力場を冷却で高め、最弱点から法線応力駆動でひびを伝播・緩和。未見の種で一回焼成し封印' },
+    'works/kairagi.html': { family: '自己組織化', tech: '多段収縮の入れ子クラック窯', how: '窯勾配と厚み場の上で3段の冷却を繰り返し、緩和長を縮めながらテンソル応力伝播で島の中へ島を刻む。種は非封印の長形' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

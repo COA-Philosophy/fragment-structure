@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>貫入 — Kannyū / No.001</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f2ecdf;
+    --paper-2:#ece3d0;
+    --ink:#26201a;
+    --ink-soft:#6a5f52;
+    --rust:#9c4423;
+    --hair:rgba(38,32,26,.22);
+    --hair-2:rgba(38,32,26,.45);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{background:var(--paper)}
+  body{
+    min-height:100vh;
+    font-family:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+    color:var(--ink);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:26px;
+    padding:56px 24px 40px;
+    position:relative;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:3;opacity:.05;
+    mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:2;opacity:.055;
+    mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='900'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+  }
+  .frame{position:fixed;inset:10px;border:1px solid var(--hair);pointer-events:none;z-index:4}
+  .frame i{position:absolute;width:13px;height:13px;border:0 solid var(--rust)}
+  .frame i:nth-child(1){top:-1px;left:-1px;border-top-width:2px;border-left-width:2px}
+  .frame i:nth-child(2){top:-1px;right:-1px;border-top-width:2px;border-right-width:2px}
+  .frame i:nth-child(3){bottom:-1px;left:-1px;border-bottom-width:2px;border-left-width:2px}
+  .frame i:nth-child(4){bottom:-1px;right:-1px;border-bottom-width:2px;border-right-width:2px}
+
+  .kicker{
+    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.42em;
+    color:var(--ink-soft);text-transform:uppercase;
+  }
+  .stage{
+    width:100%;max-width:1180px;
+    display:grid;grid-template-columns:minmax(0,1fr) 268px;gap:28px;
+    align-items:start;
+  }
+  .plate{
+    border:1px solid var(--hair-2);
+    background:var(--paper-2);
+    padding:12px;
+  }
+  canvas{display:block;width:100%;height:auto}
+
+  .label{
+    border:1px solid var(--hair-2);
+    padding:24px 22px 18px;
+    display:flex;flex-direction:column;gap:14px;
+    position:relative;
+  }
+  .no{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.35em;color:var(--rust)}
+  h1{font-size:34px;font-weight:800;letter-spacing:.06em;line-height:1.2}
+  .en{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.22em;color:var(--ink-soft);margin-top:4px}
+  .desc{font-size:12.5px;line-height:2;color:var(--ink-soft);border-top:1px solid var(--hair);padding-top:13px}
+  dl{display:flex;flex-direction:column;border-top:1px solid var(--hair)}
+  dl div{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px solid var(--hair)}
+  dt{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.16em;color:var(--ink-soft);white-space:nowrap}
+  dd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:500;text-align:right;word-break:break-all}
+  button{
+    font-family:"IBM Plex Mono",monospace;font-size:12.5px;letter-spacing:.3em;
+    padding:12px 10px;border:1px solid var(--ink);background:transparent;color:var(--ink);
+    cursor:pointer;transition:background .25s,color .25s,border-color .25s;
+  }
+  button:hover:not(:disabled){background:var(--rust);border-color:var(--rust);color:var(--paper)}
+  button:disabled{opacity:.35;cursor:default}
+  .rules{font-family:"IBM Plex Mono",monospace;font-size:10px;line-height:2.05;color:var(--ink-soft)}
+  .rules b{color:var(--rust);font-weight:500}
+  .seal{
+    align-self:flex-end;
+    width:34px;height:34px;background:var(--rust);color:var(--paper);
+    display:flex;align-items:center;justify-content:center;
+    font-size:17px;font-weight:700;transform:rotate(2deg);
+    box-shadow:inset 0 0 0 1.5px var(--paper), inset 0 0 0 3px var(--rust);
+  }
+  .foot{
+    font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.3em;
+    color:var(--ink-soft);
+  }
+  @media (max-width:900px){
+    .stage{grid-template-columns:1fr}
+    body{padding:40px 16px 32px}
+  }
+</style>
+</head>
+<body>
+<div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+<p class="kicker">Fragments of Structure</p>
+
+<div class="stage">
+  <div class="plate">
+    <canvas id="cv" width="1440" height="960" aria-label="貫入 — 応力緩和による逐次クラック伝播の一回焼成。"></canvas>
+  </div>
+
+  <aside class="label">
+    <div>
+      <p class="no">SPECIMEN — NO.001</p>
+      <h1>貫入</h1>
+      <p class="en">KANNYŪ — FIRED CRACKLE</p>
+    </div>
+    <p class="desc">釉は素地より縮む。張力は最も弱い点で破れ、走ったひびが応力を逃がし、次のひびの行き先を変える。これは一度きりの冷却の記録である。</p>
+    <dl>
+      <div><dt>系 SYSTEM</dt><dd>応力緩和・逐次伝播</dd></div>
+      <div><dt>形式 FORM</dt><dd>焼成 Fired（一回性）</dd></div>
+      <div><dt>種 SEED</dt><dd id="seed">—</dd></div>
+      <div><dt>封印 SEAL</dt><dd id="sealhash">—</dd></div>
+      <div><dt>欠陥 FLAWS</dt><dd id="flaws">—</dd></div>
+      <div><dt>冷却 COOLING</dt><dd id="cooling">—</dd></div>
+      <div><dt>格子 GRID</dt><dd id="grid">—</dd></div>
+      <div><dt>ひび CRACKS</dt><dd id="cracks">—</dd></div>
+      <div><dt>発色 PIGMENT</dt><dd>interpretive: 解放量→線幅</dd></div>
+      <div><dt>状態 STATE</dt><dd id="state">窯の中</dd></div>
+    </dl>
+    <button id="replay" disabled>↻ 再演 — RE-ENACT</button>
+    <p class="rules"><b>開示</b> — 諸元と封印値は常時、作品と同じ平面に。<br><b>不選別</b> — 種は封印時刻より。未見のまま焼成し、美醜による再焼成はしない（無効: 実行不能・ひび0本・60秒超）。<br><b>焼成</b> — この一回のみ。再演は記録の再生であり、再実行ではない。</p>
+    <div class="seal" aria-hidden="true">然</div>
+  </aside>
+</div>
+
+<p class="foot">じねん — おのずから生じた秩序への敬意</p>
+
+<noscript><p style="font-size:13px">この器は JavaScript の窯でだけ焼かれます。</p></noscript>
+
+<script>
+(function(){
+  "use strict";
+
+  var SEALED = {
+    engine: "kannyu-engine v1",
+    grid: [480, 320],
+    seed: 0x5A61CEB3,
+    flaws: { count: 24, rMin: 3, rMax: 6, depth: 0.45 },
+    strength: { base: 1.0, coarse: 0.20, fine: 0.09, coarseScale: 84, fineScale: 19 },
+    stress: { init: 0.55, noise: 0.10, shearNoise: 0.18, noiseScale: 60, shearScale: 110, coolStep: 0.004, coolMax: 0.92 },
+    crack: { arrest: 0.30, turnPenalty: 0.03, spread: 2, maxLen: 900, jitter: 0.008, snap: 5 },
+    relief: { radius: 18, amount: 0.60, shape: 8, compliance: 0.92 }
+  };
+  // 封印 2026-07-13T15時(JST) — 種は封印時刻 1783927787187ms より導出、未見のまま焼成。
+  // 調律用シード上書きはここで除去された。窯に入れた後は触れない。
+
+  var W = SEALED.grid[0], H = SEALED.grid[1], S = 3;
+  var DIRX = [1, 0.9238795325112867, 0.7071067811865476, 0.3826834323650898, 0, -0.3826834323650898, -0.7071067811865476, -0.9238795325112867, -1, -0.9238795325112867, -0.7071067811865476, -0.3826834323650898, 0, 0.3826834323650898, 0.7071067811865476, 0.9238795325112867];
+  var DIRY = [0, 0.3826834323650898, 0.7071067811865476, 0.9238795325112867, 1, 0.9238795325112867, 0.7071067811865476, 0.3826834323650898, 0, -0.3826834323650898, -0.7071067811865476, -0.9238795325112867, -1, -0.9238795325112867, -0.7071067811865476, -0.3826834323650898];
+  // 法線成分の射影: 進行方向 h のひび（法線 n=(-DIRY,DIRX)）は
+  // 法線応力 σn = σx·nx² + σy·ny² + 2τxy·nx·ny に駆動され、その成分を緩和する
+  var NX2 = [], NY2 = [], NXY = [];
+  for (var dh = 0; dh < 16; dh++){
+    NX2.push(DIRY[dh] * DIRY[dh]);
+    NY2.push(DIRX[dh] * DIRX[dh]);
+    NXY.push(-DIRY[dh] * DIRX[dh]);
+  }
+
+  function PRNG(state){
+    var a = state >>> 0;
+    return function(){
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function hash2(ix, iy, sd){
+    var h = Math.imul(ix, 374761393) ^ Math.imul(iy, 668265263) ^ sd;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  }
+  function vnoise(x, y, scale, sd){
+    var gx = x / scale, gy = y / scale;
+    var ix = Math.floor(gx), iy = Math.floor(gy);
+    var fx = gx - ix, fy = gy - iy;
+    var sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+    var a = hash2(ix, iy, sd), b = hash2(ix + 1, iy, sd);
+    var c = hash2(ix, iy + 1, sd), d = hash2(ix + 1, iy + 1, sd);
+    return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+  }
+  function jit(x, y, k){
+    var h = (Math.imul(x, 73856093) ^ Math.imul(y, 19349663) ^ Math.imul(k, 83492791)) >>> 0;
+    return ((h % 2048) / 1024) - 1;
+  }
+
+  function fire(P){
+    var rng = PRNG(P.seed);
+    var sdA = (P.seed ^ 0x9E3779B9) >>> 0, sdB = (P.seed ^ 0x85EBCA6B) >>> 0, sdC = (P.seed ^ 0xC2B2AE35) >>> 0, sdD = (P.seed ^ 0x27D4EB2F) >>> 0;
+    var N = W * H;
+    var tau = new Float32Array(N);
+    var sigx = new Float32Array(N), sigy = new Float32Array(N), sigxy = new Float32Array(N);
+    var relx = new Float32Array(N), rely = new Float32Array(N);
+    var cracked = new Uint8Array(N);
+    var x, y, i;
+    var sdE = (P.seed ^ 0x165667B1) >>> 0;
+
+    for (y = 0; y < H; y++) for (x = 0; x < W; x++){
+      i = y * W + x;
+      tau[i] = P.strength.base
+        + P.strength.coarse * (vnoise(x, y, P.strength.coarseScale, sdA) - 0.5) * 2
+        + P.strength.fine * (vnoise(x, y, P.strength.fineScale, sdB) - 0.5) * 2;
+      sigx[i] = P.stress.init + P.stress.noise * (vnoise(x, y, P.stress.noiseScale, sdC) - 0.5) * 2;
+      sigy[i] = P.stress.init + P.stress.noise * (vnoise(x, y, P.stress.noiseScale, sdD) - 0.5) * 2;
+      sigxy[i] = P.stress.shearNoise * (vnoise(x, y, P.stress.shearScale, sdE) - 0.5) * 2;
+      relx[i] = 1; rely[i] = 1;
+    }
+    function sn(ii, h){ return sigx[ii] * NX2[h] + sigy[ii] * NY2[h] + 2 * sigxy[ii] * NXY[h]; }
+
+    var flaws = [];
+    var k, fx, fy, fr, dx, dy, d2;
+    for (k = 0; k < P.flaws.count; k++){
+      fx = 4 + Math.floor(rng() * (W - 8));
+      fy = 4 + Math.floor(rng() * (H - 8));
+      fr = P.flaws.rMin + rng() * (P.flaws.rMax - P.flaws.rMin);
+      flaws.push([fx, fy, fr]);
+      var R = Math.ceil(fr);
+      for (dy = -R; dy <= R; dy++) for (dx = -R; dx <= R; dx++){
+        var nx = fx + dx, ny = fy + dy;
+        if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        d2 = Math.sqrt(dx * dx + dy * dy);
+        if (d2 > fr) continue;
+        var f = P.flaws.depth + (1 - P.flaws.depth) * (d2 / fr);
+        i = ny * W + nx;
+        if (f < 1) tau[i] *= f;
+      }
+    }
+
+    var RR = P.relief.radius, sh2 = P.relief.shape * P.relief.shape;
+    function relieve(cx, cy, h){
+      var kx = NX2[h], ky = NY2[h], kxy = NXY[h];
+      var dyy, dxx;
+      for (dyy = -RR; dyy <= RR; dyy++){
+        var yy = cy + dyy;
+        if (yy < 0 || yy >= H) continue;
+        for (dxx = -RR; dxx <= RR; dxx++){
+          var xx = cx + dxx;
+          if (xx < 0 || xx >= W) continue;
+          var dd = dxx * dxx + dyy * dyy;
+          if (dd > RR * RR) continue;
+          var f = P.relief.amount / (1 + dd / sh2);
+          var ii = yy * W + xx;
+          var snc = sigx[ii] * kx + sigy[ii] * ky + 2 * sigxy[ii] * kxy;
+          if (snc > 0){
+            var D = f * snc;
+            sigx[ii] -= D * kx;
+            sigy[ii] -= D * ky;
+            sigxy[ii] -= D * kxy;
+          }
+          var rf = relx[ii] * (1 - P.relief.compliance * f * kx);
+          relx[ii] = rf < 0.02 ? 0.02 : rf;
+          rf = rely[ii] * (1 - P.relief.compliance * f * ky);
+          rely[ii] = rf < 0.02 ? 0.02 : rf;
+        }
+      }
+    }
+
+    function findNucleus(){
+      var best = -1, bv = 0, v, m, r;
+      for (var ii = 0; ii < N; ii++){
+        if (cracked[ii]) continue;
+        m = (sigx[ii] - sigy[ii]) * 0.5;
+        r = Math.sqrt(m * m + sigxy[ii] * sigxy[ii]);
+        v = (sigx[ii] + sigy[ii]) * 0.5 + r - tau[ii];
+        if (v > bv){ bv = v; best = ii; }
+      }
+      return best;
+    }
+
+    var events = [], stats = { cracks: 0, segs: 0, junc: 0 };
+
+    function snapScan(cx, cy, own){
+      var R = SEALED.crack.snap, bd = 1e9, bx = -1, by = -1;
+      for (var dyy = -R; dyy <= R; dyy++){
+        var yy = cy + dyy;
+        if (yy < 0 || yy >= H) continue;
+        for (var dxx = -R; dxx <= R; dxx++){
+          var xx = cx + dxx;
+          if (xx < 0 || xx >= W) continue;
+          var ii = yy * W + xx;
+          if (!cracked[ii] || own[ii]) continue;
+          var dd = dxx * dxx + dyy * dyy;
+          if (dd < bd){ bd = dd; bx = xx; by = yy; }
+        }
+      }
+      return bx < 0 ? null : [bx, by];
+    }
+
+    function runTip(px, py, h, own, path){
+      var step, dd, bs, bh, bx, by, bi;
+      for (step = 0; step < SEALED.crack.maxLen; step++){
+        var cx = Math.round(px), cy = Math.round(py);
+        var snap = snapScan(cx, cy, own);
+        if (snap){
+          events.push([px, py, snap[0], snap[1], 0.85]);
+          stats.segs++;
+          stats.junc++;
+          break;
+        }
+        bs = -1e9; bh = -1;
+        for (dd = -SEALED.crack.spread; dd <= SEALED.crack.spread; dd++){
+          var nh = (h + dd + 16) & 15;
+          var nx = px + DIRX[nh], ny = py + DIRY[nh];
+          var ncx = Math.round(nx), ncy = Math.round(ny);
+          if (ncx < 1 || ncy < 1 || ncx >= W - 1 || ncy >= H - 1) continue;
+          var ni = ncy * W + ncx;
+          if (own[ni] || cracked[ni]) continue;
+          if (sn(ni, nh) < SEALED.crack.arrest) continue;
+          var sc = sn(ni, nh) - SEALED.crack.turnPenalty * Math.abs(dd) + SEALED.crack.jitter * jit(ncx, ncy, step);
+          if (sc > bs){ bs = sc; bh = nh; bx = nx; by = ny; bi = ni; }
+        }
+        if (bh < 0) break;
+        events.push([px, py, bx, by, sn(bi, bh)]);
+        stats.segs++;
+        px = bx; py = by; h = bh;
+        var mx = Math.round(px), my = Math.round(py), mi = my * W + mx;
+        cracked[mi] = 1;
+        own[mi] = 1;
+        path.push([mi, bh]);
+      }
+    }
+
+    var steps = Math.round((P.stress.coolMax - P.stress.init) / P.stress.coolStep);
+    var cool, guard, nuc;
+    for (cool = 0; cool <= steps; cool++){
+      guard = 0;
+      while (guard++ < 600){
+        nuc = findNucleus();
+        if (nuc < 0) break;
+        var nxx = nuc % W, nyy = (nuc / W) | 0;
+        stats.cracks++;
+        cracked[nuc] = 1;
+        var own = {}; own[nuc] = 1;
+        var bh0 = 0, bv0 = -1e9;
+        for (var hh = 0; hh < 16; hh++){
+          var sx0 = Math.round(nxx + DIRX[hh] * 4), sy0 = Math.round(nyy + DIRY[hh] * 4);
+          if (sx0 < 1 || sy0 < 1 || sx0 >= W - 1 || sy0 >= H - 1) continue;
+          var vv = sn(sy0 * W + sx0, hh) + SEALED.crack.jitter * jit(sx0, sy0, hh);
+          if (vv > bv0){ bv0 = vv; bh0 = hh; }
+        }
+        var path = [[nuc, bh0]];
+        runTip(nxx, nyy, bh0, own, path);
+        runTip(nxx, nyy, (bh0 + 8) & 15, own, path);
+        for (var pc = 0; pc < path.length; pc++){
+          relieve(path[pc][0] % W, (path[pc][0] / W) | 0, path[pc][1]);
+        }
+      }
+      if (cool < steps){
+        for (i = 0; i < N; i++) if (!cracked[i]){
+          sigx[i] += P.stress.coolStep * relx[i];
+          sigy[i] += P.stress.coolStep * rely[i];
+        }
+      }
+    }
+
+    return { events: events, stats: stats, flaws: flaws, steps: steps };
+  }
+
+  // ---------- rendering ----------
+  var cv = document.getElementById("cv");
+  var ctx = cv.getContext("2d");
+  var $ = function(id){ return document.getElementById(id); };
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var hiddenNow = function(){ return document.visibilityState === "hidden"; };
+
+  function paintPlate(flaws){
+    var g = ctx.createRadialGradient(cv.width * 0.46, cv.height * 0.42, 80, cv.width * 0.5, cv.height * 0.5, cv.width * 0.62);
+    g.addColorStop(0, "#e4e8d9");
+    g.addColorStop(1, "#d4dac6");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, cv.width, cv.height);
+    var k;
+    ctx.fillStyle = "rgba(38,32,26,.03)";
+    for (k = 0; k < 2600; k++){
+      var hx = (Math.imul(k, 374761393) >>> 8) % cv.width;
+      var hy = (Math.imul(k, 668265263) >>> 8) % cv.height;
+      ctx.fillRect(hx, hy, 2, 2);
+    }
+    ctx.save();
+    ctx.strokeStyle = "rgba(38,32,26,.13)";
+    ctx.lineWidth = 1;
+    for (k = 0; k < flaws.length; k++){
+      ctx.beginPath();
+      ctx.arc(flaws[k][0] * S, flaws[k][1] * S, flaws[k][2] * S + 4, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawSeg(e, gi, total){
+    var t = total <= 1 ? 1 : gi / (total - 1);
+    var w = 1.1 + 2.2 * Math.min(1, e[4] / 1.25);
+    ctx.strokeStyle = "rgba(96,66,46,.08)";
+    ctx.lineWidth = w * 3.4;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(e[0] * S, e[1] * S);
+    ctx.lineTo(e[2] * S, e[3] * S);
+    ctx.stroke();
+    var shade = 43 + Math.round(14 * t);
+    ctx.strokeStyle = "rgba(" + shade + "," + (shade - 5) + "," + (shade - 10) + ",.92)";
+    ctx.lineWidth = w;
+    ctx.beginPath();
+    ctx.moveTo(e[0] * S, e[1] * S);
+    ctx.lineTo(e[2] * S, e[3] * S);
+    ctx.stroke();
+  }
+
+  function drawAll(res, upto){
+    paintPlate(res.flaws);
+    for (var i = 0; i < upto; i++) drawSeg(res.events[i], i, res.events.length);
+  }
+
+  var fmt = function(n){ return n.toLocaleString("ja-JP"); };
+
+  function sealHash(P, cb){
+    var canon = JSON.stringify(P) + "|" + P.engine;
+    if (window.crypto && crypto.subtle && crypto.subtle.digest){
+      var buf = new TextEncoder().encode(canon);
+      crypto.subtle.digest("SHA-256", buf).then(function(h){
+        var a = new Uint8Array(h), s = "";
+        for (var i = 0; i < 6; i++) s += a[i].toString(16).padStart(2, "0");
+        cb("sha256:" + s);
+      }, function(){ cb(fnv(canon)); });
+    } else cb(fnv(canon));
+    function fnv(str){
+      var h = 0x811c9dc5;
+      for (var i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+      return "fnv1a:" + (h >>> 0).toString(16).padStart(8, "0");
+    }
+  }
+
+  // ---------- firing ----------
+  var t0 = performance.now();
+  var res = fire(SEALED);
+  var t1 = performance.now();
+
+  $("seed").textContent = "#" + SEALED.seed.toString(16).padStart(8, "0");
+  $("flaws").textContent = SEALED.flaws.count + "点 焼き込み";
+  $("cooling").textContent = "σ " + SEALED.stress.init + "→" + SEALED.stress.coolMax + " / " + res.steps + "段";
+  $("grid").textContent = W + " × " + H;
+  $("cracks").textContent = fmt(res.stats.cracks) + "本 / 節" + fmt(res.stats.junc);
+  sealHash(SEALED, function(h){ $("sealhash").textContent = h; });
+
+  var invalid = res.stats.cracks === 0 || (t1 - t0) > 60000;
+  if (invalid){
+    $("state").textContent = "無効 — 窯詰め直し対象";
+  } else {
+    $("state").textContent = "焼成済・静置（" + Math.round(t1 - t0) + "ms）";
+  }
+
+  drawAll(res, res.events.length);
+  $("replay").disabled = invalid;
+
+  var animId = 0;
+  $("replay").addEventListener("click", function(){
+    cancelAnimationFrame(animId);
+    $("replay").disabled = true;
+    if (reduced || hiddenNow()){
+      drawAll(res, res.events.length);
+      $("state").textContent = "焼成済・静置";
+      $("replay").disabled = false;
+      return;
+    }
+    $("state").textContent = "再演中";
+    paintPlate(res.flaws);
+    var idx = 0, total = res.events.length;
+    var rate = Math.max(4, Math.ceil(total / 560));
+    function frame(){
+      var stop = Math.min(total, idx + rate);
+      for (; idx < stop; idx++) drawSeg(res.events[idx], idx, total);
+      $("cracks").textContent = fmt(Math.round(res.stats.cracks * idx / total)) + "本 / 節" + fmt(res.stats.junc);
+      if (idx < total){ animId = requestAnimationFrame(frame); }
+      else {
+        $("cracks").textContent = fmt(res.stats.cracks) + "本 / 節" + fmt(res.stats.junc);
+        $("state").textContent = "焼成済・静置";
+        $("replay").disabled = false;
+      }
+    }
+    animId = requestAnimationFrame(frame);
+  });
+})();
+</script>
+</body>
+</html>

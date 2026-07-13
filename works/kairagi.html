@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>梅花皮 — Kairagi / No.002</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f2ecdf;
+    --paper-2:#ece3d0;
+    --ink:#26201a;
+    --ink-soft:#6a5f52;
+    --rust:#9c4423;
+    --hair:rgba(38,32,26,.22);
+    --hair-2:rgba(38,32,26,.45);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{background:var(--paper)}
+  body{
+    min-height:100vh;
+    font-family:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+    color:var(--ink);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:26px;
+    padding:56px 24px 40px;
+    position:relative;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:3;opacity:.05;
+    mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:2;opacity:.055;
+    mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='900'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+  }
+  .frame{position:fixed;inset:10px;border:1px solid var(--hair);pointer-events:none;z-index:4}
+  .frame i{position:absolute;width:13px;height:13px;border:0 solid var(--rust)}
+  .frame i:nth-child(1){top:-1px;left:-1px;border-top-width:2px;border-left-width:2px}
+  .frame i:nth-child(2){top:-1px;right:-1px;border-top-width:2px;border-right-width:2px}
+  .frame i:nth-child(3){bottom:-1px;left:-1px;border-bottom-width:2px;border-left-width:2px}
+  .frame i:nth-child(4){bottom:-1px;right:-1px;border-bottom-width:2px;border-right-width:2px}
+
+  .kicker{
+    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.42em;
+    color:var(--ink-soft);text-transform:uppercase;
+  }
+  .stage{
+    width:100%;max-width:1180px;
+    display:grid;grid-template-columns:minmax(0,1fr) 268px;gap:28px;
+    align-items:start;
+  }
+  .plate{
+    border:1px solid var(--hair-2);
+    background:var(--paper-2);
+    padding:12px;
+  }
+  canvas{display:block;width:100%;height:auto}
+
+  .label{
+    border:1px solid var(--hair-2);
+    padding:24px 22px 18px;
+    display:flex;flex-direction:column;gap:14px;
+    position:relative;
+  }
+  .no{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.35em;color:var(--rust)}
+  h1{font-size:34px;font-weight:800;letter-spacing:.06em;line-height:1.2}
+  .en{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.22em;color:var(--ink-soft);margin-top:4px}
+  .desc{font-size:12.5px;line-height:2;color:var(--ink-soft);border-top:1px solid var(--hair);padding-top:13px}
+  dl{display:flex;flex-direction:column;border-top:1px solid var(--hair)}
+  dl div{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px solid var(--hair)}
+  dt{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.16em;color:var(--ink-soft);white-space:nowrap}
+  dd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:500;text-align:right;word-break:break-all}
+  button{
+    font-family:"IBM Plex Mono",monospace;font-size:12.5px;letter-spacing:.3em;
+    padding:12px 10px;border:1px solid var(--ink);background:transparent;color:var(--ink);
+    cursor:pointer;transition:background .25s,color .25s,border-color .25s;
+  }
+  button:hover:not(:disabled){background:var(--rust);border-color:var(--rust);color:var(--paper)}
+  button:disabled{opacity:.35;cursor:default}
+  button.alt{border-color:var(--ink-soft);color:var(--ink-soft)}
+  .rules{font-family:"IBM Plex Mono",monospace;font-size:10px;line-height:2.05;color:var(--ink-soft)}
+  .rules b{color:var(--rust);font-weight:500}
+  .seal{
+    align-self:flex-end;
+    width:34px;height:34px;background:var(--rust);color:var(--paper);
+    display:flex;align-items:center;justify-content:center;
+    font-size:17px;font-weight:700;transform:rotate(2deg);
+    box-shadow:inset 0 0 0 1.5px var(--paper), inset 0 0 0 3px var(--rust);
+  }
+  .foot{
+    font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.3em;
+    color:var(--ink-soft);
+  }
+  @media (max-width:900px){
+    .stage{grid-template-columns:1fr}
+    body{padding:40px 16px 32px}
+  }
+</style>
+</head>
+<body>
+<div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+<p class="kicker">Fragments of Structure</p>
+
+<div class="stage">
+  <div class="plate">
+    <canvas id="cv" width="1440" height="960" aria-label="梅花皮 — 多段収縮による入れ子クラックの長形。ロードのたびにこの種の一炉が焼成される。"></canvas>
+  </div>
+
+  <aside class="label">
+    <div>
+      <p class="no">SPECIMEN — NO.002</p>
+      <h1>梅花皮</h1>
+      <p class="en">KAIRAGI — LONG-FORM CRACKLE</p>
+    </div>
+    <p class="desc">化粧土は一度では乾かない。収縮のたびに応力の届く距離は縮み、ひびは島の中へ、さらに島を刻む。窯の強い場所ほど細かく、黒い。</p>
+    <dl>
+      <div><dt>系 SYSTEM</dt><dd>多段収縮・張力テンソル伝播</dd></div>
+      <div><dt>形式 FORM</dt><dd>長形 Long-form（全種受容）</dd></div>
+      <div><dt>種 SEED</dt><dd id="seed">—</dd></div>
+      <div><dt>封印 SEAL</dt><dd id="sealhash">—</dd></div>
+      <div><dt>窯場 KILN</dt><dd>縦勾配・上強（還元）</dd></div>
+      <div><dt>化粧土 SLIP</dt><dd>厚み 0.55–1.45（下厚）</dd></div>
+      <div><dt>収縮 STAGES</dt><dd>3段 λ16→7→3.2</dd></div>
+      <div><dt>ひび CRACKS</dt><dd id="cracks">—</dd></div>
+      <div><dt>発色 PIGMENT</dt><dd>interpretive: 窯場→予算・発色／世代→線幅・炭化</dd></div>
+      <div><dt>状態 STATE</dt><dd id="state">窯の中</dd></div>
+    </dl>
+    <button id="replay" disabled>↻ 再演 — RE-ENACT</button>
+    <button id="another" class="alt">◇ 別の種 — ANOTHER SEED</button>
+    <p class="rules"><b>開示</b> — 諸元・封印値・種は常時、作品と同じ平面に。<br><b>不選別</b> — 宣言空間（32bitの全種）のどれも選ばない。作者は種を選んで公開しない（無効: 実行不能・ひび0本・60秒超）。<br><b>長形</b> — 種はURLで指名でき、同じ種は同じ一炉を再演する。</p>
+    <div class="seal" aria-hidden="true">然</div>
+  </aside>
+</div>
+
+<p class="foot">じねん — おのずから生じた秩序への敬意</p>
+
+<noscript><p style="font-size:13px">この窯は JavaScript でだけ火が入ります。</p></noscript>
+
+<script>
+(function(){
+  "use strict";
+
+  // 封印 2026-07-13（長形）: パラメータ空間を確定 — sha256:137495b8631a。
+  // 種は封印に含まれない。32bit空間の全種が等しくこの窯の一炉である。
+  // 調律はここまで。以後のパラメータ変更は別版（v2）として扱う。
+  var SEALED = {
+    engine: "kairagi-engine v1",
+    grid: [480, 320],
+    flaws: { count: 26, rMin: 2.5, rMax: 6, depth: 0.45, bigMax: 2, bigRMin: 9, bigRMax: 16, bigDepth: 0.10 },
+    strength: { base: 1.0, coarse: 0.16, fine: 0.22, coarseScale: 70, fineScale: 7 },
+    kiln: { grad: 0.75, noiseAmp: 0.30, scale: 150 },
+    slip: { thin: 0.55, thick: 1.45, noiseAmp: 0.22, scale: 130 },
+    stress: { init: 0.40, noise: 0.09, shearNoise: 0.20, noiseScale: 55, shearScale: 100, coolStep: 0.006 },
+    stages: [
+      { lam: 16,  budget: 0.95, arrest: 0.30, snap: 5, maxLen: 900 },
+      { lam: 7,   budget: 1.18, arrest: 0.26, snap: 3, maxLen: 48 },
+      { lam: 3.2, budget: 1.45, arrest: 0.22, snap: 2, maxLen: 28 }
+    ],
+    crack: { turnPenalty: 0.03, spread: 2, maxLen: 900, jitter: 0.02 },
+    relief: { amount: 0.60, shapeFrac: 0.45, compliance: 0.92, floor: 0.02 }
+  };
+  // 長形 — シードは封印に含めない。32bit空間の全種が等しく成立する。
+
+  var P = SEALED;
+  var W = P.grid[0], H = P.grid[1], S = 3, N = W * H;
+
+  // ---------- 種の解釈: ?s=<hex> 指名、無指定・不正は時刻導出 ----------
+  var qs = new URLSearchParams(location.search).get("s");
+  var SEED = (function(){
+    var v = qs === null ? NaN : parseInt(qs, 16);
+    if (isNaN(v)) v = Date.now() % 4294967296;
+    return v >>> 0;
+  })();
+
+  var DIRX = [1, 0.9238795325112867, 0.7071067811865476, 0.3826834323650898, 0, -0.3826834323650898, -0.7071067811865476, -0.9238795325112867, -1, -0.9238795325112867, -0.7071067811865476, -0.3826834323650898, 0, 0.3826834323650898, 0.7071067811865476, 0.9238795325112867];
+  var DIRY = [0, 0.3826834323650898, 0.7071067811865476, 0.9238795325112867, 1, 0.9238795325112867, 0.7071067811865476, 0.3826834323650898, 0, -0.3826834323650898, -0.7071067811865476, -0.9238795325112867, -1, -0.9238795325112867, -0.7071067811865476, -0.3826834323650898];
+  // 法線成分の射影: 進行方向 h のひび（法線 n=(-DIRY,DIRX)）は
+  // 法線応力 σn = σx·nx² + σy·ny² + 2τxy·nx·ny に駆動され、その成分を緩和する
+  var NX2 = [], NY2 = [], NXY = [];
+  for (var dh = 0; dh < 16; dh++){
+    NX2.push(DIRY[dh] * DIRY[dh]);
+    NY2.push(DIRX[dh] * DIRX[dh]);
+    NXY.push(-DIRY[dh] * DIRX[dh]);
+  }
+
+  function PRNG(state){
+    var a = state >>> 0;
+    return function(){
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function hash2(ix, iy, sd){
+    var h = Math.imul(ix, 374761393) ^ Math.imul(iy, 668265263) ^ sd;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  }
+  function vnoise(x, y, scale, sd){
+    var gx = x / scale, gy = y / scale;
+    var ix = Math.floor(gx), iy = Math.floor(gy);
+    var fx = gx - ix, fy = gy - iy;
+    var sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+    var a = hash2(ix, iy, sd), b = hash2(ix + 1, iy, sd);
+    var c = hash2(ix, iy + 1, sd), d = hash2(ix + 1, iy + 1, sd);
+    return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+  }
+  function jit(x, y, k){
+    var h = (Math.imul(x, 73856093) ^ Math.imul(y, 19349663) ^ Math.imul(k, 83492791)) >>> 0;
+    return ((h % 2048) / 1024) - 1;
+  }
+  function clamp01(v){ return v < 0 ? 0 : (v > 1 ? 1 : v); }
+
+  // ---------- ノイズシード導出（XOR定数、応力系はステージで別化） ----------
+  var sdA  = (SEED ^ 0x9E3779B9) >>> 0;  // 素地強度 粗
+  var sdB  = (SEED ^ 0x85EBCA6B) >>> 0;  // 素地強度 細
+  var sdC  = (SEED ^ 0xC2B2AE35) >>> 0;  // σx（^ (stage+1)）
+  var sdD  = (SEED ^ 0x27D4EB2F) >>> 0;  // σy（^ (stage+1)）
+  var sdE  = (SEED ^ 0x165667B1) >>> 0;  // τxy（^ (stage+1)）
+  var sdK  = (SEED ^ 0xB5297A4D) >>> 0;  // 窯場
+  var sdT  = (SEED ^ 0x68E31DA4) >>> 0;  // 化粧土厚み
+  var sdBl = (SEED ^ 0x1B56C4E9) >>> 0;  // 火色（緋色フラッシング）
+
+  // ---------- 場（Float32Array、全て決定論） ----------
+  var kF  = new Float32Array(N);   // 窯場（上ほど強い）
+  var tF  = new Float32Array(N);   // 化粧土厚み（下ほど厚い）
+  var bud = new Float32Array(N);   // 予算係数 0.75+0.55k
+  var tau = new Float32Array(N);   // 素地強度
+  var sigx = new Float32Array(N), sigy = new Float32Array(N), sigxy = new Float32Array(N);
+  var relx = new Float32Array(N), rely = new Float32Array(N);
+  var cracked = new Uint8Array(N);
+  var flaws = [], bigFlaws = [];
+  var events = [];                 // [x0,y0,x1,y1,release,stageIdx]
+  var pathAll = [];                // 全ステージ累積のひびセル [cellIdx, heading]
+  var stats = { cracks: 0, segs: 0, junc: 0, stageCracks: [0, 0, 0] };
+
+  function sn(ii, h){ return sigx[ii] * NX2[h] + sigy[ii] * NY2[h] + 2 * sigxy[ii] * NXY[h]; }
+
+  // Δ·(n⊗n) 減算 — 局所緩和長 lam で届く距離が決まる
+  function relieve(cx, cy, h, lam){
+    var RR = Math.ceil(lam);
+    var shape = lam * P.relief.shapeFrac;
+    var sh2 = shape * shape;
+    var kx = NX2[h], ky = NY2[h], kxy = NXY[h];
+    var R2 = RR * RR;
+    for (var dyy = -RR; dyy <= RR; dyy++){
+      var yy = cy + dyy;
+      if (yy < 0 || yy >= H) continue;
+      for (var dxx = -RR; dxx <= RR; dxx++){
+        var xx = cx + dxx;
+        if (xx < 0 || xx >= W) continue;
+        var dd = dxx * dxx + dyy * dyy;
+        if (dd > R2) continue;
+        var f = P.relief.amount / (1 + dd / sh2);
+        var ii = yy * W + xx;
+        var snc = sigx[ii] * kx + sigy[ii] * ky + 2 * sigxy[ii] * kxy;
+        if (snc > 0){
+          var D = f * snc;
+          sigx[ii] -= D * kx;
+          sigy[ii] -= D * ky;
+          sigxy[ii] -= D * kxy;
+        }
+        var rf = relx[ii] * (1 - P.relief.compliance * f * kx);
+        relx[ii] = rf < P.relief.floor ? P.relief.floor : rf;
+        rf = rely[ii] * (1 - P.relief.compliance * f * ky);
+        rely[ii] = rf < P.relief.floor ? P.relief.floor : rf;
+      }
+    }
+  }
+  // ---------- 場の前計算＋欠陥播種（rng 消費順は固定） ----------
+  function initFields(){
+    var x, y, i;
+    for (y = 0; y < H; y++) for (x = 0; x < W; x++){
+      i = y * W + x;
+      kF[i] = clamp01(0.15 + P.kiln.grad * (1 - y / H) + P.kiln.noiseAmp * (vnoise(x, y, P.kiln.scale, sdK) - 0.5) * 2);
+      tF[i] = P.slip.thin + (P.slip.thick - P.slip.thin) * clamp01(0.25 + 0.75 * (y / H) + P.slip.noiseAmp * (vnoise(x, y, P.slip.scale, sdT) - 0.5) * 2);
+      bud[i] = 0.55 + 0.85 * kF[i];
+      tau[i] = P.strength.base
+        + P.strength.coarse * (vnoise(x, y, P.strength.coarseScale, sdA) - 0.5) * 2
+        + P.strength.fine * (vnoise(x, y, P.strength.fineScale, sdB) - 0.5) * 2;
+    }
+    function carve(fx, fy, fr, depth){
+      var R = Math.ceil(fr), dx, dy;
+      for (dy = -R; dy <= R; dy++) for (dx = -R; dx <= R; dx++){
+        var nx = fx + dx, ny = fy + dy;
+        if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        var d2 = Math.sqrt(dx * dx + dy * dy);
+        if (d2 > fr) continue;
+        var f = depth + (1 - depth) * (d2 / fr);
+        if (f < 1) tau[ny * W + nx] *= f;
+      }
+    }
+    var rng = PRNG(SEED), k, fx, fy, fr;
+    for (k = 0; k < P.flaws.count; k++){
+      fx = 4 + Math.floor(rng() * (W - 8));
+      fy = 4 + Math.floor(rng() * (H - 8));
+      fr = P.flaws.rMin + rng() * (P.flaws.rMax - P.flaws.rMin);
+      flaws.push([fx, fy, fr]);
+      carve(fx, fy, fr, P.flaws.depth);
+    }
+    var bigN = Math.floor(rng() * (P.flaws.bigMax + 1));  // 窯疵 0〜bigMax 点
+    for (k = 0; k < bigN; k++){
+      fx = 4 + Math.floor(rng() * (W - 8));
+      fy = 4 + Math.floor(rng() * (H - 8));
+      fr = P.flaws.bigRMin + rng() * (P.flaws.bigRMax - P.flaws.bigRMin);
+      bigFlaws.push([fx, fy, fr]);
+      carve(fx, fy, fr, P.flaws.bigDepth);
+    }
+  }
+
+  function snapScan(cx, cy, own, R){
+    var bd = 1e9, bx = -1, by = -1;
+    for (var dyy = -R; dyy <= R; dyy++){
+      var yy = cy + dyy;
+      if (yy < 0 || yy >= H) continue;
+      for (var dxx = -R; dxx <= R; dxx++){
+        var xx = cx + dxx;
+        if (xx < 0 || xx >= W) continue;
+        var ii = yy * W + xx;
+        if (!cracked[ii] || own[ii]) continue;
+        var dd = dxx * dxx + dyy * dyy;
+        if (dd < bd){ bd = dd; bx = xx; by = yy; }
+      }
+    }
+    return bx < 0 ? null : [bx, by];
+  }
+
+  function runTip(px, py, h, own, path, SG, st){
+    var step, dd, bsc, bh, bx, by, bi;
+    for (step = 0; step < (SG.maxLen || P.crack.maxLen); step++){
+      var cx = Math.round(px), cy = Math.round(py);
+      var snap = snapScan(cx, cy, own, SG.snap);
+      if (snap){
+        events.push([px, py, snap[0], snap[1], 0.85, st]);
+        stats.segs++;
+        stats.junc++;
+        break;
+      }
+      bsc = -1e9; bh = -1;
+      for (dd = -P.crack.spread; dd <= P.crack.spread; dd++){
+        var nh = (h + dd + 16) & 15;
+        var nx = px + DIRX[nh], ny = py + DIRY[nh];
+        var ncx = Math.round(nx), ncy = Math.round(ny);
+        if (ncx < 1 || ncy < 1 || ncx >= W - 1 || ncy >= H - 1) continue;
+        var ni = ncy * W + ncx;
+        if (own[ni] || cracked[ni]) continue;
+        var s0 = sn(ni, nh);
+        if (s0 < SG.arrest) continue;
+        var sc = s0 - P.crack.turnPenalty * Math.abs(dd) + P.crack.jitter * jit(ncx, ncy, step);
+        if (sc > bsc){ bsc = sc; bh = nh; bx = nx; by = ny; bi = ni; }
+      }
+      if (bh < 0) break;
+      events.push([px, py, bx, by, sn(bi, bh), st]);
+      stats.segs++;
+      px = bx; py = by; h = bh;
+      var mi = Math.round(py) * W + Math.round(px);
+      cracked[mi] = 1;
+      own[mi] = 1;
+      path.push([mi, bh]);
+    }
+  }
+
+  // ---------- バッチ核生成: 全セル1回スキャン → (v desc, idx asc) で決定論処理 ----------
+  function nucleateBatch(SG, st){
+    var cand = [], ii, m, r, v;
+    for (ii = 0; ii < N; ii++){
+      if (cracked[ii]) continue;
+      m = (sigx[ii] - sigy[ii]) * 0.5;
+      r = Math.sqrt(m * m + sigxy[ii] * sigxy[ii]);
+      v = (sigx[ii] + sigy[ii]) * 0.5 + r - tau[ii];
+      if (v > 0.002) cand.push([v, ii]);
+    }
+    if (!cand.length) return;
+    cand.sort(function(a, b){ return b[0] - a[0] || a[1] - b[1]; });
+    var lim = cand.length < 1200 ? cand.length : 1200;
+    for (var ci = 0; ci < lim; ci++){
+      ii = cand[ci][1];
+      if (cracked[ii]) continue;
+      m = (sigx[ii] - sigy[ii]) * 0.5;                       // 取り出し時に再評価
+      r = Math.sqrt(m * m + sigxy[ii] * sigxy[ii]);
+      v = (sigx[ii] + sigy[ii]) * 0.5 + r - tau[ii];
+      if (v <= 0) continue;
+      var nxx = ii % W, nyy = (ii / W) | 0;
+      stats.cracks++;
+      stats.stageCracks[st]++;
+      cracked[ii] = 1;
+      var own = {}; own[ii] = 1;
+      var bh0 = 0, bv0 = -1e9;
+      for (var hh = 0; hh < 16; hh++){                       // 初期方位プローブ（距離4セル）
+        var sx0 = Math.round(nxx + DIRX[hh] * 4), sy0 = Math.round(nyy + DIRY[hh] * 4);
+        if (sx0 < 1 || sy0 < 1 || sx0 >= W - 1 || sy0 >= H - 1) continue;
+        var vv = sn(sy0 * W + sx0, hh) + P.crack.jitter * jit(sx0, sy0, hh);
+        if (vv > bv0){ bv0 = vv; bh0 = hh; }
+      }
+      var path = [[ii, bh0]];
+      runTip(nxx, nyy, bh0, own, path, SG, st);
+      runTip(nxx, nyy, (bh0 + 8) & 15, own, path, SG, st);
+      for (var pc = 0; pc < path.length; pc++){              // 完走後に経路へ緩和＋pathAll蓄積
+        var pcell = path[pc][0];
+        relieve(pcell % W, (pcell / W) | 0, path[pc][1], SG.lam * tF[pcell]);
+        pathAll.push(path[pc]);
+      }
+    }
+  }
+
+  // ---------- 多段焼成ループ（3ステージ） ----------
+  var fireMs = 0, timedOut = false;
+  function fire(){
+    var t0 = performance.now();
+    var st, x, y, i, cs, pi;
+    for (st = 0; st < P.stages.length; st++){
+      var SG = P.stages[st];
+      var s1 = (sdC ^ (st + 1)) >>> 0, s2 = (sdD ^ (st + 1)) >>> 0, s3 = (sdE ^ (st + 1)) >>> 0;
+      for (y = 0; y < H; y++) for (x = 0; x < W; x++){       // 1. 応力の再初期化
+        i = y * W + x;
+        sigx[i] = P.stress.init * bud[i] + P.stress.noise * (vnoise(x, y, P.stress.noiseScale, s1) - 0.5) * 2;
+        sigy[i] = P.stress.init * bud[i] + P.stress.noise * (vnoise(x, y, P.stress.noiseScale, s2) - 0.5) * 2;
+        sigxy[i] = P.stress.shearNoise * (vnoise(x, y, P.stress.shearScale, s3) - 0.5) * 2;
+        relx[i] = 1; rely[i] = 1;
+      }
+      for (pi = 0; pi < pathAll.length; pi++){               // 2. 遮蔽パス（旧ひびが新しい伝達長で静める）
+        var pcell = pathAll[pi][0];
+        relieve(pcell % W, (pcell / W) | 0, pathAll[pi][1], SG.lam * tF[pcell]);
+      }
+      var stepsN = Math.ceil((SG.budget - P.stress.init) / P.stress.coolStep);
+      for (cs = 0; cs < stepsN; cs++){                       // 3. 冷却ループ
+        nucleateBatch(SG, st);
+        for (i = 0; i < N; i++) if (!cracked[i]){
+          sigx[i] += P.stress.coolStep * bud[i] * relx[i];
+          sigy[i] += P.stress.coolStep * bud[i] * rely[i];
+        }
+        if (performance.now() - t0 > 60000){ timedOut = true; break; }
+      }
+      if (timedOut) break;
+    }
+    fireMs = performance.now() - t0;
+  }
+  // ---------- rendering ----------
+  var cv = document.getElementById("cv");
+  var ctx = cv.getContext("2d");
+  var $ = function(id){ return document.getElementById(id); };
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var hiddenNow = function(){ return document.visibilityState === "hidden"; };
+  var fmt = function(n){ return n.toLocaleString("ja-JP"); };
+
+  var groundCv = null;
+  function renderGround(g){
+    var grad = g.createRadialGradient(cv.width * 0.46, cv.height * 0.42, 80, cv.width * 0.5, cv.height * 0.5, cv.width * 0.62);
+    grad.addColorStop(0, "#ece2cf");
+    grad.addColorStop(1, "#ddd2bc");
+    g.fillStyle = grad;
+    g.fillRect(0, 0, cv.width, cv.height);
+    var px, py, sx, sy, kk;
+    for (py = 0; py < cv.height; py += 4){                   // 窯トーン＋火色（4pxブロック）
+      sy = (py / S) | 0; if (sy >= H) sy = H - 1;
+      for (px = 0; px < cv.width; px += 4){
+        sx = (px / S) | 0; if (sx >= W) sx = W - 1;
+        kk = kF[sy * W + sx];
+        g.fillStyle = "rgba(52,42,33," + (kk * 0.50).toFixed(3) + ")";
+        g.fillRect(px, py, 4, 4);
+        if (kk >= 0.35 && kk <= 0.65 && vnoise(sx, sy, 90, sdBl) > 0.6){
+          g.fillStyle = "rgba(208,154,130,0.12)";
+          g.fillRect(px, py, 4, 4);
+        }
+      }
+    }
+    var k;
+    g.fillStyle = "rgba(38,32,26,.03)";                      // 斑点グレイン
+    for (k = 0; k < 2600; k++){
+      var hx = (Math.imul(k, 374761393) >>> 8) % cv.width;
+      var hy = (Math.imul(k, 668265263) >>> 8) % cv.height;
+      g.fillRect(hx, hy, 2, 2);
+    }
+    g.save();
+    g.strokeStyle = "rgba(38,32,26,.13)";                    // 通常欠陥の薄い円マーク
+    g.lineWidth = 1;
+    for (k = 0; k < flaws.length; k++){
+      g.beginPath();
+      g.arc(flaws[k][0] * S, flaws[k][1] * S, flaws[k][2] * S + 4, 0, Math.PI * 2);
+      g.stroke();
+    }
+    g.restore();
+    for (k = 0; k < bigFlaws.length; k++){                   // 大欠陥＝焦げ
+      var bfx = bigFlaws[k][0] * S, bfy = bigFlaws[k][1] * S, bfr = bigFlaws[k][2] * 2.2 * S;
+      var sg = g.createRadialGradient(bfx, bfy, 0, bfx, bfy, bfr);
+      sg.addColorStop(0, "rgba(30,22,16,.55)");
+      sg.addColorStop(1, "rgba(30,22,16,0)");
+      g.fillStyle = sg;
+      g.beginPath(); g.arc(bfx, bfy, bfr, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = "rgba(30,22,16,.25)";
+      g.lineWidth = 1;
+      g.beginPath(); g.arc(bfx, bfy, bigFlaws[k][2] * S, 0, Math.PI * 2); g.stroke();
+    }
+  }
+  function paintGround(){
+    if (!groundCv){
+      groundCv = document.createElement("canvas");
+      groundCv.width = cv.width; groundCv.height = cv.height;
+      renderGround(groundCv.getContext("2d"));
+    }
+    ctx.drawImage(groundCv, 0, 0);
+  }
+
+  var STW = [3.8, 1.9, 0.8];         // 世代→線幅
+  var STA = [0.94, 0.72, 0.34];      // 世代→濃度
+  function drawSeg(e){
+    var st = e[5];
+    var w = STW[st] * (0.75 + 0.5 * Math.min(1, e[4] / 1.2));
+    var mx = Math.round((e[0] + e[2]) * 0.5), my = Math.round((e[1] + e[3]) * 0.5);
+    if (mx < 0) mx = 0; if (mx >= W) mx = W - 1;
+    if (my < 0) my = 0; if (my >= H) my = H - 1;
+    var kk = kF[my * W + mx];        // 窯場→炭化（kが高いほど黒い）
+    ctx.lineCap = "round";
+    if (st < 2){
+      ctx.strokeStyle = "rgba(96,66,46,.07)";
+      ctx.lineWidth = w * 3;
+      ctx.beginPath();
+      ctx.moveTo(e[0] * S, e[1] * S);
+      ctx.lineTo(e[2] * S, e[3] * S);
+      ctx.stroke();
+    }
+    var cr = Math.round(46 + (23 - 46) * kk);
+    var cg = Math.round(38 + (19 - 38) * kk);
+    var cb = Math.round(32 + (16 - 32) * kk);
+    ctx.strokeStyle = "rgba(" + cr + "," + cg + "," + cb + "," + STA[st] + ")";
+    ctx.lineWidth = w;
+    ctx.beginPath();
+    ctx.moveTo(e[0] * S, e[1] * S);
+    ctx.lineTo(e[2] * S, e[3] * S);
+    ctx.stroke();
+  }
+
+  // ---------- 仕上げパス: チャンファー距離変換（2パス・上限6）→ 肩の落ち込み＋島の反り ----------
+  function finishPass(){
+    var dist = new Uint8Array(N);
+    var i, x, y, d;
+    for (i = 0; i < N; i++) dist[i] = cracked[i] ? 0 : 6;
+    for (y = 0; y < H; y++) for (x = 0; x < W; x++){
+      i = y * W + x; d = dist[i];
+      if (!d) continue;
+      if (x > 0 && dist[i - 1] + 1 < d) d = dist[i - 1] + 1;
+      if (y > 0){
+        if (dist[i - W] + 1 < d) d = dist[i - W] + 1;
+        if (x > 0 && dist[i - W - 1] + 1 < d) d = dist[i - W - 1] + 1;
+        if (x < W - 1 && dist[i - W + 1] + 1 < d) d = dist[i - W + 1] + 1;
+      }
+      dist[i] = d > 6 ? 6 : d;
+    }
+    for (y = H - 1; y >= 0; y--) for (x = W - 1; x >= 0; x--){
+      i = y * W + x; d = dist[i];
+      if (!d) continue;
+      if (x < W - 1 && dist[i + 1] + 1 < d) d = dist[i + 1] + 1;
+      if (y < H - 1){
+        if (dist[i + W] + 1 < d) d = dist[i + W] + 1;
+        if (x < W - 1 && dist[i + W + 1] + 1 < d) d = dist[i + W + 1] + 1;
+        if (x > 0 && dist[i + W - 1] + 1 < d) d = dist[i + W - 1] + 1;
+      }
+      dist[i] = d > 6 ? 6 : d;
+    }
+    ctx.fillStyle = "rgba(58,47,38,.12)";
+    for (i = 0; i < N; i++) if (dist[i] === 1) ctx.fillRect((i % W) * S, ((i / W) | 0) * S, 3, 3);
+    ctx.fillStyle = "rgba(58,47,38,.06)";
+    for (i = 0; i < N; i++) if (dist[i] === 2) ctx.fillRect((i % W) * S, ((i / W) | 0) * S, 3, 3);
+    ctx.fillStyle = "rgba(255,249,235,.055)";
+    for (i = 0; i < N; i++) if (dist[i] >= 4) ctx.fillRect((i % W) * S, ((i / W) | 0) * S, 3, 3);
+    for (i = 0; i < events.length; i++) drawSeg(events[i]);  // 線を沈ませない
+  }
+  // ---------- 封印ハッシュ: sha256(JSON.stringify(SEALED)+"|"+engine)。種は含まない ----------
+  function sealHash(Pm, cb){
+    var canon = JSON.stringify(Pm) + "|" + Pm.engine;
+    if (window.crypto && crypto.subtle && crypto.subtle.digest){
+      var buf = new TextEncoder().encode(canon);
+      crypto.subtle.digest("SHA-256", buf).then(function(h){
+        var a = new Uint8Array(h), s = "";
+        for (var i = 0; i < 6; i++) s += a[i].toString(16).padStart(2, "0");
+        cb("sha256:" + s);
+      }, function(){ cb(fnv(canon)); });
+    } else cb(fnv(canon));
+    function fnv(str){
+      var h = 0x811c9dc5;
+      for (var i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+      return "fnv1a:" + (h >>> 0).toString(16).padStart(8, "0");
+    }
+  }
+
+  // ---------- ライブ焼成の再生（記録 events の順再生） ----------
+  var animId = 0, playing = false, invalid = false, fired = false;
+
+  function crackLabelFull(){
+    $("cracks").textContent = fmt(stats.cracks) + "本 / 節" + fmt(stats.junc);
+  }
+  function drawStatic(){
+    paintGround();
+    for (var i = 0; i < events.length; i++) drawSeg(events[i]);
+    finishPass();
+    crackLabelFull();
+  }
+  function playRecord(done){
+    if (reduced || hiddenNow() || events.length === 0){
+      drawStatic();
+      done();
+      return;
+    }
+    paintGround();
+    var idx = 0, total = events.length;
+    var rate = Math.max(6, Math.ceil(total / 700));
+    var curStage = -1;
+    function frame(){
+      var stop = Math.min(total, idx + rate);
+      for (; idx < stop; idx++) drawSeg(events[idx]);
+      var lastSt = events[idx - 1][5];
+      if (lastSt !== curStage){
+        curStage = lastSt;
+        $("state").textContent = "第" + (curStage + 1) + "段 焼成中";
+      }
+      $("cracks").textContent = fmt(Math.round(stats.cracks * idx / total)) + "本 / 節" + fmt(stats.junc);
+      if (idx < total){ animId = requestAnimationFrame(frame); }
+      else {
+        finishPass();
+        crackLabelFull();
+        done();
+      }
+    }
+    animId = requestAnimationFrame(frame);
+  }
+  function settle(){
+    playing = false;
+    $("replay").disabled = false;
+    $("state").textContent = "静置 — この種の一炉";
+  }
+
+  // ---------- 起動: ラベル静的値 → 50ms後に焼成 → ライブ再生 ----------
+  $("seed").textContent = "#" + SEED.toString(16).padStart(8, "0") + "（?s= で指名可）";
+  sealHash(SEALED, function(h){ $("sealhash").textContent = h; });
+  $("state").textContent = "窯の中";
+
+  initFields();
+  paintGround();
+
+  setTimeout(function(){
+    fire();
+    fired = true;
+    invalid = stats.cracks === 0 || timedOut || fireMs > 60000;
+    if (invalid){
+      $("state").textContent = "無効 — 窯詰め直し対象";
+      $("replay").disabled = true;
+      drawStatic();
+      return;
+    }
+    playing = true;
+    $("replay").disabled = true;
+    playRecord(settle);
+  }, 50);
+
+  $("replay").addEventListener("click", function(){
+    if (playing || invalid || !fired) return;
+    cancelAnimationFrame(animId);
+    playing = true;
+    $("replay").disabled = true;
+    $("state").textContent = "再演中";
+    playRecord(settle);
+  });
+
+  $("another").addEventListener("click", function(){
+    location.href = location.pathname + "?s=" + ((Date.now() % 4294967296) >>> 0).toString(16);
+  });
+})();
+</script>
+</body>
+</html>

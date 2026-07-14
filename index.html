@@ -1113,12 +1113,21 @@
       still: ''
     },
     {
-      no: 'F067', version: 'v1', status: 'current',
+      no: 'F067', version: 'v1', status: 'archived',
       project: 'JINEN',
       use: '鑑賞 / Standalone',
       ja: '雨ざらし',
       en: 'Amazarashi — Weathering Plate',
       file: 'works/amazarashi.html',
+      still: ''
+    },
+    {
+      no: 'F067', version: 'v2', status: 'current',
+      project: 'JINEN',
+      use: '鑑賞 / Standalone',
+      ja: '雨ざらし',
+      en: 'Amazarashi — Weathering Plate',
+      file: 'works/amazarashi-v2.html',
       still: ''
     },
   ];
@@ -1202,6 +1211,7 @@
     'works/kannyu.html': { family: '自己組織化', tech: '応力テンソル場の逐次クラック伝播', how: 'σx・σy・τxyの張力場を冷却で高め、最弱点から法線応力駆動でひびを伝播・緩和。未見の種で一回焼成し封印' },
     'works/kairagi.html': { family: '自己組織化', tech: '多段収縮の入れ子クラック窯', how: '窯勾配と厚み場の上で3段の冷却を繰り返し、緩和長を縮めながらテンソル応力伝播で島の中へ島を刻む。種は非封印の長形' },
     'works/amazarashi.html': { family: '自己組織化', tech: '塗装鋼板の腐食場シミュレーション', how: '雨を下方移流させ湿り場を運び、欠陥点の発錆が塗膜下を這行、剥離連鎖と錆汁流下を五つの場で解く' },
+    'works/amazarashi-v2.html': { family: '自己組織化', tech: '塗装層序とD8水路の腐食場', how: '雨をD8最急降下で流し、欠陥から発錆・皮下這行、上塗→下塗→鉛丹→鋼の層序が接着力の順に剥離する' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>雨ざらし — Amazarashi / 調律中</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f2ecdf;
+    --paper-2:#ece3d0;
+    --ink:#26201a;
+    --ink-soft:#6a5f52;
+    --rust:#9c4423;
+    --rust-deep:#5f2b15;
+    --hair:rgba(38,32,26,.22);
+    --hair-2:rgba(38,32,26,.45);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{background:var(--paper)}
+  body{
+    min-height:100vh;
+    font-family:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+    color:var(--ink);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:26px;
+    padding:56px 24px 40px;
+    position:relative;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:3;opacity:.05;
+    mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:2;opacity:.055;
+    mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='900'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+  }
+  .frame{position:fixed;inset:10px;border:1px solid var(--hair);pointer-events:none;z-index:4}
+  .frame i{position:absolute;width:13px;height:13px;border:0 solid var(--rust)}
+  .frame i:nth-child(1){top:-1px;left:-1px;border-top-width:2px;border-left-width:2px}
+  .frame i:nth-child(2){top:-1px;right:-1px;border-top-width:2px;border-right-width:2px}
+  .frame i:nth-child(3){bottom:-1px;left:-1px;border-bottom-width:2px;border-left-width:2px}
+  .frame i:nth-child(4){bottom:-1px;right:-1px;border-bottom-width:2px;border-right-width:2px}
+
+  .kicker{
+    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.42em;
+    color:var(--ink-soft);text-transform:uppercase;
+  }
+  .stage{
+    width:100%;max-width:1180px;
+    display:grid;grid-template-columns:minmax(0,1fr) 268px;gap:28px;
+    align-items:start;
+  }
+  .plate{
+    border:1px solid var(--hair-2);
+    background:var(--paper-2);
+    padding:12px;
+  }
+  canvas{display:block;width:100%;height:auto}
+
+  .label{
+    border:1px solid var(--hair-2);
+    padding:24px 22px 18px;
+    display:flex;flex-direction:column;gap:14px;
+    position:relative;
+  }
+  .no{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.35em;color:var(--rust)}
+  h1{font-size:34px;font-weight:800;letter-spacing:.06em;line-height:1.2}
+  .en{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.22em;color:var(--ink-soft);margin-top:4px}
+  .desc{font-size:12.5px;line-height:2;color:var(--ink-soft);border-top:1px solid var(--hair);padding-top:13px}
+  dl{display:flex;flex-direction:column;border-top:1px solid var(--hair)}
+  dl div{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:6.5px 0;border-bottom:1px solid var(--hair)}
+  dt{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.16em;color:var(--ink-soft);white-space:nowrap}
+  dd{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:500;text-align:right;word-break:break-all}
+  dd em{font-style:normal;color:var(--rust)}
+  .btnrow{display:flex;flex-direction:column;gap:8px}
+  button{
+    font-family:"IBM Plex Mono",monospace;font-size:12.5px;letter-spacing:.3em;
+    padding:12px 10px;border:1px solid var(--ink);background:transparent;color:var(--ink);
+    cursor:pointer;transition:background .25s,color .25s,border-color .25s;
+  }
+  button:hover:not(:disabled){background:var(--rust);border-color:var(--rust);color:var(--paper)}
+  button:disabled{opacity:.35;cursor:default}
+  .rules{font-family:"IBM Plex Mono",monospace;font-size:10px;line-height:2.05;color:var(--ink-soft)}
+  .rules b{color:var(--rust);font-weight:500}
+  .seal{
+    align-self:flex-end;
+    width:34px;height:34px;background:var(--rust);color:var(--paper);
+    display:flex;align-items:center;justify-content:center;
+    font-size:17px;font-weight:700;transform:rotate(2deg);
+    box-shadow:inset 0 0 0 1.5px var(--paper), inset 0 0 0 3px var(--rust);
+  }
+  .foot{
+    font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.3em;
+    color:var(--ink-soft);
+  }
+  @media (max-width:900px){
+    .stage{grid-template-columns:1fr}
+    body{padding:40px 16px 32px}
+  }
+</style>
+</head>
+<body>
+<div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+<p class="kicker">Fragments of Structure</p>
+
+<div class="stage">
+  <div class="plate">
+    <canvas id="cv" width="1440" height="960" aria-label="雨ざらし — 塗装鋼板の腐食シミュレーション。錆は縁と疵から発芽し、塗膜下を這い、剥離し、錆汁が流下する。"></canvas>
+  </div>
+
+  <aside class="label">
+    <div>
+      <p class="no">SPECIMEN — 調律中 / TUNING</p>
+      <h1>雨ざらし</h1>
+      <p class="en">AMAZARASHI — WEATHERING PLATE</p>
+    </div>
+    <p class="desc">造形と塗装は与件、腐食だけが自らの意志を持つ。縁と疵から錆は発芽し、塗膜の下を這い、耐えかねて剥離し、錆汁は重力にだけ従って流れ落ちる。</p>
+    <dl>
+      <div><dt>系 SYSTEM</dt><dd>腐食 — 発錆・皮下這行・剥離・流下</dd></div>
+      <div><dt>媒体 MEDIUM</dt><dd>塗装鋼板（造形と塗装は与件）</dd></div>
+      <div><dt>種 SEED</dt><dd id="seed">—</dd></div>
+      <div><dt>画角 FRAME</dt><dd id="frame">—</dd></div>
+      <div><dt>肌 TEXTURE</dt><dd id="texture">—</dd></div>
+      <div><dt>塗色 PAINT</dt><dd id="paint">—</dd></div>
+      <div><dt>刻 TICKS</dt><dd id="ticks">—</dd></div>
+      <div><dt>発色 PIGMENT</dt><dd>侵食断面 — 上塗→下塗→鉛丹→鋼→酸化(齢) / interpretive</dd></div>
+      <div><dt>状態 STATE</dt><dd id="state">—</dd></div>
+    </dl>
+    <div class="btnrow">
+      <button id="reseed">◇ 別の種 — NEW SEED</button>
+      <button id="replay" disabled>↻ 腐食を再演 — RE-ENACT</button>
+    </div>
+    <p class="rules"><b>壱 与件</b> — 造形と塗装は初期条件。選べない。<br><b>弐 発芽</b> — 錆は縁と疵からのみ生まれる。<br><b>参 不可逆</b> — 剥離と孔食は一度きり、戻らない。</p>
+    <div class="seal" aria-hidden="true">然</div>
+  </aside>
+</div>
+
+<p class="foot">じねん — おのずから生じた秩序への敬意</p>
+
+<noscript><p style="font-size:13px">この鋼板は JavaScript の系の中でだけ朽ちます。</p></noscript>
+
+<script>
+(function(){
+  "use strict";
+  var W = 720, H = 480, S = 2;
+
+  var cv = document.getElementById("cv");
+  var ctx = cv.getContext("2d");
+  var $ = function(id){ return document.getElementById(id); };
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var hiddenNow = function(){ return document.visibilityState === "hidden"; };
+
+  function PRNG(state){
+    var a = state >>> 0;
+    return {
+      next: function(){
+        a = (a + 0x6D2B79F5) | 0;
+        var t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      },
+      state: function(){ return a >>> 0; }
+    };
+  }
+
+  // 決定論ハッシュ: 座標+塩 → 0..4294967295
+  function hash2int(x, y, salt){
+    var h = (x * 374761393 + y * 668265263 + salt * 2246822519 + 3266489917) >>> 0;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    h = (h ^ (h >>> 16)) >>> 0;
+    return h >>> 0;
+  }
+  function hash2f(x, y, salt){ return hash2int(x, y, salt) / 4294967296; }
+
+  // 値ノイズ（格子ハッシュ + バイリニア + smoothstep）
+  function valueNoise2D(x, y, salt){
+    var x0 = Math.floor(x), y0 = Math.floor(y);
+    var sx = x - x0, sy = y - y0;
+    var u = sx * sx * (3 - 2 * sx), v = sy * sy * (3 - 2 * sy);
+    var n00 = hash2f(x0, y0, salt), n10 = hash2f(x0 + 1, y0, salt);
+    var n01 = hash2f(x0, y0 + 1, salt), n11 = hash2f(x0 + 1, y0 + 1, salt);
+    var nx0 = n00 + (n10 - n00) * u;
+    var nx1 = n01 + (n11 - n01) * u;
+    return nx0 + (nx1 - nx0) * v;
+  }
+  function fbm2D(x, y, octaves, salt){
+    var total = 0, amp = 0.5, freq = 1, maxAmp = 0;
+    for (var o = 0; o < octaves; o++){
+      total += valueNoise2D(x * freq, y * freq, salt + o * 101) * amp;
+      maxAmp += amp;
+      amp *= 0.5;
+      freq *= 2;
+    }
+    return total / maxAmp;
+  }
+
+  function parseParams(){
+    var q = new URLSearchParams(location.search);
+    var sParam = q.get("s");
+    var seed;
+    if (sParam && /^[0-9a-fA-F]{1,8}$/.test(sParam)) seed = parseInt(sParam, 16) >>> 0;
+    else seed = (Date.now() % 4294967296) >>> 0;
+    var t = parseInt(q.get("t"), 10);
+    if (!isFinite(t) || t <= 0) t = 260;
+    if (t > 3000) t = 3000; // A/FT2/FT1/FT0はUint16(sentinel 0xFFFF)なので上限で衝突と長時間停止を防ぐ
+    var paint = parseInt(q.get("paint"), 10);
+    if (!isFinite(paint) || paint < 0 || paint > 4) paint = -1;
+    return { seed: seed, ticks: t, paintForce: paint };
+  }
+
+  var PARAMS = parseParams();
+
+  // 場（グリッド解像度 W*H）— 段階Bで確保
+  var FIELD = {
+    R: null, P: null, M: null, C: null, O: null, A: null, STAIN: null,
+    LR: null, FT2: null, FT1: null, FT0: null, POOL: null,
+    rivets: [], treads: [], defects: [], holes: [],
+    zoom: 1, zoomName: "",
+    AGGF: null, aggAmt: 0, aggName: "",
+    paintIdx: 0, paintName: "", paintHSL: null, primer: [150, 92, 52],
+    underIdx: 0, underName: "", underHSL: null,
+    T2raw: null, T1: null, wear: null, chalk: null, CRACK: null,
+    seed: PARAMS.seed, ticks: PARAMS.ticks, paintForce: PARAMS.paintForce
+  };
+
+  function setState(t){ $("state").textContent = t; }
+
+  function bilinear(field, gx, gy){
+    gx = Math.max(0, Math.min(W - 1.001, gx));
+    gy = Math.max(0, Math.min(H - 1.001, gy));
+    var x0 = gx | 0, y0 = gy | 0, x1 = Math.min(W - 1, x0 + 1), y1 = Math.min(H - 1, y0 + 1);
+    var fx = gx - x0, fy = gy - y0;
+    var a = field[y0*W+x0], b = field[y0*W+x1], c = field[y1*W+x0], d = field[y1*W+x1];
+    var top = a + (b-a)*fx, bot = c + (d-c)*fx;
+    return top + (bot-top)*fy;
+  }
+  function hsl2rgb(h, s, l){
+    h = ((h % 360) + 360) % 360; s = Math.max(0, Math.min(100, s)) / 100; l = Math.max(0, Math.min(100, l)) / 100;
+    var c = (1 - Math.abs(2*l - 1)) * s;
+    var x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    var m = l - c/2, r, g, b;
+    if (h < 60){ r=c; g=x; b=0; } else if (h < 120){ r=x; g=c; b=0; }
+    else if (h < 180){ r=0; g=c; b=x; } else if (h < 240){ r=0; g=x; b=c; }
+    else if (h < 300){ r=x; g=0; b=c; } else { r=c; g=0; b=x; }
+    return [(r+m)*255, (g+m)*255, (b+m)*255];
+  }
+  function distToSegment(px, py, x0, y0, x1, y1){
+    var dx = x1-x0, dy = y1-y0, len2 = dx*dx+dy*dy;
+    var t = len2 > 0 ? ((px-x0)*dx + (py-y0)*dy) / len2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    var cx = x0 + t*dx, cy = y0 + t*dy, ex = px-cx, ey = py-cy;
+    return Math.sqrt(ex*ex + ey*ey);
+  }
+  // ドーム／楕円（回転可）を起伏Rへ加算スタンプ — リベット・トレッド・ボス兼用
+  function stampBump(R, cx, cy, ax, ay, angle, height){
+    var rad = Math.max(ax, ay);
+    var x0 = Math.max(0, Math.floor(cx-rad-2)), x1 = Math.min(W-1, Math.ceil(cx+rad+2));
+    var y0 = Math.max(0, Math.floor(cy-rad-2)), y1 = Math.min(H-1, Math.ceil(cy+rad+2));
+    var ca = Math.cos(-angle), sa = Math.sin(-angle);
+    for (var y = y0; y <= y1; y++){
+      for (var x = x0; x <= x1; x++){
+        var dx = x-cx, dy = y-cy;
+        var lx = dx*ca - dy*sa, ly = dx*sa + dy*ca;
+        var d = Math.sqrt((lx/ax)*(lx/ax) + (ly/ay)*(ly/ay));
+        if (d < 1){
+          var t = 1-d, sm = t*t*(3-2*t);
+          var idx = y*W+x;
+          R[idx] = Math.min(1, R[idx] + height*sm);
+        }
+      }
+    }
+  }
+
+  var PAINTS = [
+    { name: "青 — BLUE",       w: 0.40, h:[205,225], s:[45,60], l:[38,50] },
+    { name: "緑青 — VERDIGRIS", w: 0.15, h:[180,195], s:[35,55], l:[45,60] },
+    { name: "緑 — GREEN",      w: 0.15, h:[130,150], s:[30,45], l:[40,55] },
+    { name: "灰 — GRAY",       w: 0.15, h:[0,360],   s:[5,12],  l:[45,58] },
+    { name: "鉛丹 — MINIUM",    w: 0.15, h:[12,22],   s:[45,60], l:[35,42] }
+  ];
+
+  // ---- パイプライン（各段階で実装） ----
+  function buildSubstrate(){
+    var n = W*H;
+    var R = new Float32Array(n);
+    var rng = PRNG(FIELD.seed ^ 0x9E3779B9);
+
+    // 段階I: 画角トレイト — 引き/中景/接写を種でロール(rng消費+1、以降の造形スケールに伝播)
+    var zoomRoll = rng.next();
+    var zoom = zoomRoll < 0.30 ? 1.0 : (zoomRoll < 0.70 ? 1.8 : 3.0);
+    var zoomName = zoom === 1.0 ? "引き" : (zoom === 1.8 ? "中景" : "接写");
+    var heightMul = Math.min(2.4, 0.9 + 0.45*zoom);
+    FIELD.zoom = zoom; FIELD.zoomName = zoomName;
+
+    // 段階K: 肌トレイト — なめらか25%/ゆず肌45%/骨材30%(rng消費+1)、AGGFは全セルへ格納
+    var aggRoll = rng.next();
+    var aggAmt = aggRoll < 0.25 ? 0 : (aggRoll < 0.70 ? 0.5 : 1.0);
+    var aggName = aggAmt === 0 ? "なめらか" : (aggAmt === 0.5 ? "ゆず肌" : "骨材");
+    FIELD.aggAmt = aggAmt; FIELD.aggName = aggName;
+    var AGGF = new Float32Array(n);
+    var saltAgg = (FIELD.seed ^ 0x6F17) & 0xffff;
+    for (var agy = 0; agy < H; agy++){
+      for (var agx = 0; agx < W; agx++){
+        AGGF[agy*W+agx] = aggAmt * Math.max(0, Math.min(1, 0.5 + fbm2D(agx/3.5, agy/3.5, 2, saltAgg)));
+      }
+    }
+    FIELD.AGGF = AGGF;
+
+    for (var y = 0; y < H; y++){
+      for (var x = 0; x < W; x++){
+        R[y*W+x] = fbm2D(x/150, y/150, 4, (FIELD.seed ^ 0x11) & 0xffff) * 0.08;
+      }
+    }
+
+    var formRoll = rng.next();
+    if (formRoll < 0.55/0.85){
+      var sx = (168 + (rng.next()*2-1)*30) * zoom, sy = (190 + (rng.next()*2-1)*30) * zoom;
+      var row = 0;
+      for (var gy = sy/2; gy < H+sy; gy += sy, row++){
+        var xoff = (row % 2 === 0) ? 0 : sx/2;
+        for (var gx = xoff+sx/2; gx < W+sx; gx += sx){
+          var jx = (rng.next()*2-1)*6, jy = (rng.next()*2-1)*6, rad = (15+rng.next()*4) * zoom;
+          stampBump(R, gx+jx, gy+jy, rad, rad, 0, 0.55*heightMul);
+          FIELD.rivets.push({ x: gx+jx, y: gy+jy, r: rad });
+        }
+      }
+    } else {
+      var tsx = 80*zoom, tsy = 42*zoom, trow = 0;
+      for (var ty = tsy/2; ty < H+tsy; ty += tsy, trow++){
+        var ang = (trow % 2 === 0 ? 35 : -35) * Math.PI/180;
+        for (var tx = tsx/2; tx < W+tsx; tx += tsx){
+          var jx2 = (rng.next()*2-1)*5, jy2 = (rng.next()*2-1)*5;
+          stampBump(R, tx+jx2, ty+jy2, 33*zoom, 11*zoom, ang, 0.5*heightMul);
+          stampBump(R, tx+jx2, ty+jy2, 6*zoom, 6*zoom, 0, 0.5*heightMul);
+          FIELD.treads.push({ x: tx+jx2, y: ty+jy2 });
+        }
+      }
+    }
+
+    FIELD.seams = [];
+    var seamZoom = Math.min(zoom, 2);
+    if (rng.next() < 0.45){
+      if (rng.next() < 0.5){
+        var mx = 40+rng.next()*40, my = 40+rng.next()*40;
+        FIELD.seams.push({ x0:mx, y0:0, x1:mx, y1:H });
+        FIELD.seams.push({ x0:0, y0:my, x1:W, y1:my });
+      } else {
+        FIELD.seams.push({ x0:0, y0:rng.next()*H, x1:W, y1:rng.next()*H });
+      }
+      for (var si2b = 0; si2b < FIELD.seams.length; si2b++){
+        var sgb = FIELD.seams[si2b];
+        var mxA = (sgb.x0+sgb.x1)/2, myA = (sgb.y0+sgb.y1)/2;
+        var lenAB = Math.sqrt(Math.pow(sgb.x1-sgb.x0,2)+Math.pow(sgb.y1-sgb.y0,2));
+        stampBump(R, mxA, myA, lenAB/2+9*seamZoom, 9*seamZoom, Math.atan2(sgb.y1-sgb.y0, sgb.x1-sgb.x0), 0.5);
+      }
+    }
+
+    FIELD.R = R;
+    buildPaint(rng, n);
+    buildPaintColor(rng);
+    FIELD.primer = [150,92,52].map(function(c){ return Math.max(0, Math.min(255, c + (rng.next()*2-1)*10)); });
+    buildMacro(n);
+  }
+
+  function buildPaint(rng, n){
+    var P = new Float32Array(n);
+    // 段階F: ローラー異方性厚み場 — 種で進行方向を決め(縦60%/横40%)、進行方向/90・直交方向/8でサンプル
+    var rollVert = rng.next() < 0.6;
+    var saltBand = (FIELD.seed ^ 0x2A11) & 0xffff;
+    FIELD.rollVert = rollVert; FIELD.saltBand = saltBand;
+    for (var py = 1; py < H-1; py++){
+      for (var px = 1; px < W-1; px++){
+        var idx = py*W+px;
+        var v = 0.75 + 0.2*fbm2D(px/60, py/60, 3, (FIELD.seed ^ 0x1234) & 0xffff);
+        v = Math.max(0, Math.min(1, v));
+        var R = FIELD.R;
+        var gxv = (R[idx+1]-R[idx-1])*0.5, gyv = (R[idx+W]-R[idx-W])*0.5;
+        var gm = Math.sqrt(gxv*gxv + gyv*gyv);
+        var lap = 4*R[idx] - (R[idx-1]+R[idx+1]+R[idx-W]+R[idx+W]);
+        if (gm > 0.035/Math.sqrt(FIELD.zoom) && lap > 0) v *= 0.5;
+        var bandN = rollVert ? valueNoise2D(px/8, py/90, saltBand) : valueNoise2D(px/90, py/8, saltBand);
+        v = Math.max(0, Math.min(1, v + (bandN*2-1)*0.18));
+        P[idx] = v;
+      }
+    }
+    var seamZoom = Math.min(FIELD.zoom, 2);
+    for (var si = 0; si < FIELD.seams.length; si++){
+      var sg = FIELD.seams[si];
+      var marg = 14*seamZoom;
+      var xa = Math.max(0, Math.floor(Math.min(sg.x0,sg.x1)-marg)), xb = Math.min(W-1, Math.ceil(Math.max(sg.x0,sg.x1)+marg));
+      var ya = Math.max(0, Math.floor(Math.min(sg.y0,sg.y1)-marg)), yb = Math.min(H-1, Math.ceil(Math.max(sg.y0,sg.y1)+marg));
+      for (var yy = ya; yy <= yb; yy++){
+        for (var xx = xa; xx <= xb; xx++){
+          var dd = distToSegment(xx, yy, sg.x0, sg.y0, sg.x1, sg.y1);
+          if (Math.abs(dd-9*seamZoom) < 2.5*seamZoom) P[yy*W+xx] *= 0.2;
+        }
+      }
+    }
+    var blobN = 2 + ((rng.next()*3)|0);
+    for (var b = 0; b < blobN; b++){
+      var bcx = rng.next()*W, bcy = rng.next()*H, brad = 40+rng.next()*50;
+      var bx0 = Math.max(0, Math.floor(bcx-brad)), bx1 = Math.min(W-1, Math.ceil(bcx+brad));
+      var by0 = Math.max(0, Math.floor(bcy-brad)), by1 = Math.min(H-1, Math.ceil(bcy+brad));
+      for (var yb2 = by0; yb2 <= by1; yb2++){
+        for (var xb2 = bx0; xb2 <= bx1; xb2++){
+          var db = Math.sqrt((xb2-bcx)*(xb2-bcx)+(yb2-bcy)*(yb2-bcy))/brad;
+          if (db < 1){
+            var tb = 1-db, smb = tb*tb*(3-2*tb);
+            var idxb = yb2*W+xb2;
+            P[idxb] = P[idxb]*(1-smb) + 0.4*smb;
+          }
+        }
+      }
+    }
+    FIELD.defects = [];
+    var scratchN = 1 + ((rng.next()*3)|0);
+    for (var s = 0; s < scratchN; s++){
+      var stx = rng.next()*W, sty = rng.next()*(H*0.7);
+      var ddx = (rng.next()*2-1), ddy = 0.5+rng.next()*0.5;
+      var dl = Math.sqrt(ddx*ddx+ddy*ddy); ddx /= dl; ddy /= dl;
+      var slen = 100+rng.next()*200, swid = 1+((rng.next()<0.5)?0:1);
+      for (var st = 0; st <= slen; st++){
+        var sxp = Math.round(stx+ddx*st), syp = Math.round(sty+ddy*st);
+        if (sxp < 0 || sxp >= W || syp < 0 || syp >= H) break;
+        for (var wx = -swid; wx <= swid; wx++){
+          for (var wy = -swid; wy <= swid; wy++){
+            var nxp = sxp+wx, nyp = syp+wy;
+            if (nxp >= 0 && nxp < W && nyp >= 0 && nyp < H) P[nyp*W+nxp] = Math.min(P[nyp*W+nxp], 0.05);
+          }
+        }
+      }
+      FIELD.defects.push({ x: stx, y: sty });
+    }
+    FIELD.holes = [];
+    var holeN = Math.round(n*0.00004);
+    for (var h = 0; h < holeN; h++){
+      var hx = (rng.next()*W)|0, hy = (rng.next()*H)|0;
+      P[hy*W+hx] = 0.05;
+      FIELD.holes.push({ x: hx, y: hy });
+    }
+
+    // 段階F: 既存P生成をベースにT2rawとする(同一配列の別名) — 微細亀裂を刻み込む
+    var T2raw = P;
+    var CRACK = new Uint8Array(n);
+    var crackN = 8 + ((rng.next()*12)|0);
+    for (var cN = 0; cN < crackN; cN++){
+      var cx0 = 0, cy0 = 0, gotEdge = false, cTries = 0;
+      if (rng.next() < 0.6){
+        while (!gotEdge && cTries < 200){
+          cx0 = 1 + ((rng.next()*(W-2))|0);
+          cy0 = 1 + ((rng.next()*(H-2))|0);
+          var oidx = cy0*W+cx0;
+          var ogx = (FIELD.R[oidx+1]-FIELD.R[oidx-1])*0.5, ogy = (FIELD.R[oidx+W]-FIELD.R[oidx-W])*0.5;
+          if (Math.sqrt(ogx*ogx+ogy*ogy) > 0.05) gotEdge = true;
+          cTries++;
+        }
+      }
+      if (!gotEdge){
+        // 段階K: 肌の粗さで亀裂起点を採否判定(粗いほど採用されやすい)
+        var aggTries = 0;
+        do {
+          cx0 = (rng.next()*W)|0; cy0 = (rng.next()*H)|0;
+          aggTries++;
+        } while (hash2f(cx0, cy0, 0x7A99) >= 0.4+0.6*FIELD.AGGF[cy0*W+cx0] && aggTries < 24);
+      }
+      var cang = rng.next()*Math.PI*2, clen = (30 + rng.next()*90) * Math.sqrt(FIELD.zoom);
+      var ccx = cx0, ccy = cy0;
+      for (var cs = 0; cs < clen; cs++){
+        var cxi = Math.round(ccx), cyi = Math.round(ccy);
+        if (cxi < 0 || cxi >= W || cyi < 0 || cyi >= H) break;
+        var ccidx = cyi*W+cxi;
+        CRACK[ccidx] = 1;
+        T2raw[ccidx] *= 0.15;
+        var cdiff = Math.atan2(Math.sin(Math.PI/2-cang), Math.cos(Math.PI/2-cang));
+        cang += cdiff*0.05 + (rng.next()*2-1)*0.35;
+        ccx += Math.cos(cang); ccy += Math.sin(cang);
+      }
+    }
+    FIELD.CRACK = CRACK;
+
+    // 段階F: 摩耗(解析的、凸ラプラシアン由来)・白亜化・下塗厚 — FIELD.P は実効上塗厚T2effにする
+    var wear = new Float32Array(n), chalk = new Float32Array(n), T1 = new Float32Array(n);
+    var Rw = FIELD.R;
+    var saltWear = (FIELD.seed ^ 0x3B57) & 0xffff, saltChalk = (FIELD.seed ^ 0x4D19) & 0xffff, saltT1 = (FIELD.seed ^ 0x5E23) & 0xffff;
+    for (var wy = 1; wy < H-1; wy++){
+      for (var wx = 1; wx < W-1; wx++){
+        var widx = wy*W+wx;
+        var wlap = 4*Rw[widx] - (Rw[widx-1]+Rw[widx+1]+Rw[widx-W]+Rw[widx+W]);
+        var conv = Math.max(0, Math.min(1, -wlap*8));
+        var wv = 0.5*conv*(0.6+0.4*fbm2D(wx/40, wy/40, 3, saltWear));
+        wear[widx] = wv;
+        chalk[widx] = Math.max(0, Math.min(1, 0.55*wv/Math.max(T2raw[widx],0.2) + 0.25*conv + 0.3*fbm2D(wx/70, wy/70, 3, saltChalk)));
+      }
+    }
+    for (var t1y = 0; t1y < H; t1y++){
+      for (var t1x = 0; t1x < W; t1x++){
+        T1[t1y*W+t1x] = 0.5 + 0.15*fbm2D(t1x/90, t1y/90, 3, saltT1);
+      }
+    }
+    var T2eff = new Float32Array(n);
+    for (var ei = 0; ei < n; ei++) T2eff[ei] = Math.max(0, T2raw[ei] - wear[ei]*0.5);
+
+    FIELD.T2raw = T2raw; FIELD.wear = wear; FIELD.chalk = chalk; FIELD.T1 = T1;
+    FIELD.P = T2eff;
+  }
+
+  // 塗色1本を確率選択(forceIdx>=0なら強制) — 上塗/下塗の共通ロール処理
+  function pickPaint(rng, forceIdx){
+    var pr = rng.next(), acc = 0, pIdx = 0;
+    for (var pi = 0; pi < PAINTS.length; pi++){
+      acc += PAINTS[pi].w;
+      pIdx = pi;
+      if (pr < acc) break;
+    }
+    if (forceIdx >= 0) pIdx = forceIdx;
+    var pp = PAINTS[pIdx];
+    var ph = pp.h[0] + rng.next()*(pp.h[1]-pp.h[0]);
+    var ps = pp.s[0] + rng.next()*(pp.s[1]-pp.s[0]);
+    var pl = pp.l[0] + rng.next()*(pp.l[1]-pp.l[0]);
+    return { idx: pIdx, name: pp.name, hsl: { h: ph, s: ps, l: pl } };
+  }
+  function hueDist(a, b){
+    var d = Math.abs(a - b) % 360;
+    return d > 180 ? 360 - d : d;
+  }
+  // 段階F: 上塗(既存ロール)＋下塗(新規ロール)の2色ペア。色相距離40度未満なら再ロール(最大6回、灰はどの相手でも可)
+  function buildPaintColor(rng){
+    var top = pickPaint(rng, FIELD.paintForce);
+    var under = pickPaint(rng, -1);
+    var GRAY_IDX = 3, MINIUM_IDX = 4, tries = 0;
+    while ((under.idx === MINIUM_IDX || (top.idx !== GRAY_IDX && under.idx !== GRAY_IDX && hueDist(top.hsl.h, under.hsl.h) < 40)) && tries < 8){
+      under = pickPaint(rng, -1);
+      tries++;
+    }
+    if (under.idx === MINIUM_IDX) under = pickPaint(rng, 0);
+    FIELD.paintIdx = top.idx; FIELD.paintName = top.name; FIELD.paintHSL = top.hsl;
+    FIELD.underIdx = under.idx; FIELD.underName = under.name; FIELD.underHSL = under.hsl;
+  }
+
+  function buildMacro(n){
+    var macroL = new Float32Array(n), macroH = new Float32Array(n);
+    for (var my = 0; my < H; my++){
+      for (var mx = 0; mx < W; mx++){
+        var idxm = my*W+mx;
+        macroL[idxm] = fbm2D(mx/220, my/220, 3, (FIELD.seed ^ 0x777) & 0xffff)*2-1;
+        macroH[idxm] = fbm2D(mx/260, my/260, 3, (FIELD.seed ^ 0xABC) & 0xffff)*2-1;
+      }
+    }
+    FIELD.macroL = macroL; FIELD.macroH = macroH;
+  }
+
+  // 基質のみの物理描画(フル解像度) — 段階D で腐食項を加えて拡張される
+  function renderSubstrate(data){
+    var LX = -0.55, LY = -0.7, LZ = 0.45;
+    var llen = Math.sqrt(LX*LX+LY*LY+LZ*LZ); LX/=llen; LY/=llen; LZ/=llen;
+    var FW = W*S, FH = H*S;
+    for (var fy = 0; fy < FH; fy++){
+      var gy = fy/S;
+      for (var fx = 0; fx < FW; fx++){
+        var gx = fx/S;
+        var r0 = bilinear(FIELD.R, gx, gy);
+        var rx1 = bilinear(FIELD.R, gx+1, gy), rx0 = bilinear(FIELD.R, gx-1, gy);
+        var ry1 = bilinear(FIELD.R, gx, gy+1), ry0 = bilinear(FIELD.R, gx, gy-1);
+        var dRdx = (rx1-rx0)*0.5, dRdy = (ry1-ry0)*0.5;
+        var nx = -dRdx*8, ny = -dRdy*8, nz = 1;
+        var nlen = Math.sqrt(nx*nx+ny*ny+nz*nz);
+        var ndl = (nx*LX+ny*LY+nz*LZ)/nlen;
+        var diffuse = 0.75 + 0.45*Math.max(-1, Math.min(1, ndl));
+        var lap = 4*r0-(rx0+rx1+ry0+ry1);
+        var conc = Math.max(0, Math.min(1, -lap*8));
+        var ao = 1 - 0.15*conc;
+        var macroL = bilinear(FIELD.macroL, gx, gy), macroH = bilinear(FIELD.macroH, gx, gy);
+        var jitter = 1 + (hash2f(fx, fy, (FIELD.seed ^ 0x55) & 0xffff)*2-1)*0.04;
+        var h = FIELD.paintHSL.h + macroH*4;
+        var l = Math.max(0, Math.min(100, FIELD.paintHSL.l * (1+macroL*0.10)));
+        var rgb = hsl2rgb(h, FIELD.paintHSL.s, l);
+        var light = diffuse*ao*jitter;
+        var pidx = (fy*FW+fx)*4;
+        data[pidx]   = Math.max(0, Math.min(255, rgb[0]*light));
+        data[pidx+1] = Math.max(0, Math.min(255, rgb[1]*light));
+        data[pidx+2] = Math.max(0, Math.min(255, rgb[2]*light));
+        data[pidx+3] = 255;
+      }
+    }
+  }
+
+  var DX8 = [1,-1,0,0,1,1,-1,-1], DY8 = [0,0,1,-1,1,-1,1,-1];
+
+  // 段階C: 腐食動力学 — M(湿り)・C(状態)・O(酸化)・A(発錆tick)・FT2(剥離tick)・STAIN(錆汁)
+  // 段階G: LR(残存最上層 3=上塗/2=下塗/1=プライマー/0=露出)・FT2/FT1/FT0(各層剥離tick)
+  function simulate(ticks){
+    var n = W*H;
+    var R = FIELD.R, P = FIELD.P, CRACK = FIELD.CRACK;
+    var M = new Float32Array(n), Mtmp = new Float32Array(n);
+    var C = new Uint8Array(n);
+    var O = new Float32Array(n);
+    var A = new Uint16Array(n); A.fill(0xFFFF);
+    var LR = new Uint8Array(n); LR.fill(3);
+    var FT2 = new Uint16Array(n); FT2.fill(0xFFFF);
+    var FT1 = new Uint16Array(n); FT1.fill(0xFFFF);
+    var FT0 = new Uint16Array(n); FT0.fill(0xFFFF);
+    var STAIN = new Float32Array(n);
+    var rng2 = PRNG(FIELD.seed ^ 0xC0FFEE);
+
+    // 欠陥点(疵画素・造形縁・微小孔)— 一度だけ全面走査して収集
+    var defectList = [];
+    for (var dy = 1; dy < H-1; dy++){
+      for (var dx = 1; dx < W-1; dx++){
+        var didx = dy*W+dx;
+        if (P[didx] < 0.2){ defectList.push(didx); continue; }
+        var gxv = (R[didx+1]-R[didx-1])*0.5, gyv = (R[didx+W]-R[didx-W])*0.5;
+        if (Math.sqrt(gxv*gxv+gyv*gyv) > 0.035/Math.sqrt(FIELD.zoom) && P[didx] < 0.6 && hash2f(dx>>5, dy>>5, 0xB10C) < 0.55) defectList.push(didx);
+      }
+    }
+
+    var frontier = [], corroded = [];
+    function onset(idx, t){ C[idx] = 1; A[idx] = t; corroded.push(idx); frontier.push(idx); }
+
+    // 段階J: 移流の幾何(D8最急降下)はRに依存し不変 — tick毎の再計算を避け一度だけ算出
+    var flowFrac = new Float32Array(n), flowTarget = new Int32Array(n);
+    var POOL = new Uint8Array(n);
+    for (var y1 = 0; y1 < H; y1++){
+      for (var x1 = 0; x1 < W; x1++){
+        var idx1 = y1*W+x1;
+        if (y1 >= H-1){ flowFrac[idx1] = 0; flowTarget[idx1] = idx1; continue; }
+        var cxL = x1 > 0 ? x1-1 : 0, cxR = x1 < W-1 ? x1+1 : W-1;
+        var idxL = (y1+1)*W+cxL, idxM = idx1+W, idxR = (y1+1)*W+cxR;
+        // drop_k = R[idx]-R[cand] ; 真下候補のみ +0.015 バイアス(平坦部の無意味な蛇行防止)
+        var dropL = R[idx1]-R[idxL], dropM = R[idx1]-R[idxM]+0.015, dropR = R[idx1]-R[idxR];
+        var bestDrop = dropM, bestIdx = idxM;
+        if (dropL > bestDrop){ bestDrop = dropL; bestIdx = idxL; }
+        if (dropR > bestDrop){ bestDrop = dropR; bestIdx = idxR; }
+        if (bestDrop < -0.02){
+          // 滞留(三方すべて上り) — 浸透のみ、真下へわずかに送りPOOLを立てる
+          flowFrac[idx1] = 0.05; flowTarget[idx1] = idxM; POOL[idx1] = 1;
+        } else {
+          var slope1 = bestDrop*4;
+          if (slope1 > 1) slope1 = 1; else if (slope1 < -0.3) slope1 = -0.3;
+          flowFrac[idx1] = 0.35+0.35*slope1;
+          flowTarget[idx1] = bestIdx;
+        }
+      }
+    }
+
+    for (var tick = 0; tick < ticks; tick++){
+      var raining = (tick % 36) < 13;
+      for (var i = 0; i < n; i++){
+        var m = M[i];
+        if (raining) m += 0.10;
+        M[i] = m * (POOL[i] ? 0.955 : 0.92); // 段階J: 滞留セルは乾きにくい
+      }
+      Mtmp.set(M);
+      for (var i1 = 0; i1 < n; i1++){
+        var flow = M[i1] * flowFrac[i1];
+        Mtmp[i1] -= flow;
+        Mtmp[flowTarget[i1]] += flow;
+      }
+      var tswap = M; M = Mtmp; Mtmp = tswap;
+
+      for (var di = 0; di < defectList.length; di++){
+        var fidx0 = defectList[di];
+        if (C[fidx0]) continue;
+        if (rng2.next() < 0.032*M[fidx0]*(1-P[fidx0])) onset(fidx0, tick);
+      }
+
+      var newFrontier = [];
+      for (var fi = 0; fi < frontier.length; fi++){
+        var fidx = frontier[fi];
+        var fx = fidx % W, fy = (fidx / W) | 0;
+        var still = false;
+        for (var k = 0; k < 8; k++){
+          var nx = fx+DX8[k], ny = fy+DY8[k];
+          if (nx < 0 || nx >= W || ny < 0 || ny >= H) continue;
+          var nidx = ny*W+nx;
+          if (C[nidx]) continue;
+          still = true;
+          var dirW = DY8[k] > 0 ? 1.25 : (DY8[k] < 0 ? 0.8 : 1.0);
+          var pk = 0.070 * M[nidx] * (0.25 + 0.75*(1-P[nidx])) * dirW;
+          if (LR[fidx] <= 2) pk *= 1.35; // 段階G: 部分露出セルからの這行は湿りが直接届く
+          if (rng2.next() < pk){ C[nidx] = 1; A[nidx] = tick; corroded.push(nidx); newFrontier.push(nidx); }
+        }
+        if (still) newFrontier.push(fidx);
+      }
+      frontier = newFrontier;
+
+      for (var ci = 0; ci < corroded.length; ci++){
+        var cidx = corroded[ci];
+        if (C[cidx] === 3) continue;
+        O[cidx] += 0.010 + 0.020*M[cidx];
+        var ccx = cidx % W, ccy = (cidx / W) | 0;
+        var lr = LR[cidx];
+        if (lr > 0 && C[cidx] >= 1){
+          // 段階G: 層別剥離 — 上塗→下塗→プライマー→露出、既存の隣接連鎖(35%)は3→2のみ
+          var adhesion = 0.55 + 0.9*P[cidx] + 0.25*hash2f(ccx, ccy, 0x2C0A7) - 0.18*FIELD.AGGF[cidx];
+          if (lr === 3 && O[cidx] > adhesion){
+            LR[cidx] = 2; FT2[cidx] = tick;
+            for (var k2 = 0; k2 < 8; k2++){
+              var nx2 = ccx+DX8[k2], ny2 = ccy+DY8[k2];
+              if (nx2 < 0 || nx2 >= W || ny2 < 0 || ny2 >= H) continue;
+              var nidx2 = ny2*W+nx2;
+              if (C[nidx2] >= 1 && LR[nidx2] === 3 && rng2.next() < 0.35){ LR[nidx2] = 2; FT2[nidx2] = tick; }
+            }
+          } else if (lr === 2 && O[cidx] > adhesion*(1.25 + 0.75*hash2f(ccx, ccy, 0xA31))){
+            LR[cidx] = 1; FT1[cidx] = tick;
+          } else if (lr === 1 && O[cidx] > adhesion*(1.7 + 1.3*hash2f(ccx, ccy, 0xA32))){
+            LR[cidx] = 0; C[cidx] = 2; FT0[cidx] = tick;
+          }
+        } else if (C[cidx] === 2 && O[cidx] > 6.2){
+          C[cidx] = 3;
+          for (var k3 = 0; k3 < 8; k3++){
+            var nx3 = ccx+DX8[k3], ny3 = ccy+DY8[k3];
+            if (nx3 < 0 || nx3 >= W || ny3 < 0 || ny3 >= H) continue;
+            var nidx3 = ny3*W+nx3;
+            if (C[nidx3] === 2 && O[nidx3] > 5.8) C[nidx3] = 3;
+          }
+        }
+      }
+
+      if (tick % 3 === 0){
+        for (var si = 0; si < corroded.length; si++){
+          var sidx = corroded[si];
+          if (CRACK[sidx] === 1 && C[sidx] >= 1 && M[sidx] > 0.25) STAIN[sidx] += 0.010*O[sidx]; // 段階G: 毛細管染み
+          if (C[sidx] < 2 || M[sidx] <= 0.25) continue;
+          var sx = sidx % W, sy = (sidx / W) | 0;
+          if (hash2f(sx, 0, 0xD21F) >= 0.12) continue;
+          if (hash2f(sx, sy, 0x51A1E) >= 0.50) continue;
+          var L = 45 + O[sidx]*55;
+          var wide = hash2f(sx, 7, 0xE7) > 0.5;
+          var cur = sidx; // 段階J: flowTargetチェーンを辿るジグザグ下降
+          for (var j = 0; j < L; j++){
+            var sedim = 0.034*O[sidx]*(1-j/L);
+            STAIN[cur] += sedim;
+            if (wide && (cur % W) + 1 < W) STAIN[cur+1] += sedim*0.55;
+            if (POOL[cur] === 1){ STAIN[cur] += 0.15; break; } // 滞留に入ったらまとまり、停止
+            var nextC = flowTarget[cur];
+            if (nextC === cur) break; // 最下段
+            cur = nextC;
+          }
+        }
+      }
+    }
+
+    FIELD.C = C; FIELD.O = O; FIELD.A = A; FIELD.STAIN = STAIN;
+    FIELD.LR = LR; FIELD.FT2 = FT2; FIELD.FT1 = FT1; FIELD.FT0 = FT0;
+    FIELD.POOL = POOL;
+  }
+  var RUST_RAMP = [[222,128,52],[196,92,36],[148,58,26],[96,40,22],[52,28,16]];
+  function rampSample(t){
+    t = Math.max(0, Math.min(1, t));
+    var f = t*(RUST_RAMP.length-1);
+    var lo = Math.min(RUST_RAMP.length-2, f|0), m = f-lo;
+    var a = RUST_RAMP[lo], b = RUST_RAMP[lo+1];
+    return [a[0]+(b[0]-a[0])*m, a[1]+(b[1]-a[1])*m, a[2]+(b[2]-a[2])*m];
+  }
+
+  // 腐食の近傍情報を一度だけ前計算(変色ハロー・層境界チップ) — 段階H: chipEdgeはLR因果で再定義
+  function buildCorrosionAux(){
+    var n = W*H, C = FIELD.C, LR = FIELD.LR;
+    var nearRust = new Uint8Array(n), chipEdge = new Uint8Array(n);
+    for (var y = 0; y < H; y++){
+      for (var x = 0; x < W; x++){
+        var idx = y*W+x, c = C[idx];
+        if (c === 0 || c === 1){
+          for (var k = 0; k < 8; k++){
+            var nx = x+DX8[k], ny = y+DY8[k];
+            if (nx < 0 || nx >= W || ny < 0 || ny >= H) continue;
+            if (C[ny*W+nx] >= 1){ nearRust[idx] = 1; break; }
+          }
+        }
+        var minLR = LR[idx];
+        for (var k2 = 0; k2 < 8; k2++){
+          var nx2 = x+DX8[k2], ny2 = y+DY8[k2];
+          if (nx2 < 0 || nx2 >= W || ny2 < 0 || ny2 >= H) continue;
+          var nlr = LR[ny2*W+nx2];
+          if (nlr < minLR) minLR = nlr;
+        }
+        if (minLR < LR[idx]) chipEdge[idx] = 1;
+      }
+    }
+    FIELD.nearRust = nearRust; FIELD.chipEdge = chipEdge;
+  }
+
+  // 段階D: 物質レンダリング(フル解像度・最終合成) — renderSubstrateを腐食項で拡張
+  function renderFinal(){
+    buildCorrosionAux();
+    var LX = -0.55, LY = -0.7, LZ = 0.45;
+    var llen = Math.sqrt(LX*LX+LY*LY+LZ*LZ); LX/=llen; LY/=llen; LZ/=llen;
+    var FW = W*S, FH = H*S;
+    var img = ctx.createImageData(FW, FH);
+    var data = img.data;
+    var R = FIELD.R, O = FIELD.O, STAIN = FIELD.STAIN, C = FIELD.C, A = FIELD.A;
+    var primer = FIELD.primer;
+    for (var fy = 0; fy < FH; fy++){
+      var gy = fy/S, gcy = fy >> 1; if (gcy >= H) gcy = H-1;
+      for (var fx = 0; fx < FW; fx++){
+        var gx = fx/S, gcx = fx >> 1; if (gcx >= W) gcx = W-1;
+        var idxC = gcy*W+gcx, c = C[idxC];
+        var lr0 = c === 3 ? -1 : FIELD.LR[idxC];
+
+        var r0 = bilinear(R, gx, gy);
+        var rx1 = bilinear(R, gx+1, gy), rx0 = bilinear(R, gx-1, gy);
+        var ry1 = bilinear(R, gx, gy+1), ry0 = bilinear(R, gx, gy-1);
+        var dRdx = (rx1-rx0)*0.5, dRdy = (ry1-ry0)*0.5;
+        var oVal = bilinear(O, gx, gy);
+
+        if (c === 1){
+          var oSat = oVal < 1 ? 1 : 0;
+          dRdx += (bilinear(O,gx+1,gy)-bilinear(O,gx-1,gy))*0.5*oSat*0.35;
+          dRdy += (bilinear(O,gx,gy+1)-bilinear(O,gx,gy-1))*0.5*oSat*0.35;
+        }
+
+        var nx = -dRdx*11.5, ny = -dRdy*11.5, nz = 1;
+        if (lr0 === 3){
+          // 段階K: ゆず肌の粒陰影 — AGGF勾配を法線へ加算(上塗のみ)
+          var aggGx = (bilinear(FIELD.AGGF, gx+1, gy)-bilinear(FIELD.AGGF, gx-1, gy))*0.5;
+          var aggGy = (bilinear(FIELD.AGGF, gx, gy+1)-bilinear(FIELD.AGGF, gx, gy-1))*0.5;
+          nx += aggGx*6*FIELD.aggAmt; ny += aggGy*6*FIELD.aggAmt;
+        }
+        var nlen = Math.sqrt(nx*nx+ny*ny+nz*nz);
+        var ndl = (nx*LX+ny*LY+nz*LZ)/nlen;
+        var diffuse = 0.75 + 0.45*Math.max(-1, Math.min(1, ndl));
+        var lap = 4*r0-(rx0+rx1+ry0+ry1);
+        var conc = Math.max(0, Math.min(1, -lap*8));
+        var ao = 1 - 0.24*conc;
+        var macroLv = bilinear(FIELD.macroL, gx, gy), macroHv = bilinear(FIELD.macroH, gx, gy);
+        var jitter = 1 + (hash2f(fx, fy, (FIELD.seed ^ 0x55) & 0xffff)*2-1)*0.04;
+        var light = diffuse*ao*jitter;
+        var rgb;
+
+        if (c === 3){
+          rgb = [18*ao, 14*ao, 12*ao];
+        } else {
+          // 段階H: 侵食断面 — 可視層はLR(残存最上層)で決まる。3=上塗/2=下塗/1=プライマー/0=露出(酸化)
+          var lr = lr0;
+          if (lr === 0){
+            var age = A[idxC] === 0xFFFF ? 0 : (1 - A[idxC]/FIELD.ticks);
+            rgb = rampSample(Math.max(0, Math.min(0.9, age*0.5 + Math.min(oVal,3)/3*0.4)));
+            var jig = 1 + (hash2f(gcx, gcy, 0x9A11)*2-1)*0.18;
+            var grain = 1 + (valueNoise2D(fx/2.5, fy/2.5, (FIELD.seed ^ 0x7C) & 0xffff)*2-1)*0.22;
+            rgb[0] *= jig*grain; rgb[1] *= jig*grain; rgb[2] *= jig*grain;
+          } else if (lr === 1){
+            var rampT = 0.2 + 0.3*Math.min(oVal,2)/2;
+            var rc = rampSample(rampT);
+            var mixA = Math.min(oVal/2.5, 0.55);
+            rgb = [primer[0]*(1-mixA)+rc[0]*mixA, primer[1]*(1-mixA)+rc[1]*mixA, primer[2]*(1-mixA)+rc[2]*mixA];
+            var grainPr = 1 + (hash2f(gcx, gcy, 0x9C33)*2-1)*0.06;
+            rgb[0]*=grainPr; rgb[1]*=grainPr; rgb[2]*=grainPr;
+          } else if (lr === 2){
+            rgb = hsl2rgb(FIELD.underHSL.h, FIELD.underHSL.s, Math.max(0, Math.min(100, FIELD.underHSL.l*(1+macroLv*0.06))));
+            var brownU = Math.min(oVal,1)*0.15;
+            rgb[0] *= 1+brownU; rgb[1] *= 1-brownU*0.3; rgb[2] *= 1-brownU*0.5;
+            var grainUn = 1 + (hash2f(gcx, gcy, 0x9D44)*2-1)*0.06;
+            rgb[0]*=grainUn; rgb[1]*=grainUn; rgb[2]*=grainUn;
+          } else {
+            rgb = hsl2rgb(FIELD.paintHSL.h+macroHv*4, FIELD.paintHSL.s, Math.max(0, Math.min(100, FIELD.paintHSL.l*(1+macroLv*0.10))));
+            if (FIELD.nearRust[idxC]){
+              rgb[0] = rgb[0]*0.9+primer[0]*0.1; rgb[1] = rgb[1]*0.9+primer[1]*0.1; rgb[2] = rgb[2]*0.9+primer[2]*0.1;
+            }
+            if (FIELD.chipEdge[idxC]){ var ch0 = 1.1 + hash2f(gcx, gcy, 0xC41)*0.3; rgb[0]*=ch0; rgb[1]*=ch0; rgb[2]*=ch0; }
+            var bandN = FIELD.rollVert ? valueNoise2D(gx/8, gy/90, FIELD.saltBand) : valueNoise2D(gx/90, gy/8, FIELD.saltBand);
+            var rollB = 1 + (bandN*2-1)*0.08;
+            rgb[0]*=rollB; rgb[1]*=rollB; rgb[2]*=rollB;
+            var speck = 1 + (hash2f(gcx, gcy, 0x8B15)*2-1)*0.06*FIELD.aggAmt;
+            rgb[0]*=speck; rgb[1]*=speck; rgb[2]*=speck;
+            var chalkAmt = FIELD.chalk[idxC]*0.72;
+            if (chalkAmt > 0){
+              var lum = (rgb[0]+rgb[1]+rgb[2])/3, gT = Math.min(255, lum*1.2+18);
+              rgb[0] += (gT-rgb[0])*chalkAmt; rgb[1] += (gT-rgb[1])*chalkAmt; rgb[2] += (gT-rgb[2])*chalkAmt;
+            }
+            if (FIELD.CRACK[idxC] === 1){
+              rgb[0]*=0.82; rgb[1]*=0.82; rgb[2]*=0.82;
+              if (c >= 1){
+                var rcr = rampSample(0.3);
+                rgb[0] = rgb[0]*0.8+rcr[0]*0.2; rgb[1] = rgb[1]*0.8+rcr[1]*0.2; rgb[2] = rgb[2]*0.8+rcr[2]*0.2;
+              }
+            }
+          }
+        }
+
+        var rr = rgb[0]*light, gg = rgb[1]*light, bb = rgb[2]*light;
+        var stainVal = bilinear(STAIN, gx, gy);
+        if (stainVal > 0){
+          var alpha = Math.pow(Math.min(1, stainVal/5), 0.6)*0.42;
+          rr = rr*(1-alpha) + 188*light*alpha;
+          gg = gg*(1-alpha) + 100*light*alpha;
+          bb = bb*(1-alpha) + 40*light*alpha;
+        }
+
+        var pidx = (fy*FW+fx)*4;
+        data[pidx] = Math.max(0, Math.min(255, rr));
+        data[pidx+1] = Math.max(0, Math.min(255, gg));
+        data[pidx+2] = Math.max(0, Math.min(255, bb));
+        data[pidx+3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+
+    var n = W*H, rustN = 0;
+    for (var i = 0; i < n; i++) if (C[i] >= 1) rustN++;
+    $("state").textContent = "静置 — 腐食 " + (rustN/n*100).toFixed(1) + "%";
+  }
+  renderFinal.__impl = true;
+  function updateLabel(){
+    $("seed").textContent = "#" + FIELD.seed.toString(16).padStart(8, "0");
+    $("frame").textContent = FIELD.zoomName || "—";
+    $("texture").textContent = FIELD.aggName || "—";
+    $("ticks").textContent = FIELD.ticks;
+    $("paint").textContent = FIELD.paintName ? (FIELD.paintName + " / " + FIELD.underName) : "—";
+  }
+
+  // 段階E: 再演(τ=0→TICKSを約6秒でスイープ、格子解像度の簡易合成→最後にフル解像度で確定)
+  var animId = 0;
+  var replayCv = document.createElement("canvas");
+  replayCv.width = W; replayCv.height = H;
+  var rctx = replayCv.getContext("2d");
+
+  function drawReplayFrame(tau){
+    var n = W*H, A = FIELD.A, O = FIELD.O, C = FIELD.C, STAIN = FIELD.STAIN;
+    var FT2 = FIELD.FT2, FT1 = FIELD.FT1, FT0 = FIELD.FT0, primer = FIELD.primer, chalk = FIELD.chalk, wear = FIELD.wear;
+    var paintRGB = hsl2rgb(FIELD.paintHSL.h, FIELD.paintHSL.s, FIELD.paintHSL.l);
+    var underRGB = hsl2rgb(FIELD.underHSL.h, FIELD.underHSL.s, FIELD.underHSL.l);
+    var holeRGB = [18, 14, 12];
+    var img = rctx.createImageData(W, H);
+    var data = img.data;
+    var frac = FIELD.ticks > 0 ? tau/FIELD.ticks : 0;
+    var stainFrac = frac;
+    for (var i = 0; i < n; i++){
+      // 段階H: LR(τ) = τ<FT2?3(上塗) : τ<FT1?2(下塗) : τ<FT0?1(プライマー) : 0(露出/酸化)
+      var lr = tau < FT2[i] ? 3 : (tau < FT1[i] ? 2 : (tau < FT0[i] ? 1 : 0));
+      var rgb;
+      if (lr === 3){
+        rgb = [paintRGB[0], paintRGB[1], paintRGB[2]];
+        var chalkAmt = chalk[i]*0.72*frac;
+        if (chalkAmt > 0){
+          var lum = (rgb[0]+rgb[1]+rgb[2])/3, gT = Math.min(255, lum*1.2+18);
+          rgb[0] += (gT-rgb[0])*chalkAmt; rgb[1] += (gT-rgb[1])*chalkAmt; rgb[2] += (gT-rgb[2])*chalkAmt;
+        }
+        var wearAmt = wear[i]*frac*0.3;
+        rgb[0] *= 1-wearAmt; rgb[1] *= 1-wearAmt; rgb[2] *= 1-wearAmt;
+      } else if (lr === 2){
+        rgb = underRGB;
+      } else if (lr === 1){
+        rgb = primer;
+      } else if (C[i] === 3){
+        rgb = holeRGB;
+      } else {
+        var age = A[i] === 0xFFFF ? 0 : Math.max(0, (tau - A[i])/FIELD.ticks);
+        rgb = rampSample(Math.max(0, Math.min(1, age*0.5 + Math.min(O[i],3)/3*0.5)));
+      }
+      var sv = STAIN[i]*stainFrac;
+      var pidx = i*4, r = rgb[0], g = rgb[1], b = rgb[2];
+      if (sv > 0){
+        var alpha = Math.pow(Math.min(1, sv/8), 0.6)*0.55;
+        r = r*(1-alpha) + (r*178/255)*alpha;
+        g = g*(1-alpha) + (g*96/255)*alpha;
+        b = b*(1-alpha) + (b*32/255)*alpha;
+      }
+      data[pidx] = r; data[pidx+1] = g; data[pidx+2] = b; data[pidx+3] = 255;
+    }
+    rctx.putImageData(img, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, W*S, H*S);
+    ctx.drawImage(replayCv, 0, 0, W*S, H*S);
+  }
+
+  function replay(onDone){
+    cancelAnimationFrame(animId);
+    if (reduced || hiddenNow()){
+      renderFinal();
+      ctx.imageSmoothingEnabled = true;
+      onDone();
+      return;
+    }
+    setState("腐食中 — WEATHERING");
+    var DURATION = 6000, start = null;
+    function frame(ts){
+      if (start === null) start = ts;
+      var tau = Math.min(FIELD.ticks, ((ts-start)/DURATION)*FIELD.ticks);
+      drawReplayFrame(tau);
+      if (tau < FIELD.ticks && !hiddenNow()){
+        animId = requestAnimationFrame(frame);
+      } else {
+        ctx.imageSmoothingEnabled = true;
+        renderFinal();
+        onDone();
+      }
+    }
+    animId = requestAnimationFrame(frame);
+  }
+
+  function boot(){
+    cancelAnimationFrame(animId);
+    $("replay").disabled = true;
+    setState("生成中 — GENERATING");
+    buildSubstrate();
+    updateLabel();
+    simulate(FIELD.ticks);
+    replay(function(){ $("replay").disabled = false; });
+  }
+
+  $("replay").addEventListener("click", function(){
+    $("replay").disabled = true;
+    replay(function(){ $("replay").disabled = false; });
+  });
+
+  $("reseed").addEventListener("click", function(){
+    FIELD.seed = (Math.floor(Math.random()*4294967296)) >>> 0;
+    boot();
+  });
+
+  boot();
+})();
+</script>
+</body>
+</html>

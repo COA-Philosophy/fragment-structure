@@ -1130,6 +1130,15 @@
       file: 'works/amazarashi-v2.html',
       still: ''
     },
+    {
+      no: 'F068', version: 'v1', status: 'current',
+      project: 'JINEN',
+      use: '検体 No.003 / Specimen',
+      ja: '錆書',
+      en: 'Sabigaki - Rust Calligraphy',
+      file: 'works/sabigaki.html',
+      still: ''
+    },
   ];
 
   // ── 技法メタ（各作品のコードから命名 / works/<file> をキーに WORKS へマージ）──
@@ -1212,6 +1221,7 @@
     'works/kairagi.html': { family: '自己組織化', tech: '多段収縮の入れ子クラック窯', how: '窯勾配と厚み場の上で3段の冷却を繰り返し、緩和長を縮めながらテンソル応力伝播で島の中へ島を刻む。種は非封印の長形' },
     'works/amazarashi.html': { family: '自己組織化', tech: '塗装鋼板の腐食場シミュレーション', how: '雨を下方移流させ湿り場を運び、欠陥点の発錆が塗膜下を這行、剥離連鎖と錆汁流下を五つの場で解く' },
     'works/amazarashi-v2.html': { family: '自己組織化', tech: '塗装層序とD8水路の腐食場', how: '雨をD8最急降下で流し、欠陥から発錆・皮下這行、上塗→下塗→鉛丹→鋼の層序が接着力の順に剥離する' },
+    'works/sabigaki.html': { family: '自己組織化', tech: '腐蝕圧×塗膜臨界の多場風化窯', how: '亀裂と腐蝕圧Uを場で育て、U+応力が付着×膜厚を超えた点から露出・浮き・膨れへ分岐。錆汁は多幅拡散と重力移流で滲む' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

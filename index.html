@@ -1148,6 +1148,15 @@
       file: 'works/tsuchime-v1.html',
       still: ''
     },
+    {
+      no: 'F070', version: 'v1', status: 'current',
+      project: 'STUDIES',
+      use: '工房 / Studio',
+      ja: '錆書 — 写しラボ NO.003',
+      en: 'Sabigaki — Utsushi Lab NO.003',
+      file: 'works/sabigaki-v1.html',
+      still: ''
+    },
   ];
 
   // ── 技法メタ（各作品のコードから命名 / works/<file> をキーに WORKS へマージ）──
@@ -1232,6 +1241,7 @@
     'works/amazarashi-v2.html': { family: '自己組織化', tech: '塗装層序とD8水路の腐食場', how: '雨をD8最急降下で流し、欠陥から発錆・皮下這行、上塗→下塗→鉛丹→鋼の層序が接着力の順に剥離する' },
     'works/sabigaki.html': { family: '自己組織化', tech: '腐蝕圧×塗膜臨界の多場風化窯', how: '亀裂と腐蝕圧Uを場で育て、U+応力が付着×膜厚を超えた点から露出・浮き・膨れへ分岐。錆汁は多幅拡散と重力移流で滲む' },
     'works/tsuchime-v1.html': { family: '材質レリーフ', tech: '打点時系列の鍛造ハイトフィールド', how: '打点を配列順に高さ場へ局所上書きし凹面と潰れ痕を鍛造。曲率場×fbmで燻し、法線からBlinn陰影' },
+    'works/sabigaki-v1.html': { family: '材質レリーフ', tech: '参照抽出＋7層錆合成の写しパイプライン', how: '参照写真から錆斑・泡孔・亀裂を形態学抽出し、距離変換とfbmで7層合成、宣言光で陰影焼成' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

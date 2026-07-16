@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>写しラボ — 錆書 SABIGAKI UTSUSHI LAB v0.5</title>
+<style>
+  :root{
+    --paper:#F2EFE7; --paper2:#EBE7DB; --ink:#2B2723; --ink2:#6B6355;
+    --rule:#D8D2C4; --sabi:#A6521F; --sabi2:#7E3C13;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;font-size:13px}
+  .mono{font-family:ui-monospace,"Courier New",monospace;letter-spacing:.18em}
+  header{border-bottom:1px solid var(--rule);padding:14px 20px 10px;display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+  header .eyebrow{color:var(--sabi);font-size:10px}
+  header h1{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-size:26px;margin:0;font-weight:600}
+  header .sub{color:var(--ink2);font-size:10px}
+  #err{display:none;background:#7E1F13;color:#F2EFE7;padding:8px 20px;font-size:12px;white-space:pre-wrap}
+  main{display:flex;gap:0;align-items:flex-start;flex-wrap:wrap}
+  /* 検分台 */
+  #stagewrap{flex:1 1 480px;min-width:340px;padding:16px 20px;border-right:1px solid var(--rule)}
+  #stage{background:var(--paper2);border:1px solid var(--rule);padding:10px;display:inline-block;max-width:100%}
+  #main{display:block;max-width:100%;height:auto;image-rendering:auto}
+  #stage.squint #main{filter:blur(2.2px)}
+  .viewbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:10px 0 4px}
+  .viewbar label{cursor:pointer}
+  .blendrow{display:flex;gap:10px;align-items:center;margin:6px 0}
+  .blendrow input[type=range]{width:220px}
+  #mini{display:flex;gap:8px;margin-top:10px}
+  #mini canvas{width:106px;height:160px;filter:blur(1.1px);border:1px solid var(--rule)}
+  .cap{color:var(--ink2);font-size:10px}
+  #status{color:var(--sabi2);font-size:11px;min-height:16px;margin-top:8px}
+  /* 調律盤 */
+  #panel{flex:1 1 360px;min-width:320px;padding:16px 20px;max-width:560px}
+  .hud{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .hud div{background:var(--paper2);border:1px solid var(--rule);padding:6px 8px}
+  .hud b{display:block;font-size:15px;font-weight:600}
+  .hud span{font-size:9px;color:var(--ink2)}
+  .layers{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;padding:8px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+  details{border-bottom:1px dotted var(--rule);padding:6px 0}
+  summary{cursor:pointer;color:var(--sabi2);font-size:11px;letter-spacing:.14em;font-family:ui-monospace,monospace}
+  .sl{display:grid;grid-template-columns:150px 1fr 52px;gap:8px;align-items:center;margin:5px 0}
+  .sl label{font-size:11px;color:var(--ink2)}
+  .sl input[type=range]{width:100%}
+  .sl output{font-family:ui-monospace,monospace;font-size:11px;text-align:right}
+  button{background:var(--ink);color:var(--paper);border:0;padding:8px 14px;font-family:ui-monospace,monospace;
+    letter-spacing:.16em;font-size:11px;cursor:pointer;margin:8px 8px 0 0}
+  button.ghost{background:transparent;color:var(--ink);border:1px solid var(--ink)}
+  textarea{width:100%;height:110px;background:var(--paper2);border:1px solid var(--rule);
+    font-family:ui-monospace,monospace;font-size:10px;margin-top:8px;color:var(--ink)}
+  footer{padding:10px 20px;color:var(--ink2);font-size:10px;border-top:1px solid var(--rule)}
+  input[type=range]{accent-color:var(--sabi)}
+  input[type=checkbox],input[type=radio]{accent-color:var(--sabi)}
+</style>
+</head>
+<body>
+<div id="err"></div>
+<header>
+  <div>
+    <div class="eyebrow mono">SPECIMEN — NO.003 / UTSUSHI LAB</div>
+    <h1>錆書 — 写しラボ</h1>
+  </div>
+  <div class="sub mono">器 v0.5 — 非公開・研究用贋作 / 写真の双子方式 / 手合わせ抽出＋7層合成 / 停止条件: 2往復</div>
+</header>
+
+<main>
+  <section id="stagewrap">
+    <div class="viewbar mono" id="views">
+      <label><input type="radio" name="view" value="twin" checked> 双子</label>
+      <label><input type="radio" name="view" value="ref"> 参照</label>
+      <label><input type="radio" name="view" value="teawase"> 手合わせ</label>
+      <label><input type="radio" name="view" value="sbs"> 並置</label>
+      <label><input type="checkbox" id="squint"> スクワント</label>
+      <label><input type="checkbox" id="blink"> 点滅</label>
+    </div>
+    <div class="blendrow">
+      <span class="cap mono">参照</span>
+      <input type="range" id="blend" min="0" max="1" step="0.01" value="1">
+      <span class="cap mono">双子</span>
+    </div>
+    <div id="stage"><canvas id="main" width="426" height="640"></canvas></div>
+    <div id="mini">
+      <div><canvas id="miniRef" width="426" height="640"></canvas><div class="cap mono">REF 25%</div></div>
+      <div><canvas id="miniTwin" width="426" height="640"></canvas><div class="cap mono">TWIN 25%</div></div>
+    </div>
+    <div id="status" class="mono">焼成準備…</div>
+  </section>
+
+  <section id="panel">
+    <div class="hud mono" id="hud">
+      <div><b id="cBloom">–</b><span>開花体</span></div>
+      <div><b id="cPore">–</b><span>泡孔</span></div>
+      <div><b id="cDot">–</b><span>白斑</span></div>
+      <div><b id="cCrack">–</b><span>亀裂px</span></div>
+    </div>
+    <div class="layers mono" id="toggles">
+      <label><input type="checkbox" data-on="on3" checked> L3 白斑</label>
+      <label><input type="checkbox" data-on="on4" checked> L4 亀裂</label>
+      <label><input type="checkbox" data-on="on5" checked> L5 段差</label>
+      <label><input type="checkbox" data-on="on6" checked> L6 開花体</label>
+      <label><input type="checkbox" data-on="on7" checked> L7 撮影</label>
+    </div>
+    <div id="sliders"></div>
+    <details>
+      <summary>A 抽出パラメータ（変更後は再抽出）</summary>
+      <div id="exsliders"></div>
+      <button id="reextract">再抽出して焼成</button>
+    </details>
+    <div>
+      <button id="ledger">文法台帳を書き出し</button>
+      <button id="export" class="ghost">調律JSONを書き出し</button>
+      <button id="import" class="ghost">調律JSONを読み込み</button>
+      <button id="save" class="ghost">双子PNGを保存</button>
+    </div>
+    <textarea id="json" class="mono" spellcheck="false" placeholder="調律JSON"></textarea>
+  </section>
+</main>
+<footer class="mono">器: sabigaki_utsushi_lab v0.5 — 単一HTML・外部依存なし。参照JPEG同梱。合格 = 並置スクワント同種判定＋残差名指し＋層別変数表。</footer>
+
+<script>
+/* 錆書・写しラボ core — 抽出＋合成（DOM非依存）
+   Python版 calligraphy_utsushi.py の等価移植。node/ブラウザ共用 */
+(function (global) {
+  "use strict";
+
+  // ---------- PRNG ----------
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function gauss2(rand) { // Box-Muller
+    let u = 0, v = 0;
+    while (u === 0) u = rand();
+    while (v === 0) v = rand();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+
+  // ---------- 基本演算 ----------
+  const clamp = (x, a, b) => x < a ? a : (x > b ? b : x);
+  const sstep = (x, a, b) => { const t = clamp((x - a) / (b - a + 1e-9), 0, 1); return t * t * (3 - 2 * t); };
+
+  function gaussKernel(sigma) {
+    const r = Math.max(1, Math.ceil(sigma * 3));
+    const k = new Float32Array(2 * r + 1);
+    let s = 0;
+    for (let i = -r; i <= r; i++) { const v = Math.exp(-(i * i) / (2 * sigma * sigma)); k[i + r] = v; s += v; }
+    for (let i = 0; i < k.length; i++) k[i] /= s;
+    return { k, r };
+  }
+  const _kcache = new Map();
+  function blur(src, W, H, sigma, out) {
+    if (sigma <= 0.01) { (out || (out = new Float32Array(src.length))).set(src); return out; }
+    const key = sigma.toFixed(3);
+    let kk = _kcache.get(key); if (!kk) { kk = gaussKernel(sigma); _kcache.set(key, kk); }
+    const { k, r } = kk;
+    const tmp = new Float32Array(W * H);
+    out = out || new Float32Array(W * H);
+    for (let y = 0; y < H; y++) {           // 横
+      const row = y * W;
+      for (let x = 0; x < W; x++) {
+        let s = 0;
+        for (let i = -r; i <= r; i++) {
+          let xx = x + i; if (xx < 0) xx = 0; else if (xx >= W) xx = W - 1;
+          s += src[row + xx] * k[i + r];
+        }
+        tmp[row + x] = s;
+      }
+    }
+    for (let x = 0; x < W; x++) {           // 縦
+      for (let y = 0; y < H; y++) {
+        let s = 0;
+        for (let i = -r; i <= r; i++) {
+          let yy = y + i; if (yy < 0) yy = 0; else if (yy >= H) yy = H - 1;
+          s += tmp[yy * W + x] * k[i + r];
+        }
+        out[y * W + x] = s;
+      }
+    }
+    return out;
+  }
+
+  // 円盤フットプリントの min/max（グレースケール形態学）
+  function diskOffsets(r) {
+    const o = [];
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++)
+      if (dx * dx + dy * dy <= r * r) o.push([dy, dx]);
+    return o;
+  }
+  function morphDisk(src, W, H, r, isMax) {
+    const off = diskOffsets(r);
+    const out = new Float32Array(W * H);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      let v = isMax ? -1e30 : 1e30;
+      for (let i = 0; i < off.length; i++) {
+        let yy = y + off[i][0]; if (yy < 0) yy = 0; else if (yy >= H) yy = H - 1;
+        let xx = x + off[i][1]; if (xx < 0) xx = 0; else if (xx >= W) xx = W - 1;
+        const s = src[yy * W + xx];
+        if (isMax ? s > v : s < v) v = s;
+      }
+      out[y * W + x] = v;
+    }
+    return out;
+  }
+  const grayClose = (s, W, H, r) => morphDisk(morphDisk(s, W, H, r, true), W, H, r, false);
+  const grayOpen  = (s, W, H, r) => morphDisk(morphDisk(s, W, H, r, false), W, H, r, true);
+  function binMorph(mask, W, H, r, isMax) {
+    const f = Float32Array.from(mask);
+    const m = morphDisk(f, W, H, r, isMax);
+    const out = new Uint8Array(W * H);
+    for (let i = 0; i < out.length; i++) out[i] = m[i] > 0.5 ? 1 : 0;
+    return out;
+  }
+
+  // 連結成分（8近傍）
+  function labelCC(mask, W, H) {
+    const lab = new Int32Array(W * H);
+    const areas = [0];
+    const stack = new Int32Array(W * H);
+    let next = 1;
+    for (let i = 0; i < W * H; i++) {
+      if (!mask[i] || lab[i]) continue;
+      let sp = 0; stack[sp++] = i; lab[i] = next; let area = 0;
+      while (sp) {
+        const p = stack[--sp]; area++;
+        const y = (p / W) | 0, x = p - y * W;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          if (!dy && !dx) continue;
+          const yy = y + dy, xx = x + dx;
+          if (yy < 0 || yy >= H || xx < 0 || xx >= W) continue;
+          const q = yy * W + xx;
+          if (mask[q] && !lab[q]) { lab[q] = next; stack[sp++] = q; }
+        }
+      }
+      areas.push(area); next++;
+    }
+    return { lab, areas, n: next - 1 };
+  }
+  function removeSmall(mask, W, H, minArea) {
+    const { lab, areas } = labelCC(mask, W, H);
+    const out = new Uint8Array(W * H);
+    for (let i = 0; i < out.length; i++) out[i] = (lab[i] && areas[lab[i]] >= minArea) ? 1 : 0;
+    return out;
+  }
+  function fillSmallHoles(mask, W, H, maxArea) { // 境界に接しない背景成分 area<maxArea を埋める
+    const inv = new Uint8Array(W * H);
+    for (let i = 0; i < inv.length; i++) inv[i] = mask[i] ? 0 : 1;
+    const { lab, areas, n } = labelCC(inv, W, H);
+    const touch = new Uint8Array(n + 1);
+    for (let x = 0; x < W; x++) { if (lab[x]) touch[lab[x]] = 1; const b = (H - 1) * W + x; if (lab[b]) touch[lab[b]] = 1; }
+    for (let y = 0; y < H; y++) { const l = lab[y * W]; if (l) touch[l] = 1; const r2 = lab[y * W + W - 1]; if (r2) touch[r2] = 1; }
+    const out = Uint8Array.from(mask);
+    for (let i = 0; i < out.length; i++) {
+      const l = lab[i];
+      if (l && !touch[l] && areas[l] < maxArea) out[i] = 1;
+    }
+    return out;
+  }
+
+  // 距離変換（Felzenszwalb）: setMask=1 の最近画素までの距離
+  function distToSet(setMask, W, H) {
+    const INF = 1e12;
+    const f = new Float32Array(W * H);
+    for (let i = 0; i < f.length; i++) f[i] = setMask[i] ? 0 : INF;
+    const d = new Float32Array(Math.max(W, H));
+    const v = new Int32Array(Math.max(W, H));
+    const z = new Float32Array(Math.max(W, H) + 1);
+    const g = new Float32Array(Math.max(W, H));
+    function edt1d(n, get, set) {
+      let k = 0; v[0] = 0; z[0] = -INF; z[1] = INF;
+      for (let q = 1; q < n; q++) {
+        let s = ((get(q) + q * q) - (get(v[k]) + v[k] * v[k])) / (2 * q - 2 * v[k]);
+        while (s <= z[k]) {
+          k--;
+          s = ((get(q) + q * q) - (get(v[k]) + v[k] * v[k])) / (2 * q - 2 * v[k]);
+        }
+        k++; v[k] = q; z[k] = s; z[k + 1] = INF;
+      }
+      k = 0;
+      for (let q = 0; q < n; q++) {
+        while (z[k + 1] < q) k++;
+        const p = v[k];
+        set(q, (q - p) * (q - p) + get(p));
+      }
+    }
+    for (let x = 0; x < W; x++) {   // 縦
+      for (let y = 0; y < H; y++) g[y] = f[y * W + x];
+      edt1d(H, (i) => g[i], (i, val) => { d[i] = val; });
+      for (let y = 0; y < H; y++) f[y * W + x] = d[y];
+    }
+    for (let y = 0; y < H; y++) {   // 横
+      for (let x = 0; x < W; x++) g[x] = f[y * W + x];
+      edt1d(W, (i) => g[i], (i, val) => { d[i] = val; });
+      for (let x = 0; x < W; x++) f[y * W + x] = Math.sqrt(d[x]);
+    }
+    return f;
+  }
+
+  function maxFilterSq(src, W, H, r) { // 正方 max（分離）
+    const tmp = new Float32Array(W * H), out = new Float32Array(W * H);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      let m = -1e30;
+      for (let i = -r; i <= r; i++) { let xx = clamp(x + i, 0, W - 1); const s = src[y * W + xx]; if (s > m) m = s; }
+      tmp[y * W + x] = m;
+    }
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      let m = -1e30;
+      for (let i = -r; i <= r; i++) { let yy = clamp(y + i, 0, H - 1); const s = tmp[yy * W + x]; if (s > m) m = s; }
+      out[y * W + x] = m;
+    }
+    return out;
+  }
+
+  function fbm(W, H, scales, weights, seed) {
+    const rand = mulberry32(seed);
+    const out = new Float32Array(W * H);
+    const n = new Float32Array(W * H);
+    for (let s = 0; s < scales.length; s++) {
+      for (let i = 0; i < n.length; i++) n[i] = gauss2(rand);
+      const b = blur(n, W, H, scales[s]);
+      let mx = 1e-9; for (let i = 0; i < b.length; i++) { const a = Math.abs(b[i]); if (a > mx) mx = a; }
+      for (let i = 0; i < out.length; i++) out[i] += weights[s] * b[i] / mx;
+    }
+    let mx = 1e-9; for (let i = 0; i < out.length; i++) { const a = Math.abs(out[i]); if (a > mx) mx = a; }
+    for (let i = 0; i < out.length; i++) out[i] /= mx;
+    return out;
+  }
+
+  function median(arr) {
+    if (!arr.length) return null;
+    const a = Float32Array.from(arr).sort();
+    return a[a.length >> 1];
+  }
+  function smoothRows(buf, H, sigma) { // (H×3) の行方向1Dガウス平滑
+    const { k, r } = gaussKernel(sigma);
+    const sm = new Float32Array(H * 3);
+    for (let c = 0; c < 3; c++) for (let y = 0; y < H; y++) {
+      let s = 0;
+      for (let i = -r; i <= r; i++) {
+        let yy = y + i; if (yy < 0) yy = 0; else if (yy >= H) yy = H - 1;
+        s += buf[yy * 3 + c] * k[i + r];
+      }
+      sm[y * 3 + c] = s;
+    }
+    buf.set(sm);
+  }
+  function blurAniso(src, W, H, sx, sy) { // 横σx→縦σy の分離ガウス（筋=縦伸長）
+    const kx = gaussKernel(Math.max(sx, 0.05)), ky = gaussKernel(Math.max(sy, 0.05));
+    const tmp = new Float32Array(W * H), out = new Float32Array(W * H);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      let s = 0;
+      for (let i = -kx.r; i <= kx.r; i++) { let xx = clamp(x + i, 0, W - 1); s += src[y * W + xx] * kx.k[i + kx.r]; }
+      tmp[y * W + x] = s;
+    }
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      let s = 0;
+      for (let i = -ky.r; i <= ky.r; i++) { let yy = clamp(y + i, 0, H - 1); s += tmp[yy * W + x] * ky.k[i + ky.r]; }
+      out[y * W + x] = s;
+    }
+    return out;
+  }
+  function pct(sorted, p) { // 昇順配列のパーセンタイル
+    if (!sorted.length) return null;
+    const i = clamp(Math.round((sorted.length - 1) * p), 0, sorted.length - 1);
+    return sorted[i];
+  }
+
+  // ---------- 既定調律値 ----------
+  const DEFAULTS = {
+    // 抽出
+    rust_warm_th: 0.125, rust_rg_th: 0.045, rim_warm_th: 0.30, rim_val_th: 0.34,
+    crack_mag_th: 0.038, speckle_th: 0.055, hole_max: 70,
+    // L2
+    resid_w: 0.80, fbm_amp: 0.016, calib_mean: 1.0, calib_sd: 0.35,
+    // L2.5 ペンキ膜
+    paint_clean_r: 7, paint_clean: 0.55, paint_sheen: 0.12,
+    // L3
+    dot_gain: 0.55, dot_rad_scale: 0.85, dot_shadow_fr: 0.30,
+    micro_gain: 0.35, dot_big_area: 3, dot_low_cut: 0.35,
+    // L4
+    crack_strength: 0.98, crack_widen: 0.7, crack_low_bst: 0.30,
+    stain_gain: 1.15, stain_lambda: 55, stain_band_c: 0.46, stain_band_w: 0.24,
+    stain_floor: 0.05, crack_guard: 0.45,
+    // L5
+    light_az: 300, light_el: 52, step_shadow: 0.50, step_shadow_r: 3.2,
+    section_gain: 0.50, gap_dark: 0.24,
+    // L6
+    rim_width: 3.0, rim_ring_w: 0.22, rim_x_w: 0.95,
+    vmod_lo: 0.32, vmod_hi: 1.55, grain_amp: 0.045,
+    wet_ks: 0.70, wet_shin: 30, sheen_amp: 0.16,
+    crust_grain: 0.10, streak_amp: 0.18, lite_warm: 1.0, rim_burn: 0.30,
+    juice_max: 0.26, juice_adv: 0.85,
+    // L7
+    tone_contrast: 1.045, vignette: 0.09, film_grain: 0.011, film_blur: 0.45,
+    // 層トグル
+    on3: 1, on4: 1, on5: 1, on6: 1, on7: 1,
+  };
+  const COL = {
+    crack_up: [0.16, 0.13, 0.115], crack_low: [0.13, 0.115, 0.14],
+    stain: [0.36, 0.145, 0.055],
+    section: [0.86, 0.88, 0.885],
+    core_a: [0.105, 0.036, 0.020], core_b: [0.295, 0.084, 0.040],
+    crust_a: [0.40, 0.155, 0.065], crust_b: [0.55, 0.245, 0.105],
+    lite: [0.70, 0.40, 0.16],
+    rim_a: [0.60, 0.26, 0.07], rim_b: [0.88, 0.53, 0.175],
+    pore: [0.80, 0.835, 0.845],
+    spec: [1.0, 0.96, 0.88],
+    juice_trans: [0.95, 0.70, 0.48],
+    juice_sigmas: [3, 9, 22], juice_w: [0.45, 0.33, 0.22],
+  };
+
+  // ---------- STAGE A: 手合わせ抽出 ----------
+  function extract(ref, W, H, P) {
+    const N = W * H;
+    const R = ref.R, G = ref.G, B = ref.B;
+    const V = new Float32Array(N);
+    for (let i = 0; i < N; i++) V[i] = 0.299 * R[i] + 0.587 * G[i] + 0.114 * B[i];
+
+    let raw = new Uint8Array(N);
+    for (let i = 0; i < N; i++) raw[i] = (R[i] - B[i] > P.rust_warm_th && R[i] - G[i] > P.rust_rg_th) ? 1 : 0;
+    raw = removeSmall(raw, W, H, 6);
+    let body = binMorph(raw, W, H, 2, true);      // dilate
+    body = binMorph(body, W, H, 2, false);        // erode → closing
+    body = removeSmall(body, W, H, 10);
+    const filled = fillSmallHoles(body, W, H, P.hole_max);
+
+    // 泡孔: closing前 raw の穴（1..hole_max）
+    let pores0 = new Uint8Array(N);
+    for (let i = 0; i < N; i++) pores0[i] = (filled[i] && !raw[i]) ? 1 : 0;
+    {
+      const { lab, areas } = labelCC(pores0, W, H);
+      for (let i = 0; i < N; i++) {
+        const l = lab[i];
+        pores0[i] = (l && areas[l] >= 1 && areas[l] <= P.hole_max) ? 1 : 0;
+      }
+    }
+    const pores = pores0;
+
+    const rim = new Uint8Array(N);
+    for (let i = 0; i < N; i++)
+      rim[i] = (filled[i] && R[i] - B[i] > P.rim_warm_th && V[i] > P.rim_val_th) ? 1 : 0;
+
+    // 亀裂
+    const bh0 = grayClose(V, W, H, 3);
+    const inner = binMorph(filled, W, H, 2, false); // erosion
+    const crackMag = new Float32Array(N);
+    for (let i = 0; i < N; i++) {
+      const v = bh0[i] - V[i];
+      crackMag[i] = (inner[i] || v <= 0) ? 0 : v;
+    }
+    let cr = new Uint8Array(N);
+    for (let i = 0; i < N; i++) cr[i] = crackMag[i] > P.crack_mag_th ? 1 : 0;
+    cr = removeSmall(cr, W, H, 14);
+    for (let i = 0; i < N; i++) if (!cr[i]) crackMag[i] = 0;
+
+    // 白斑
+    const op = grayOpen(V, W, H, 2);
+    const sp = new Uint8Array(N);
+    for (let i = 0; i < N; i++) sp[i] = (V[i] - op[i] > P.speckle_th && !filled[i] && !cr[i]) ? 1 : 0;
+    const dots = [];
+    {
+      const { lab, areas, n } = labelCC(sp, W, H);
+      const sy = new Float64Array(n + 1), sx = new Float64Array(n + 1);
+      for (let i = 0; i < N; i++) { const l = lab[i]; if (l) { sy[l] += (i / W) | 0; sx[l] += i % W; } }
+      for (let l = 1; l <= n; l++) dots.push([sy[l] / areas[l], sx[l] / areas[l], areas[l]]);
+    }
+
+    // 縦LUT＋風化雲残差
+    let excl = new Uint8Array(N);
+    for (let i = 0; i < N; i++) excl[i] = (filled[i] || cr[i] || sp[i]) ? 1 : 0;
+    excl = binMorph(excl, W, H, 2, true);
+    const lut = new Float32Array(H * 3);
+    let prev = [0, 0, 0]; let c0 = 0;
+    for (let x = 0; x < W; x++) { prev[0] += R[x]; prev[1] += G[x]; prev[2] += B[x]; c0++; }
+    prev = prev.map(v => v / c0);
+    const rowbuf = [new Float32Array(W), new Float32Array(W), new Float32Array(W)];
+    for (let y = 0; y < H; y++) {
+      let m = 0;
+      for (let x = 0; x < W; x++) {
+        const i = y * W + x;
+        if (!excl[i]) { rowbuf[0][m] = R[i]; rowbuf[1][m] = G[i]; rowbuf[2][m] = B[i]; m++; }
+      }
+      if (m > 12) prev = [median(rowbuf[0].subarray(0, m)), median(rowbuf[1].subarray(0, m)), median(rowbuf[2].subarray(0, m))];
+      lut[y * 3] = prev[0]; lut[y * 3 + 1] = prev[1]; lut[y * 3 + 2] = prev[2];
+    }
+    smoothRows(lut, H, 9);
+    const resid = [new Float32Array(N), new Float32Array(N), new Float32Array(N)];
+    {
+      const base = [new Float32Array(N), new Float32Array(N), new Float32Array(N)];
+      for (let i = 0; i < N; i++) {
+        const y = (i / W) | 0;
+        base[0][i] = excl[i] ? lut[y * 3] : R[i];
+        base[1][i] = excl[i] ? lut[y * 3 + 1] : G[i];
+        base[2][i] = excl[i] ? lut[y * 3 + 2] : B[i];
+      }
+      for (let c = 0; c < 3; c++) {
+        const low = blur(base[c], W, H, 15);
+        for (let i = 0; i < N; i++) { const y = (i / W) | 0; resid[c][i] = low[i] - lut[y * 3 + c]; }
+      }
+    }
+
+    // 亀裂線色LUT（行別・参照の亀裂画素の中央値 → σ9平滑）
+    const crackLut = new Float32Array(H * 3);
+    {
+      let pc = [0.14, 0.12, 0.13];
+      for (let y = 0; y < H; y++) {
+        let m = 0;
+        for (let x = 0; x < W; x++) {
+          const i = y * W + x;
+          if (cr[i]) { rowbuf[0][m] = R[i]; rowbuf[1][m] = G[i]; rowbuf[2][m] = B[i]; m++; }
+        }
+        if (m > 6) pc = [median(rowbuf[0].subarray(0, m)), median(rowbuf[1].subarray(0, m)), median(rowbuf[2].subarray(0, m))];
+        crackLut[y * 3] = pc[0]; crackLut[y * 3 + 1] = pc[1]; crackLut[y * 3 + 2] = pc[2];
+      }
+      smoothRows(crackLut, H, 9);
+    }
+    // 地色校正: 参照の行別 平均/標準偏差（開花体外）→ σ7平滑
+    const rowMeanRef = new Float32Array(H * 3), rowSdRef = new Float32Array(H * 3);
+    {
+      let pm = [0.5, 0.5, 0.5], ps = [0.1, 0.1, 0.1];
+      for (let y = 0; y < H; y++) {
+        let n = 0; const s = [0, 0, 0], s2 = [0, 0, 0];
+        for (let x = 0; x < W; x++) {
+          const i = y * W + x;
+          if (filled[i]) continue;
+          s[0] += R[i]; s[1] += G[i]; s[2] += B[i];
+          s2[0] += R[i] * R[i]; s2[1] += G[i] * G[i]; s2[2] += B[i] * B[i]; n++;
+        }
+        if (n > 20) {
+          for (let c = 0; c < 3; c++) {
+            pm[c] = s[c] / n;
+            ps[c] = Math.sqrt(Math.max(1e-8, s2[c] / n - pm[c] * pm[c]));
+          }
+        }
+        for (let c = 0; c < 3; c++) { rowMeanRef[y * 3 + c] = pm[c]; rowSdRef[y * 3 + c] = ps[c]; }
+      }
+      smoothRows(rowMeanRef, H, 7); smoothRows(rowSdRef, H, 7);
+    }
+
+    // ---- 合成用キャッシュ（抽出にのみ依存） ----
+    const notBody = new Uint8Array(N);
+    for (let i = 0; i < N; i++) notBody[i] = filled[i] ? 0 : 1;
+    const d_in = distToSet(notBody, W, H);
+    const d_out = distToSet(filled, W, H);
+    const thick = maxFilterSq(d_in, W, H, 4);
+    const msB = blur(Float32Array.from(filled), W, H, 1.1);
+    const nx2 = new Float32Array(N), ny2 = new Float32Array(N);
+    gradNormals2D(msB, W, H, nx2, ny2);
+    const rimSoft = blur(Float32Array.from(rim), W, H, 0.8);
+    for (let i = 0; i < N; i++) rimSoft[i] = clamp(rimSoft[i] * 1.4, 0, 1);
+    const vm = blur(V, W, H, 1.2);
+    const inVals = []; for (let i = 0; i < N; i++) if (filled[i]) inVals.push(vm[i]);
+    const vmMed = (median(inVals) || 1) + 1e-9;
+    const f1 = fbm(W, H, [2, 5, 12], [0.5, 0.32, 0.18], 21);
+    const f2 = fbm(W, H, [3, 8, 18], [0.5, 0.3, 0.2], 33);
+    const f7 = fbm(W, H, [4, 9, 20, 44], [0.45, 0.28, 0.17, 0.10], 7);
+    const f44 = fbm(W, H, [2, 6], [0.6, 0.4], 44);
+    const hgt = new Float32Array(N);
+    { const hb = blur(Float32Array.from(filled), W, H, 2.2); for (let i = 0; i < N; i++) hgt[i] = hb[i] * 1.6 + f44[i] * 0.5; }
+    const nx3 = new Float32Array(N), ny3 = new Float32Array(N), nz3 = new Float32Array(N);
+    gradNormals3D(hgt, W, H, nx3, ny3, nz3);
+    const softCr11 = blur(crackMag, W, H, 1.1);
+    // 塗膜の艶用 — 参照輝度の低周波を地の高さと読む（抽出）
+    const hgG = blur(V, W, H, 18);
+    const nxG = new Float32Array(N), nyG = new Float32Array(N), nzG = new Float32Array(N);
+    { const hs = new Float32Array(N); for (let i = 0; i < N; i++) hs[i] = hgG[i] * 6.0;
+      gradNormals3D(hs, W, H, nxG, nyG, nzG); }
+    const juiceSrc = new Float32Array(N);
+    { const bb = blur(Float32Array.from(filled), W, H, 1.0);
+      const sc = blur(crackMag, W, H, 1.0);
+      for (let i = 0; i < N; i++) juiceSrc[i] = clamp(bb[i] + clamp(sc[i] / 0.1, 0, 1) * 0.45, 0, 1); }
+    const poreSoft = blur(Float32Array.from(pores), W, H, 0.6);
+    { let mx = 1e-9; for (let i = 0; i < N; i++) if (poreSoft[i] > mx) mx = poreSoft[i];
+      for (let i = 0; i < N; i++) { const a = clamp(poreSoft[i] / mx, 0, 1); poreSoft[i] = (pores[i] || a > 0.25) ? a : 0; } }
+    const grainL = new Float32Array(N), grainC = [new Float32Array(N), new Float32Array(N), new Float32Array(N)];
+    { const rnd = mulberry32(777);
+      for (let i = 0; i < N; i++) grainL[i] = gauss2(rnd);
+      for (let c = 0; c < 3; c++) for (let i = 0; i < N; i++) grainC[c][i] = gauss2(rnd); }
+    // 白斑の計測密度場（微細母集団のキャリア）
+    const dotDensity = new Float32Array(N);
+    for (const [cy, cx, area] of dots) {
+      const iy = clamp(Math.round(cy), 0, H - 1), ix = clamp(Math.round(cx), 0, W - 1);
+      dotDensity[iy * W + ix] += Math.sqrt(area);
+    }
+    { const dd = blur(dotDensity, W, H, 4.0);
+      const srt = Float32Array.from(dd).sort();
+      const hi = Math.max(pct(srt, 0.97), 1e-6);
+      for (let i = 0; i < N; i++) dotDensity[i] = clamp(dd[i] / hi, 0, 1); }
+    // 微細泡孔の粒（正の粒だけ残す）
+    const microGrain = new Float32Array(N);
+    { const rnd = mulberry32(888);
+      for (let i = 0; i < N; i++) microGrain[i] = gauss2(rnd);
+      const mg = blur(microGrain, W, H, 0.7);
+      let mx = 1e-9; for (let i = 0; i < N; i++) { const a = Math.abs(mg[i]); if (a > mx) mx = a; }
+      for (let i = 0; i < N; i++) { const v = Math.max(0, mg[i] / mx); microGrain[i] = Math.pow(v, 1.5); } }
+    // 筋（縦伸長の異方性ノイズ）
+    const streak = new Float32Array(N);
+    { const rnd = mulberry32(55);
+      for (let i = 0; i < N; i++) streak[i] = gauss2(rnd);
+      const st = blurAniso(streak, W, H, 0.9, 7.0);
+      let mx = 1e-9; for (let i = 0; i < N; i++) { const a = Math.abs(st[i]); if (a > mx) mx = a; }
+      for (let i = 0; i < N; i++) streak[i] = st[i] / mx; }
+    // 開花体内部の明度分位（三状態: 湿潤核/痂皮/明部）
+    let vmQ33 = 0.3, vmQ66 = 0.5;
+    { const inv = []; for (let i = 0; i < N; i++) if (filled[i]) inv.push(vm[i]);
+      const srt = Float32Array.from(inv).sort();
+      vmQ33 = pct(srt, 0.33) || vmQ33; vmQ66 = pct(srt, 0.66) || vmQ66; }
+    // 三状態パレットを参照からゾーン別サンプリング（p30/p70）— 定数パレット廃止
+    const statePal = [];
+    const vmMedZ = [0.25, 0.45, 0.65];
+    {
+      const zone = new Int8Array(N).fill(-1);
+      for (let i = 0; i < N; i++) {
+        if (!filled[i]) continue;
+        const s1 = vm[i] > vmQ33 * 1.02 ? 1 : 0, s2 = vm[i] > vmQ66 * 1.02 ? 1 : 0;
+        zone[i] = s2 ? 2 : (s1 ? 1 : 0);
+      }
+      for (let z = 0; z < 3; z++) {
+        const rr = [], gg = [], bb = [], vv = [];
+        for (let i = 0; i < N; i++) if (zone[i] === z) { rr.push(R[i]); gg.push(G[i]); bb.push(B[i]); vv.push(vm[i]); }
+        const sR = Float32Array.from(rr).sort(), sG = Float32Array.from(gg).sort(), sB = Float32Array.from(bb).sort();
+        statePal.push({ a: [pct(sR, 0.30) || 0.2, pct(sG, 0.30) || 0.1, pct(sB, 0.30) || 0.05],
+                        b: [pct(sR, 0.70) || 0.4, pct(sG, 0.70) || 0.2, pct(sB, 0.70) || 0.1] });
+        const sV = Float32Array.from(vv).sort();
+        if (vv.length) vmMedZ[z] = pct(sV, 0.50);
+      }
+    }
+    // リムパレットも参照実位置からサンプリング（p35/p75）
+    let rimPal = { a: [0.60, 0.26, 0.07], b: [0.88, 0.53, 0.175] };
+    {
+      const rr = [], gg = [], bb = [];
+      for (let i = 0; i < N; i++) if (rim[i]) { rr.push(R[i]); gg.push(G[i]); bb.push(B[i]); }
+      if (rr.length > 50) {
+        const sR = Float32Array.from(rr).sort(), sG = Float32Array.from(gg).sort(), sB = Float32Array.from(bb).sort();
+        rimPal = { a: [pct(sR, 0.35), pct(sG, 0.35), pct(sB, 0.35)],
+                   b: [pct(sR, 0.75), pct(sG, 0.75), pct(sB, 0.75)] };
+      }
+    }
+    const shadowRand = new Float32Array(dots.length);
+    { const rnd = mulberry32(555); for (let i = 0; i < dots.length; i++) shadowRand[i] = rnd(); }
+    const bodyD1 = binMorph(filled, W, H, 1, true);
+    const nBloom = labelCC(filled, W, H).n;
+    let crackPx = 0; for (let i = 0; i < N; i++) if (cr[i]) crackPx++;
+    let nPores = labelCC(pores, W, H).n;
+
+    return {
+      W, H, ref, V, body: filled, rim, pores, crack: cr, crackMag, dots, lut, resid,
+      crackLut, rowMeanRef, rowSdRef,
+      d_in, d_out, thick, nx2, ny2, rimSoft, vm, vmMed, f1, f2, f7,
+      hgt, nx3, ny3, nz3, softCr11, juiceSrc, poreSoft, grainL, grainC, shadowRand, bodyD1,
+      dotDensity, microGrain, streak, vmQ33, vmQ66, vmMedZ, nxG, nyG, nzG, statePal, rimPal,
+      counts: { blooms: nBloom, pores: nPores, speckle: dots.length, crack_px: crackPx },
+    };
+  }
+
+  function gradNormals2D(ms, W, H, nx, ny) {
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      const gx = (ms[y * W + Math.min(x + 1, W - 1)] - ms[y * W + Math.max(x - 1, 0)]) * 0.5;
+      const gy = (ms[Math.min(y + 1, H - 1) * W + x] - ms[Math.max(y - 1, 0) * W + x]) * 0.5;
+      const nn = Math.hypot(gx, gy) + 1e-9;
+      nx[i] = -gx / nn; ny[i] = -gy / nn;
+    }
+  }
+  function gradNormals3D(h, W, H, nx, ny, nz) {
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      const gx = (h[y * W + Math.min(x + 1, W - 1)] - h[y * W + Math.max(x - 1, 0)]) * 0.5;
+      const gy = (h[Math.min(y + 1, H - 1) * W + x] - h[Math.max(y - 1, 0) * W + x]) * 0.5;
+      const inz = 1 / Math.sqrt(gx * gx + gy * gy + 1);
+      nx[i] = -gx * inz; ny[i] = -gy * inz; nz[i] = inz;
+    }
+  }
+
+  // ---------- STAGE B: 合成 ----------
+  function synth(E, P) {
+    const { W, H } = E; const N = W * H;
+    const out = [new Float32Array(N), new Float32Array(N), new Float32Array(N)];
+    // L2 塗膜場
+    for (let i = 0; i < N; i++) {
+      const y = (i / W) | 0;
+      for (let c = 0; c < 3; c++)
+        out[c][i] = clamp(E.lut[y * 3 + c] + E.resid[c][i] * P.resid_w + E.f7[i] * P.fbm_amp, 0, 1);
+    }
+    // L2.5 清拭ハロー — 開花体周縁ではペンキ膜が拭われて見える（白斑/亀裂/染色を減衰）
+    let haloF = null;
+    if (P.paint_clean > 0) {
+      haloF = new Float32Array(N);
+      const rc = Math.max(0.5, P.paint_clean_r);
+      for (let i = 0; i < N; i++)
+        haloF[i] = E.body[i] ? 0 : P.paint_clean * Math.exp(-Math.max(0, E.d_out[i] - 1.5) / rc);
+    }
+    // L3 白斑 — 二母集団（微細=計測密度場×粒 / 粗大=離散膨れ）
+    if (P.on3) {
+      const acc = new Float32Array(N), sh = new Float32Array(N);
+      for (let d = 0; d < E.dots.length; d++) {
+        const [cy, cx, area] = E.dots[d];
+        if (area < P.dot_big_area) continue;               // 微細側は密度場に委譲
+        const iy = Math.round(cy), ix = Math.round(cx);
+        const ii = Math.min(iy, H - 1) * W + Math.min(ix, W - 1);
+        if (E.bodyD1[ii]) continue;
+        const rad = Math.max(0.7, Math.sqrt(area / Math.PI)) * P.dot_rad_scale;
+        const bf = 0.45 + 0.55 * sstep(rad, 0.8, 2.4);     // 輝度は径に従属
+        const k = Math.max(2, Math.floor(rad * 2.2));
+        const s2 = 2 * (rad * 0.62) * (rad * 0.62);
+        for (let yy = Math.max(0, iy - k); yy < Math.min(H, iy + k + 1); yy++)
+          for (let xx = Math.max(0, ix - k); xx < Math.min(W, ix + k + 1); xx++) {
+            const d2 = (yy - cy) * (yy - cy) + (xx - cx) * (xx - cx);
+            acc[yy * W + xx] += bf * Math.exp(-d2 / s2);
+          }
+        if (E.shadowRand[d] < P.dot_shadow_fr) {
+          const s3 = 2 * (rad * 0.5) * (rad * 0.5);
+          const oy = cy + rad * 0.9, ox = cx + rad * 0.4;
+          for (let yy = Math.max(0, iy - k); yy < Math.min(H, iy + k + 1); yy++)
+            for (let xx = Math.max(0, ix - k); xx < Math.min(W, ix + k + 1); xx++)
+              sh[yy * W + xx] += 0.5 * Math.exp(-((yy - oy) * (yy - oy) + (xx - ox) * (xx - ox)) / s3);
+        }
+      }
+      for (let i = 0; i < N; i++) {
+        const y = (i / W) | 0;
+        const hh = haloF ? haloF[i] : 0;
+        const cut = (1 - P.dot_low_cut * sstep(y / H, 0.42, 0.62)) * (1 - hh);   // 下帯抑制＋清拭
+        const micro = (E.bodyD1[i] ? 0 : E.microGrain[i] * E.dotDensity[i] * P.micro_gain * 4.0) * cut;
+        const a = Math.min(1, clamp(acc[i], 0, 1) * P.dot_gain * cut + micro);
+        const shv = 1 - clamp(sh[i], 0, 1) * 0.10;
+        for (let c = 0; c < 3; c++) {
+          const pale = clamp(out[c][i] + 0.22 + (c === 2 ? 0.015 : 0), 0, 1);
+          out[c][i] = (out[c][i] * (1 - a) + pale * a) * shv;
+        }
+      }
+    }
+    // L4 亀裂＋染色
+    let crackSoft = null;
+    if (P.on4) {
+      crackSoft = blur(E.crackMag, W, H, P.crack_widen);
+      const soft = crackSoft;
+      for (let i = 0; i < N; i++) {
+        const y = (i / W) | 0;
+        const wlow = sstep(y / H, 0.42, 0.62);
+        const hh = haloF ? haloF[i] : 0;
+        let a = clamp(soft[i] / 0.095, 0, 1) * P.crack_strength * (1 + P.crack_low_bst * wlow) * (1 - hh * 0.85);
+        a = clamp(a, 0, 1);
+        if (a > 0) for (let c = 0; c < 3; c++) {
+          const col = E.crackLut[y * 3 + c];   // 参照から行別抽出した線色
+          out[c][i] = out[c][i] * (1 - a) + col * a;
+        }
+        const bq = (y / H - P.stain_band_c) / P.stain_band_w;
+        const band = Math.exp(-(bq * bq));
+        let sa = clamp(E.softCr11[i] / 0.10, 0, 1) * Math.exp(-E.d_out[i] / P.stain_lambda) *
+                 Math.max(band, P.stain_floor) * P.stain_gain * (1 - hh * 0.6);
+        sa = clamp(sa, 0, 0.9) * 0.75;
+        if (sa > 0) for (let c = 0; c < 3; c++)
+          out[c][i] = out[c][i] * (1 - sa) + COL.stain[c] * sa;
+      }
+    }
+    // L4.5 ペンキの清拭 — 開花体周縁を行の明側塗膜色へ寄せる（剥離前縁の浮き）
+    if (haloF) {
+      for (let i = 0; i < N; i++) {
+        if (E.body[i]) continue;
+        const t = haloF[i] * 0.6;
+        if (t <= 0.002) continue;
+        const y = (i / W) | 0;
+        for (let c = 0; c < 3; c++) {
+          const tgt = Math.min(1, E.rowMeanRef[y * 3 + c] + 0.55 * E.rowSdRef[y * 3 + c]);
+          out[c][i] = out[c][i] * (1 - t) + tgt * t;
+        }
+      }
+    }
+    // 光ベクトル
+    const az = P.light_az * Math.PI / 180, el = P.light_el * Math.PI / 180;
+    const L3v = [Math.cos(el) * Math.cos(az), -Math.cos(el) * Math.sin(az), Math.sin(el)];
+    { const n = Math.hypot(...L3v); for (let c = 0; c < 3; c++) L3v[c] /= n; }
+    const L2n = Math.hypot(L3v[0], L3v[1]) + 1e-9;
+    const L2v = [L3v[0] / L2n, L3v[1] / L2n];
+    const Hv = [L3v[0], L3v[1], L3v[2] + 1];
+    { const n = Math.hypot(...Hv); for (let c = 0; c < 3; c++) Hv[c] /= n; }
+    // L6 開花体（充填・泡孔・三状態・艶）
+    if (P.on6) {
+      for (let i = 0; i < N; i++) {
+        if (!E.body[i]) continue;
+        const t_core = sstep(E.d_in[i], 0.4, P.rim_width);
+        const rim_gain = sstep(E.thick[i], 1.6, 4.6);
+        const rim_t = clamp(P.rim_ring_w * (1 - t_core) * rim_gain + P.rim_x_w * E.rimSoft[i], 0, 1);
+        const tf1 = clamp(E.f1[i] * 0.5 + 0.5, 0, 1), tf2 = clamp(E.f2[i] * 0.5 + 0.5, 0, 1);
+        // 三状態: 湿潤核（暗・艶）／痂皮（中間赤褐・マット粒・筋）／明部
+        const s1 = sstep(E.vm[i], E.vmQ33 * 0.92, E.vmQ33 * 1.12);
+        const s2 = sstep(E.vm[i], E.vmQ66 * 0.92, E.vmQ66 * 1.12);
+        const wCore = 1 - s1, wLite = s2, wCrust = clamp(s1 - s2, 0, 1);
+        // vmodはゾーン相対（パレットがゾーンの水準を持つため二重減衰を防ぐ v0.5）
+        const medZ = wCore * E.vmMedZ[0] + wCrust * E.vmMedZ[1] + wLite * E.vmMedZ[2];
+        const vmod = clamp(E.vm[i] / Math.max(medZ, 1e-3), P.vmod_lo, P.vmod_hi);
+        const gAmt = P.grain_amp + (wCrust + 0.6 * (wLite + rim_t)) * P.crust_grain;
+        const sAmt = P.streak_amp * (wCrust + 0.5 * wLite);
+        const gMul = 1 + E.f1[i] * gAmt + E.streak[i] * sAmt;
+        const gAdd = (E.f1[i] * gAmt + E.streak[i] * sAmt) * 0.16;
+        for (let c = 0; c < 3; c++) {
+          const core = E.statePal[0].a[c] * (1 - tf1) + E.statePal[0].b[c] * tf1;
+          const crust = E.statePal[1].a[c] * (1 - tf2) + E.statePal[1].b[c] * tf2;
+          let lite = E.statePal[2].a[c] * (1 - tf1) + E.statePal[2].b[c] * tf1;
+          const fill0 = core * wCore + crust * wCrust + lite * wLite;
+          const rim0 = E.rimPal.a[c] * (1 - tf2) + E.rimPal.b[c] * tf2;
+          const rimc = rim0 * (1 - P.rim_burn) + crust * P.rim_burn;   // リムの焦げ
+          out[c][i] = clamp((fill0 * (1 - rim_t) + rimc * rim_t) * gMul * vmod + gAdd, 0, 1);
+        }
+        // 明部の橙み — 明部・リム帯の彩度を基準1で参照どおり、下げると灰へ
+        if (P.lite_warm !== 1) {
+          const wz = clamp(wLite + rim_t, 0, 1);
+          if (wz > 0.01) {
+            const L = 0.299 * out[0][i] + 0.587 * out[1][i] + 0.114 * out[2][i];
+            const t = 1 + (P.lite_warm - 1) * wz;
+            for (let c = 0; c < 3; c++) out[c][i] = clamp(L + (out[c][i] - L) * t, 0, 1);
+          }
+        }
+        // 泡孔
+        const pa = E.poreSoft[i] * 0.85;
+        if (pa > 0) for (let c = 0; c < 3; c++)
+          out[c][i] = out[c][i] * (1 - pa) + COL.pore[c] * pa;
+        // 艶（湿潤核に限定）
+        const ndl = clamp(E.nx3[i] * L3v[0] + E.ny3[i] * L3v[1] + E.nz3[i] * L3v[2], 0, 1);
+        const ndh = clamp(E.nx3[i] * Hv[0] + E.ny3[i] * Hv[1] + E.nz3[i] * Hv[2], 0, 1);
+        const wet = (0.15 + 0.85 * wCore) * (0.55 + 0.45 * (1 - rim_t));
+        const spec = Math.pow(ndh, P.wet_shin) * P.wet_ks * wet;
+        const sheen = (1 - P.sheen_amp) + P.sheen_amp * ndl * 1.4;
+        for (let c = 0; c < 3; c++)
+          out[c][i] = clamp(out[c][i] * sheen + spec * COL.spec[c], 0, 1);
+      }
+    }
+    // L5 剥離段差 — 充填の後段に移設（内側影がL6の上書きで死んでいた潜在バグの修理 v0.5）
+    if (P.on5) {
+      for (let i = 0; i < N; i++) {
+        const facing = E.nx2[i] * L2v[0] + E.ny2[i] * L2v[1];
+        if (E.body[i]) {
+          const s = Math.max(facing, 0) * Math.exp(-E.d_in[i] / P.step_shadow_r) * P.step_shadow;
+          if (s > 0) for (let c = 0; c < 3; c++) out[c][i] *= (1 - s);
+        } else if (E.d_out[i] > 0 && E.d_out[i] <= 1.4) {
+          const sa = Math.max(-facing, 0) * P.section_gain;
+          if (sa > 0) for (let c = 0; c < 3; c++)
+            out[c][i] = out[c][i] * (1 - sa) + COL.section[c] * sa;
+        }
+        const sd = E.body[i] ? E.d_in[i] : -E.d_out[i];
+        const ring = clamp(1 - Math.abs(sd) / 0.9, 0, 1);
+        if (ring > 0) for (let c = 0; c < 3; c++) out[c][i] *= (1 - ring * P.gap_dark);
+      }
+    }
+    // L6b 錆汁（体外・多幅＋移流・吸収）
+    if (P.on6) {
+      const juice = new Float32Array(N);
+      const tmp = new Float32Array(N);
+      for (let s = 0; s < COL.juice_sigmas.length; s++) {
+        const sg = COL.juice_sigmas[s], w = COL.juice_w[s];
+        const shift = Math.round(sg * P.juice_adv);
+        // rolled = juiceSrc を shift 行下へ（上端はゼロ）
+        for (let y = H - 1; y >= shift; y--)
+          for (let x = 0; x < W; x++) tmp[y * W + x] = E.juiceSrc[(y - shift) * W + x];
+        for (let y = 0; y < shift; y++) for (let x = 0; x < W; x++) tmp[y * W + x] = 0;
+        const bl = blur(tmp, W, H, sg);
+        for (let i = 0; i < N; i++) juice[i] += w * bl[i];
+      }
+      for (let i = 0; i < N; i++) {
+        if (E.body[i]) continue;
+        const j = clamp(juice[i], 0, P.juice_max);
+        if (j > 0) for (let c = 0; c < 3; c++)
+          out[c][i] = out[c][i] * ((1 - j) + j * COL.juice_trans[c]);
+      }
+    }
+    // L6.4 亀裂の増し彫り — 錆汁・白斑で薄まった線を深める（この後の校正が地色を参照へ張り直す）
+    if (P.on4 && P.crack_guard > 0 && crackSoft) {
+      for (let i = 0; i < N; i++) {
+        const y = (i / W) | 0;
+        const wlow = sstep(y / H, 0.42, 0.62);
+        let a = clamp(crackSoft[i] / 0.095, 0, 1) * P.crack_strength * (1 + P.crack_low_bst * wlow);
+        const g = clamp(a, 0, 1) * P.crack_guard;
+        if (g > 0) for (let c = 0; c < 3; c++)
+          out[c][i] = out[c][i] * (1 - g) + E.crackLut[y * 3 + c] * g;
+      }
+    }
+    // L6.5 地色校正 — 開花体外の行別統計を参照へ（平均=ベース色の固定／分散=コントラストの一致は控えめに）
+    if (P.calib_mean > 0 || P.calib_sd > 0) {
+      const mT = new Float32Array(H * 3), sT = new Float32Array(H * 3);
+      {
+        let pm = [0.5, 0.5, 0.5], ps = [0.1, 0.1, 0.1];
+        for (let y = 0; y < H; y++) {
+          let n = 0; const s = [0, 0, 0], s2 = [0, 0, 0];
+          for (let x = 0; x < W; x++) {
+            const i = y * W + x;
+            if (E.body[i]) continue;
+            for (let c = 0; c < 3; c++) { const v = out[c][i]; s[c] += v; s2[c] += v * v; }
+            n++;
+          }
+          if (n > 20) for (let c = 0; c < 3; c++) {
+            pm[c] = s[c] / n;
+            ps[c] = Math.sqrt(Math.max(1e-8, s2[c] / n - pm[c] * pm[c]));
+          }
+          for (let c = 0; c < 3; c++) { mT[y * 3 + c] = pm[c]; sT[y * 3 + c] = ps[c]; }
+        }
+        smoothRows(mT, H, 7); smoothRows(sT, H, 7);
+      }
+      for (let i = 0; i < N; i++) {
+        if (E.body[i]) continue;
+        const y = (i / W) | 0;
+        for (let c = 0; c < 3; c++) {
+          const m = mT[y * 3 + c], sd = Math.max(sT[y * 3 + c], 1e-3);
+          const m1 = m + P.calib_mean * (E.rowMeanRef[y * 3 + c] - m);
+          const scale = 1 + P.calib_sd * (E.rowSdRef[y * 3 + c] / sd - 1);
+          out[c][i] = clamp((out[c][i] - m) * scale + m1, 0, 1);
+        }
+      }
+    }
+    // L6.6 塗膜の艶 — 宣言光での地の広いシーン（焼付塗装の肌・平面応答基準の偏差のみ）
+    if (P.paint_sheen > 0) {
+      const nd0 = Math.pow(clamp(L3v[2], 0, 1), 3);
+      const nh0 = Math.pow(clamp(Hv[2], 0, 1), 50);
+      for (let i = 0; i < N; i++) {
+        if (E.body[i]) continue;
+        const ndl = clamp(E.nxG[i] * L3v[0] + E.nyG[i] * L3v[1] + E.nzG[i] * L3v[2], 0, 1);
+        const ndh = clamp(E.nxG[i] * Hv[0] + E.nyG[i] * Hv[1] + E.nzG[i] * Hv[2], 0, 1);
+        const gs = P.paint_sheen * 1.6 * (Math.pow(ndl, 3) - nd0);
+        const sp = Math.max(0, Math.pow(ndh, 50) - nh0) * P.paint_sheen * 0.6;
+        for (let c = 0; c < 3; c++)
+          out[c][i] = clamp(out[c][i] * (1 + gs) + sp * (c === 2 ? 0.96 : 1.0), 0, 1);
+      }
+    }
+    // L7 撮影パス
+    if (P.on7) {
+      for (let i = 0; i < N; i++) {
+        const y = (i / W) | 0, x = i - y * W;
+        const rx = (x - W / 2) / (W / 2), ry = (y - H / 2) / (H / 2);
+        const r2 = (rx * rx + ry * ry) / 2;
+        const vg = 1 - P.vignette * Math.pow(r2, 1.4);
+        for (let c = 0; c < 3; c++) {
+          let v = 0.5 + (out[c][i] - 0.5) * P.tone_contrast;
+          v *= vg;
+          v += (E.grainL[i] * 0.8 + E.grainC[c][i] * 0.2) * P.film_grain;
+          out[c][i] = v;
+        }
+      }
+      if (P.film_blur > 0.05) for (let c = 0; c < 3; c++) out[c] = blur(out[c], W, H, P.film_blur);
+      for (let c = 0; c < 3; c++) for (let i = 0; i < N; i++) out[c][i] = clamp(out[c][i], 0, 1);
+    }
+    return out;
+  }
+
+  // 手合わせオーバーレイ
+  function overlay(E) {
+    const { W, H, ref } = E; const N = W * H;
+    const out = [Float32Array.from(ref.R), Float32Array.from(ref.G), Float32Array.from(ref.B)];
+    for (let i = 0; i < N; i++) {
+      if (E.crack[i]) { out[0][i] = 0.1; out[1][i] = 0.55; out[2][i] = 0.95; }
+      if (E.body[i]) {
+        out[0][i] = out[0][i] * 0.35 + 0.85 * 0.65;
+        out[1][i] = out[1][i] * 0.35 + 0.25 * 0.65;
+        out[2][i] = out[2][i] * 0.35 + 0.10 * 0.65;
+      }
+      if (E.rim[i]) { out[0][i] = 1.0; out[1][i] = 0.72; out[2][i] = 0.15; }
+      if (E.pores[i]) { out[0][i] = out[1][i] = out[2][i] = 1; }
+    }
+    return out;
+  }
+
+  // ---------- 文法台帳（実測） — 蒸留の合格基準は座標ではなくこの分布 ----------
+  function ledger(E, P) {
+    const { W, H } = E; const N = W * H;
+    const sortedF = (arr) => Float32Array.from(arr).sort();
+    const q = (arr) => { const s = sortedF(arr); return { p10: rnd3(pct(s, 0.10)), p50: rnd3(pct(s, 0.50)), p90: rnd3(pct(s, 0.90)), n: arr.length }; };
+    const rnd3 = (v) => v == null ? null : +(+v).toFixed(3);
+
+    // --- 白斑（泡孔・膨れ）
+    const radii = E.dots.map(d => Math.sqrt(d[2] / Math.PI));
+    const bandsY = 8, perBand = new Array(bandsY).fill(0);
+    for (const d of E.dots) perBand[Math.min(bandsY - 1, (d[0] / H * bandsY) | 0)]++;
+    const bandKpx = W * (H / bandsY) / 1000;
+    const densY = perBand.map(v => +(v / bandKpx).toFixed(2));
+    const distBins = [[0, 5], [5, 15], [15, 40], [40, 1e9]];
+    const distCnt = [0, 0, 0, 0], distArea = [0, 0, 0, 0];
+    for (let i = 0; i < N; i++) { const d = E.d_out[i]; for (let b = 0; b < 4; b++) if (d >= distBins[b][0] && d < distBins[b][1]) { distArea[b]++; break; } }
+    for (const d of E.dots) {
+      const i = Math.min(N - 1, (Math.round(d[0]) | 0) * W + (Math.round(d[1]) | 0));
+      const dd = E.d_out[i];
+      for (let b = 0; b < 4; b++) if (dd >= distBins[b][0] && dd < distBins[b][1]) { distCnt[b]++; break; }
+    }
+    const densDist = distCnt.map((c, b) => distArea[b] ? +((c / (distArea[b] / 1000))).toFixed(2) : 0);
+    let overlapShare = 0;
+    { const cell = 8, gw = Math.ceil(W / cell);
+      const grid = new Map();
+      E.dots.forEach((d, idx) => { const k = ((d[0] / cell) | 0) * gw + ((d[1] / cell) | 0);
+        let lst = grid.get(k); if (!lst) { lst = []; grid.set(k, lst); } lst.push(idx); });
+      let ov = 0;
+      E.dots.forEach((d, idx) => {
+        const gy = (d[0] / cell) | 0, gx = (d[1] / cell) | 0; let best = 1e9, bj = -1;
+        for (let yy = gy - 1; yy <= gy + 1; yy++) for (let xx = gx - 1; xx <= gx + 1; xx++) {
+          const lst = grid.get(yy * gw + xx); if (!lst) continue;
+          for (const j of lst) { if (j === idx) continue; const dj = E.dots[j];
+            const dd = Math.hypot(d[0] - dj[0], d[1] - dj[1]); if (dd < best) { best = dd; bj = j; } }
+        }
+        if (bj >= 0 && best < radii[idx] + radii[bj]) ov++;
+      });
+      overlapShare = +(ov / Math.max(1, E.dots.length)).toFixed(3); }
+    const poreCC = labelCC(E.pores, W, H);
+    const poreR = []; for (let l = 1; l <= poreCC.n; l++) poreR.push(Math.sqrt(poreCC.areas[l] / Math.PI));
+    let bodyPx = 0; for (let i = 0; i < N; i++) if (E.body[i]) bodyPx++;
+
+    // --- 亀裂
+    const nonCr = new Uint8Array(N); for (let i = 0; i < N; i++) nonCr[i] = E.crack[i] ? 0 : 1;
+    const dNon = distToSet(nonCr, W, H);
+    const wUp = [], wMid = [], wLow = []; let crUp = 0, crMid = 0, crLow = 0, crTot = 0;
+    for (let i = 0; i < N; i++) {
+      if (!E.crack[i]) continue; crTot++;
+      const y = (i / W) | 0, wdt = Math.max(1, 2 * dNon[i] - 1);
+      if (y < H * 0.30) { wUp.push(wdt); crUp++; } else if (y < H * 0.55) { wMid.push(wdt); crMid++; } else { wLow.push(wdt); crLow++; }
+    }
+    const allW = wUp.concat(wMid, wLow); const p75 = pct(sortedF(allW), 0.75) || 2;
+    let thickN = 0; for (const w of allW) if (w >= p75) thickN++;
+    const y0 = (H * 0.55) | 0; const cellsMask = new Uint8Array(N);
+    for (let y = y0; y < H; y++) for (let x = 0; x < W; x++) { const i = y * W + x; cellsMask[i] = (!E.crack[i] && !E.body[i]) ? 1 : 0; }
+    const cc = labelCC(cellsMask, W, H); const regionArea = W * (H - y0);
+    const cellD = []; for (let l = 1; l <= cc.n; l++) { const a = cc.areas[l]; if (a >= 25 && a <= regionArea * 0.15) cellD.push(2 * Math.sqrt(a / Math.PI)); }
+    // 太線基準（幅p75以上の亀裂だけを壁にする） — 全亀裂基準は白斑間の暗地を含み下限側に偏る
+    const cellsMask2 = new Uint8Array(N);
+    for (let y = y0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      const wide = E.crack[i] && (2 * dNon[i] - 1) >= p75;
+      cellsMask2[i] = (!wide && !E.body[i]) ? 1 : 0;
+    }
+    const cc2 = labelCC(cellsMask2, W, H);
+    const cellD2 = []; for (let l = 1; l <= cc2.n; l++) { const a = cc2.areas[l]; if (a >= 60 && a <= regionArea * 0.25) cellD2.push(2 * Math.sqrt(a / Math.PI)); }
+    const dbins = [[0, 8], [8, 16], [16, 28], [28, 44], [44, 70], [70, 110]];
+    const wsum = new Float64Array(6), wcnt = new Float64Array(6);
+    for (let i = 0; i < N; i++) {
+      if (!E.crack[i]) continue; const warm = E.ref.R[i] - E.ref.B[i]; const d = E.d_out[i];
+      for (let b = 0; b < 6; b++) if (d >= dbins[b][0] && d < dbins[b][1]) { wsum[b] += warm; wcnt[b]++; break; }
+    }
+    const wmean = [...wsum].map((s, b) => wcnt[b] ? s / wcnt[b] : null);
+    let lambdaFit = null;
+    { const base = wmean[5] ?? wmean[4] ?? 0; const xs = [], ys = [];
+      for (let b = 0; b < 4; b++) { if (wmean[b] == null) continue; const v = wmean[b] - base;
+        if (v > 1e-3) { xs.push((dbins[b][0] + dbins[b][1]) / 2); ys.push(Math.log(v)); } }
+      if (xs.length >= 3) {
+        const n = xs.length, mx = xs.reduce((a, b) => a + b) / n, my = ys.reduce((a, b) => a + b) / n;
+        let num = 0, den = 0; for (let k2 = 0; k2 < n; k2++) { num += (xs[k2] - mx) * (ys[k2] - my); den += (xs[k2] - mx) * (xs[k2] - mx); }
+        const slope = num / den;
+        if (slope < -1e-4) { const lam = -1 / slope; if (lam > 5 && lam < 300) lambdaFit = +lam.toFixed(1); }
+      } }
+    let bodyEdgeOnCrack = 0, bodyEdge = 0;
+    { const crD = binMorph(E.crack, W, H, 2, true);
+      for (let i = 0; i < N; i++) { if (!E.body[i]) continue; if (E.d_in[i] <= 1.2) { bodyEdge++; if (crD[i]) bodyEdgeOnCrack++; } } }
+    let crackNearBody = 0; for (let i = 0; i < N; i++) if (E.crack[i] && E.d_out[i] < 10) crackNearBody++;
+
+    // --- 開花体
+    let aCore = 0, aCrust = 0, aLite = 0; const vmodVals = [];
+    for (let i = 0; i < N; i++) {
+      if (!E.body[i]) continue;
+      const s1 = sstep(E.vm[i], E.vmQ33 * 0.92, E.vmQ33 * 1.12);
+      const s2 = sstep(E.vm[i], E.vmQ66 * 0.92, E.vmQ66 * 1.12);
+      aCore += 1 - s1; aLite += s2; aCrust += clamp(s1 - s2, 0, 1);
+      vmodVals.push(E.vm[i] / E.vmMed);
+    }
+    const bCC = labelCC(E.body, W, H); const bloomR = [];
+    for (let l = 1; l <= bCC.n; l++) bloomR.push(Math.sqrt(bCC.areas[l] / Math.PI));
+    const inV = []; for (let i = 0; i < N; i++) if (E.body[i]) inV.push(E.V[i]);
+    const vq90 = pct(sortedF(inV), 0.90);
+    let liteCover = 0; for (const v of inV) if (v > vq90) liteCover++;
+
+    return {
+      engine: "sabigaki_utsushi_lab v0.3",
+      role: "文法台帳（実測） — 蒸留の合格基準: 座標ではなくこの分布を再現する",
+      hakuhan: {
+        総数: E.dots.length, 半径px: q(radii), 密度_帯別_個perKpx: densY,
+        密度_開花体距離別_個perKpx: { "0-5px": densDist[0], "5-15px": densDist[1], "15-40px": densDist[2], "40px+": densDist[3] },
+        重なり率: overlapShare,
+        泡孔_開花体内: { 個数: poreCC.n, 半径px: q(poreR), 密度_個perKpx: +(poreCC.n / Math.max(1, bodyPx / 1000)).toFixed(2) },
+      },
+      kiretsu: {
+        総px: crTot,
+        帯別px比: { 上: +(crUp / crTot).toFixed(3), 中: +(crMid / crTot).toFixed(3), 下: +(crLow / crTot).toFixed(3) },
+        太さpx: { 上: q(wUp), 中: q(wMid), 下: q(wLow) },
+        世代プロキシ_太線率_p75以上: +(thickN / Math.max(1, allW.length)).toFixed(3),
+        下部セル径px: Object.assign(q(cellD), { 個数: cellD.length, 注: "全亀裂基準 — 白斑間の暗地込みで下限側に偏る" }),
+        下部セル径px_太線基準: Object.assign(q(cellD2), { 個数: cellD2.length, 注: "幅p75以上の亀裂のみを壁とした計測" }),
+        染色減衰: { 距離ビン平均warm: wmean.map(v => v == null ? null : +v.toFixed(4)), λ推定px: lambdaFit, λ調律px: P.stain_lambda },
+        開花体との因果: {
+          開花体縁の亀裂接触率: +(bodyEdgeOnCrack / Math.max(1, bodyEdge)).toFixed(3),
+          亀裂の開花体10px内比率: +(crackNearBody / Math.max(1, crTot)).toFixed(3),
+        },
+      },
+      kaikatai: {
+        個数: bCC.n, 面積比_対画面: +(bodyPx / N).toFixed(4), 等価半径px: q(bloomR),
+        状態面積比: { 湿潤核: +(aCore / bodyPx).toFixed(3), 痂皮: +(aCrust / bodyPx).toFixed(3), 明部: +(aLite / bodyPx).toFixed(3) },
+        明部被覆_参照V_q90超: +(liteCover / Math.max(1, bodyPx)).toFixed(3),
+        内部明度場vmod: q(vmodVals),
+        分位: { q33: +E.vmQ33.toFixed(4), q66: +E.vmQ66.toFixed(4) },
+      },
+    };
+  }
+
+  global.SabigakiCore = { DEFAULTS, COL, extract, synth, overlay, ledger, blur, mulberry32 };
+})(typeof window !== "undefined" ? window : globalThis);
+
+</script>
+<script>
+"use strict";
+window.onerror = function (m, s, l, c) {
+  const e = document.getElementById("err");
+  e.style.display = "block";
+  e.textContent = "実行エラー: " + m + " (" + (s||"").split("/").pop() + ":" + l + ":" + c + ")";
+};
+const REF_B64 = "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";
+const C = window.SabigakiCore;
+const $ = (id) => document.getElementById(id);
+const status = (t) => { $("status").textContent = t; };
+
+// ---- スライダ仕様 ----
+const SYNTH_SLIDERS = [
+  ["L2 塗膜場", [
+    ["resid_w","風化雲(抽出場)",0,1.2,0.01],
+    ["fbm_amp","微細ムラ",0,0.06,0.001],
+    ["calib_mean","地色校正・平均",0,1,0.01],
+    ["calib_sd","地色校正・分散",0,1,0.01],
+  ]],
+  ["L2.5 ペンキ膜", [
+    ["paint_clean_r","清拭半径px",1,20,0.5],
+    ["paint_clean","清拭強度",0,1,0.01],
+    ["paint_sheen","塗膜の艶",0,0.5,0.01],
+  ]],
+  ["L3 白斑・膨れ", [
+    ["dot_gain","粗大点の輝度",0,1,0.01],
+    ["dot_rad_scale","粗大点の径",0.4,1.6,0.01],
+    ["dot_big_area","粗大しきい面積",1,12,1],
+    ["micro_gain","微細泡孔（密度場）",0,1,0.01],
+    ["dot_low_cut","下帯の白斑抑制",0,1,0.01],
+    ["dot_shadow_fr","微小影率",0,1,0.01],
+  ]],
+  ["L4 craquelure＋染色", [
+    ["crack_strength","亀裂濃度",0,1.4,0.01],
+    ["crack_widen","軟拡幅σ",0.1,2.5,0.05],
+    ["crack_low_bst","下部増強",0,0.8,0.01],
+    ["stain_gain","染色強度",0,2,0.01],
+    ["stain_lambda","数珠つなぎ距離",10,140,1],
+    ["stain_band_c","染色帯中心",0.2,0.8,0.01],
+    ["stain_band_w","染色帯幅",0.05,0.5,0.01],
+    ["stain_floor","染色の床",0,0.3,0.01],
+    ["crack_guard","亀裂の増し彫り",0,1,0.01],
+  ]],
+  ["L5 剥離段差", [
+    ["light_az","光方位°",0,360,1],
+    ["light_el","光仰角°",15,85,1],
+    ["step_shadow","内側影",0,1,0.01],
+    ["step_shadow_r","影半径px",1,8,0.1],
+    ["section_gain","断面線",0,1,0.01],
+    ["gap_dark","隙間暗線",0,0.6,0.01],
+  ]],
+  ["L6 開花体＋艶＋錆汁", [
+    ["rim_x_w","実位置リム",0,1.4,0.01],
+    ["rim_ring_w","距離環リム",0,0.8,0.01],
+    ["rim_width","リム幅px",1,8,0.1],
+    ["vmod_lo","内部明度下限",0.1,1,0.01],
+    ["vmod_hi","内部明度上限",1,2.2,0.01],
+    ["grain_amp","粒",0,0.15,0.005],
+    ["crust_grain","痂皮の粒",0,0.4,0.01],
+    ["streak_amp","筋",0,0.6,0.01],
+    ["lite_warm","明部の橙み",0,1.5,0.01],
+    ["rim_burn","リムの焦げ",0,1,0.01],
+    ["wet_ks","濡れ艶ks",0,1.5,0.01],
+    ["wet_shin","艶の鋭さ",4,80,1],
+    ["sheen_amp","シーン",0,0.5,0.01],
+    ["juice_max","錆汁上限",0,0.6,0.01],
+    ["juice_adv","錆汁移流",0,2,0.05],
+  ]],
+  ["L7 撮影パス", [
+    ["tone_contrast","トーン",0.9,1.2,0.005],
+    ["vignette","周辺減光",0,0.3,0.005],
+    ["film_grain","粒状",0,0.04,0.001],
+    ["film_blur","ぼかしσ",0,1.2,0.05],
+  ]],
+];
+const EXTRACT_SLIDERS = [
+  ["rust_warm_th","錆 R−B しきい",0.05,0.3,0.005],
+  ["rust_rg_th","錆 R−G しきい",0,0.15,0.005],
+  ["rim_warm_th","リム暖色しきい",0.15,0.5,0.005],
+  ["rim_val_th","リム明度しきい",0.2,0.6,0.005],
+  ["crack_mag_th","亀裂しきい",0.015,0.08,0.001],
+  ["speckle_th","白斑しきい",0.02,0.12,0.002],
+  ["hole_max","泡孔最大面積",10,200,1],
+];
+
+// ---- 状態 ----
+const P = Object.assign({}, C.DEFAULTS);
+let W = 0, H = 0, refArr = null, E = null;
+let refID = null, twinID = null, ovID = null;
+let blinkPhase = false, blinkTimer = null, renderTimer = null;
+
+// ---- UI構築 ----
+function buildSliders() {
+  const host = $("sliders");
+  for (const [group, rows] of SYNTH_SLIDERS) {
+    const d = document.createElement("details");
+    if (group.startsWith("L6")) d.open = true;
+    const s = document.createElement("summary"); s.textContent = group; d.appendChild(s);
+    for (const [key, label, mn, mx, st] of rows) d.appendChild(sliderRow(key, label, mn, mx, st, false));
+    host.appendChild(d);
+  }
+  const ex = $("exsliders");
+  for (const [key, label, mn, mx, st] of EXTRACT_SLIDERS) ex.appendChild(sliderRow(key, label, mn, mx, st, true));
+}
+function sliderRow(key, label, mn, mx, st, isExtract) {
+  const row = document.createElement("div"); row.className = "sl";
+  const lb = document.createElement("label"); lb.textContent = label;
+  const inp = document.createElement("input");
+  inp.type = "range"; inp.min = mn; inp.max = mx; inp.step = st; inp.value = P[key];
+  inp.dataset.key = key;
+  const out = document.createElement("output"); out.textContent = fmt(P[key]);
+  inp.addEventListener("input", () => {
+    P[key] = parseFloat(inp.value); out.textContent = fmt(P[key]);
+    if (!isExtract) scheduleRender();
+  });
+  row.append(lb, inp, out);
+  return row;
+}
+const fmt = (v) => (Math.abs(v) >= 10 ? v.toFixed(0) : v.toFixed(3).replace(/0+$/, "").replace(/\.$/, ""));
+
+// ---- 描画 ----
+function arrsToImageData(arrs, w, h) {
+  const id = new ImageData(w, h);
+  for (let i = 0; i < w * h; i++) {
+    id.data[i * 4]     = Math.round(Math.min(1, Math.max(0, arrs[0][i])) * 255);
+    id.data[i * 4 + 1] = Math.round(Math.min(1, Math.max(0, arrs[1][i])) * 255);
+    id.data[i * 4 + 2] = Math.round(Math.min(1, Math.max(0, arrs[2][i])) * 255);
+    id.data[i * 4 + 3] = 255;
+  }
+  return id;
+}
+const cvOf = (id) => { const c = document.createElement("canvas"); c.width = id.width; c.height = id.height; c.getContext("2d").putImageData(id, 0, 0); return c; };
+let refCv = null, twinCv = null, ovCv = null;
+
+function draw() {
+  const view = document.querySelector('input[name=view]:checked').value;
+  const cnv = $("main"), ctx = cnv.getContext("2d");
+  const blend = parseFloat($("blend").value);
+  const showTwin = $("blink").checked ? blinkPhase : null;
+  if (view === "sbs") {
+    cnv.width = W * 2 + 8; cnv.height = H;
+    ctx.fillStyle = "#f2f0e9"; ctx.fillRect(0, 0, cnv.width, H);
+    if (refCv) ctx.drawImage(refCv, 0, 0);
+    if (twinCv) ctx.drawImage(twinCv, W + 8, 0);
+  } else {
+    cnv.width = W; cnv.height = H;
+    if (view === "ref") { if (refCv) ctx.drawImage(refCv, 0, 0); }
+    else if (view === "teawase") { if (ovCv) ctx.drawImage(ovCv, 0, 0); }
+    else { // twin（ブレンド／点滅）
+      if (showTwin === null) {
+        if (refCv) ctx.drawImage(refCv, 0, 0);
+        if (twinCv) { ctx.globalAlpha = blend; ctx.drawImage(twinCv, 0, 0); ctx.globalAlpha = 1; }
+      } else {
+        ctx.drawImage(showTwin ? twinCv : refCv, 0, 0);
+      }
+    }
+  }
+  if (refCv) $("miniRef").getContext("2d").drawImage(refCv, 0, 0);
+  if (twinCv) $("miniTwin").getContext("2d").drawImage(twinCv, 0, 0);
+}
+
+function render() {
+  status("焼成中…");
+  requestAnimationFrame(() => setTimeout(() => {
+    const t0 = performance.now();
+    const out = C.synth(E, P);
+    twinID = arrsToImageData(out, W, H);
+    twinCv = cvOf(twinID);
+    status("焼成 " + Math.round(performance.now() - t0) + "ms — スクワントで参照と見比べ、残差を名指しする");
+    draw();
+  }, 16));
+}
+function scheduleRender() {
+  clearTimeout(renderTimer);
+  renderTimer = setTimeout(render, 140);
+}
+
+function runExtract(then) {
+  status("手合わせ抽出中…（数秒）");
+  requestAnimationFrame(() => setTimeout(() => {
+    const t0 = performance.now();
+    E = C.extract(refArr, W, H, P);
+    ovID = arrsToImageData(C.overlay(E), W, H);
+    ovCv = cvOf(ovID);
+    $("cBloom").textContent = E.counts.blooms;
+    $("cPore").textContent = E.counts.pores;
+    $("cDot").textContent = E.counts.speckle;
+    $("cCrack").textContent = (E.counts.crack_px / 1000).toFixed(0) + "k";
+    status("抽出 " + Math.round(performance.now() - t0) + "ms");
+    then && then();
+  }, 16));
+}
+
+// ---- 起動 ----
+function boot() {
+  buildSliders();
+  const img = new Image();
+  img.onload = () => {
+    W = img.naturalWidth; H = img.naturalHeight;
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const cx = c.getContext("2d", { willReadFrequently: true });
+    cx.drawImage(img, 0, 0);
+    const d = cx.getImageData(0, 0, W, H).data;
+    const N = W * H;
+    refArr = { R: new Float32Array(N), G: new Float32Array(N), B: new Float32Array(N) };
+    for (let i = 0; i < N; i++) { refArr.R[i] = d[i*4]/255; refArr.G[i] = d[i*4+1]/255; refArr.B[i] = d[i*4+2]/255; }
+    refID = new ImageData(new Uint8ClampedArray(d), W, H);
+    refCv = cvOf(refID);
+    $("main").width = W; $("main").height = H;
+    runExtract(render);
+  };
+  img.onerror = () => { status("参照画像の読込に失敗"); };
+  img.src = "data:image/jpeg;base64," + REF_B64;
+
+  document.querySelectorAll('input[name=view]').forEach(r => r.addEventListener("change", draw));
+  $("blend").addEventListener("input", draw);
+  $("squint").addEventListener("change", () => $("stage").classList.toggle("squint", $("squint").checked));
+  $("blink").addEventListener("change", () => {
+    clearInterval(blinkTimer);
+    if ($("blink").checked) blinkTimer = setInterval(() => { blinkPhase = !blinkPhase; draw(); }, 320);
+    else draw();
+  });
+  document.querySelectorAll('#toggles input').forEach(t => t.addEventListener("change", () => {
+    P[t.dataset.on] = t.checked ? 1 : 0; scheduleRender();
+  }));
+  $("reextract").addEventListener("click", () => runExtract(render));
+  $("export").addEventListener("click", () => {
+    const j = JSON.stringify({ engine: "sabigaki_utsushi_lab v0.5", reference: "Calligraphy__1_.jpg",
+      counts: E ? E.counts : null, P }, null, 1);
+    $("json").value = j;
+    if (navigator.clipboard) navigator.clipboard.writeText(j).catch(() => {});
+  });
+  $("ledger").addEventListener("click", () => {
+    if (!E) return;
+    status("台帳計測中…");
+    setTimeout(() => {
+      const t0 = performance.now();
+      const L = C.ledger(E, P);
+      const j = JSON.stringify(L, null, 1);
+      $("json").value = j;
+      const a = document.createElement("a");
+      a.download = "sabigaki_bunpo_daicho.json";
+      a.href = "data:application/json;charset=utf-8," + encodeURIComponent(j);
+      a.click();
+      if (navigator.clipboard) navigator.clipboard.writeText(j).catch(() => {});
+      status("台帳 " + Math.round(performance.now() - t0) + "ms — 蒸留の合格基準はこの分布");
+    }, 16);
+  });
+  const EXTRACT_KEYS = new Set(EXTRACT_SLIDERS.map(r => r[0]).concat(["hole_max"]));
+  $("import").addEventListener("click", () => {
+    let obj;
+    try { obj = JSON.parse($("json").value); } catch (e) { status("JSONが読めない: " + e.message); return; }
+    const src = obj && obj.P ? obj.P : obj;
+    if (!src || typeof src !== "object") { status("調律JSONの形式が違う（P が見つからない）"); return; }
+    if (typeof src.calib_w === "number" && typeof src.calib_mean !== "number") src.calib_mean = src.calib_w;
+    let exChanged = false;
+    for (const k of Object.keys(C.DEFAULTS)) {
+      if (typeof src[k] === "number") {
+        if (EXTRACT_KEYS.has(k) && src[k] !== P[k]) exChanged = true;
+        P[k] = src[k];
+      }
+    }
+    document.querySelectorAll(".sl").forEach(row => {
+      const inp = row.querySelector("input"), out = row.querySelector("output");
+      const key = inp.dataset.key;
+      if (key && typeof P[key] === "number") { inp.value = P[key]; out.textContent = fmt(P[key]); }
+    });
+    document.querySelectorAll('#toggles input').forEach(t => { t.checked = !!P[t.dataset.on]; });
+    status(exChanged ? "調律を復元 — 抽出系が変わったため再抽出中…" : "調律を復元");
+    if (exChanged) runExtract(render); else render();
+  });
+  $("save").addEventListener("click", () => {
+    if (!twinCv) return;
+    const a = document.createElement("a");
+    a.download = "sabigaki_twin.png";
+    a.href = twinCv.toDataURL("image/png");
+    a.click();
+  });
+}
+boot();
+</script>
+</body>
+</html>

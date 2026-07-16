@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>ALMANA — 3D紋章 動画工房 v2</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!--
+  v2 — 「呼吸するホールド」を主役に再設計（almana-3d-mon-studio.html の改良）:
+  3幕 = 立ち上がり(可変) → ホールド/呼吸(可変・約8s, orbit継続で3D奥行きを読ませる) → 溶暗+締め言葉+ALMANA。
+  質感 = 奥行き明度(密度の高い稜=明)・最密部に微かな朱・丸いソフト点（彫りに見せる）。
+  立ち上がり/ホールド秒はスライダーで可変。黒地に白点(additive)。1080×1920 WebM 録画。
+-->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;700&display=swap');
+:root{--ink:#e8e6e0;--mut:#8c887f;--line:rgba(232,230,224,.16);--shu:#c8503a;
+  --grot:"Archivo","Helvetica Neue",Helvetica,Arial,sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0c0b0a;color:var(--ink);font-family:var(--grot);display:flex;gap:30px;
+  justify-content:center;align-items:flex-start;flex-wrap:wrap;padding:28px 20px 70px;}
+.stage{display:flex;flex-direction:column;align-items:center;gap:12px;}
+#out{height:min(76vh,620px);width:auto;background:#000;border:1px solid var(--line);display:block;}
+.cap{font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.18em;color:var(--mut);text-transform:uppercase;}
+.panel{width:300px;}
+.h{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--mut);margin:0 0 16px;}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:20px;}
+.ty{text-align:left;background:transparent;border:1px solid var(--line);color:var(--ink);
+  font-family:var(--grot);font-size:11px;letter-spacing:.04em;padding:9px 10px;cursor:pointer;transition:.15s;}
+.ty .ja{display:block;font-size:8.5px;color:var(--mut);margin-top:2px;letter-spacing:0;}
+.ty.on{background:var(--ink);color:#0c0b0a;} .ty.on .ja{color:rgba(12,11,10,.6);}
+label{display:block;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut);margin:0 0 7px;}
+textarea{width:100%;background:#16140f;border:1px solid var(--line);color:var(--ink);
+  font-family:'Noto Serif JP',serif;font-size:14px;line-height:1.7;padding:11px 12px;resize:vertical;outline:none;}
+.sld{margin:14px 0 0;}
+.sld .row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
+.sld .val{font-family:ui-monospace,monospace;font-size:10px;color:var(--ink);letter-spacing:.06em;}
+input[type=range]{width:100%;accent-color:var(--shu);background:transparent;cursor:pointer;}
+.btns{display:flex;gap:9px;margin-top:20px;}
+button.act{flex:1;background:transparent;border:1px solid var(--line);color:var(--ink);
+  font-family:var(--grot);font-size:10px;letter-spacing:.2em;text-transform:uppercase;padding:12px 0;cursor:pointer;transition:.15s;}
+button.act:hover{background:rgba(232,230,224,.07);}
+button.rec{border-color:var(--shu);color:var(--shu);} button.rec:hover{background:rgba(200,80,58,.12);}
+.note{font-family:'Noto Serif JP',serif;font-weight:300;font-size:12px;line-height:1.8;color:var(--mut);margin-top:18px;}
+.stat{font-family:ui-monospace,monospace;font-size:10px;color:var(--shu);letter-spacing:.1em;min-height:14px;margin-top:10px;}
+</style>
+</head>
+<body>
+  <div class="stage">
+    <canvas id="out" width="1080" height="1920"></canvas>
+    <div class="cap" id="cap">— · 9:16</div>
+  </div>
+  <div class="panel">
+    <div class="h">ALMANA · 3D紋章 動画工房 · v2</div>
+    <div class="types" id="types"></div>
+
+    <div class="sld">
+      <div class="row"><label style="margin:0">立ち上がり / Emerge</label><span class="val" id="emV">3.0s</span></div>
+      <input type="range" id="em" min="1500" max="6000" step="100" value="3000">
+    </div>
+    <div class="sld">
+      <div class="row"><label style="margin:0">ホールド / Hold（呼吸）</label><span class="val" id="hoV">6.0s</span></div>
+      <input type="range" id="ho" min="3000" max="14000" step="500" value="6000">
+    </div>
+
+    <label style="margin-top:18px">締めの言葉（1〜2行）</label>
+    <textarea id="text" rows="3">占うためではなく、読むために。</textarea>
+
+    <div class="btns">
+      <button class="act" id="play">▶ 再生</button>
+      <button class="act rec" id="rec">● 録画 (WebM)</button>
+    </div>
+    <div class="stat" id="stat"></div>
+    <div class="note">v2: 紋章が「立ち上がり → 呼吸するホールド（約8秒・回転継続で奥行きを読ませる） → 溶暗・締め言葉・ALMANA」。
+      奥行きで明度が変わり、最密部に微かな朱。録画は1パスを WebM(1080×1920) で書き出し（IG用 MP4 は後で変換）。</div>
+  </div>
+
+<script>
+(function(){
+  var $=function(s){return document.getElementById(s);};
+  // --- canonical 12 types (almana-12types-v2.html の焼付 a,b,c,d,γ) ---
+  var TYPES=[
+    {code:'Architect',  ja:'静かな設計者', a:2.28,b:-0.86,c:0.65,d:1.22,g:0.78},
+    {code:'Weaver',     ja:'共感の紡ぎ手', a:-1.46,b:2.53,c:-0.67,d:1.05,g:0.74},
+    {code:'StormDancer',ja:'情熱の変革者', a:2.96,b:0.49,c:0.82,d:-2.12,g:0.44},
+    {code:'Sage',       ja:'理を織る賢者', a:1.63,b:-2.06,c:2.34,d:-1.39,g:0.40},
+    {code:'Artist',     ja:'自由な表現者', a:-1.46,b:2.53,c:-0.90,d:1.20,g:0.74},
+    {code:'Guardian',   ja:'礎を築く守護者',a:1.14,b:1.30,c:0.01,d:-2.91,g:0.84},
+    {code:'Seeker',     ja:'永遠の探求者', a:2.08,b:-1.36,c:2.20,d:-1.28,g:0.36},
+    {code:'Sovereign',  ja:'静かなる統治者',a:-0.12,b:1.28,c:0.15,d:-3.00,g:0.74},
+    {code:'FlowWalker', ja:'賢い旅人',     a:0.36,b:2.86,c:0.76,d:1.18,g:0.78},
+    {code:'Healer',     ja:'慈悲深き癒し手',a:1.99,b:-3.00,c:3.00,d:-3.00,g:0.74},
+    {code:'Foreseer',   ja:'鋭敏な夢見人', a:1.75,b:2.57,c:1.51,d:-0.43,g:0.74},
+    {code:'Alchemist',  ja:'錬金術師',     a:-2.92,b:2.25,c:1.52,d:-2.15,g:0.68}
+  ];
+  var W=1080,H=1920,N=180000;
+  // --- timeline (ms) — パーティクル形成 → 文章 → ALMANAロゴ → 焼き付け高画質紋 ---
+  var P={ lead:400, emerge:3000, hold:6000, text:2200, logo:2200, bake:2800 };
+  function totalDur(){ return P.lead+P.emerge+P.hold+P.text+P.logo+P.bake; }
+  var DUR=totalDur();
+  var cur=0, raf=0, t0=0, playing=false;
+
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+  function easeOut(x){ return 1-Math.pow(1-x,3); }
+
+  // --- offscreen WebGL (3D mon) ---
+  var glc=document.createElement('canvas'); glc.width=W; glc.height=H;
+  var renderer=new THREE.WebGLRenderer({canvas:glc,antialias:true,alpha:false,preserveDrawingBuffer:true});
+  renderer.setPixelRatio(1); renderer.setSize(W,H,false); renderer.setClearColor(0x000000,1);
+  var scene=new THREE.Scene();
+  var camera=new THREE.PerspectiveCamera(45,W/H,0.1,100); camera.position.set(0,0,4.2);
+  var geo=new THREE.BufferGeometry();
+  var mat=new THREE.ShaderMaterial({
+    uniforms:{ uProgress:{value:0}, uTime:{value:0}, uSize:{value:2.3}, uShift:{value:0},
+               uBreath:{value:0}, uGlow:{value:1} },
+    transparent:true, blending:THREE.AdditiveBlending, depthWrite:false,
+    vertexShader:[
+      'attribute float aSeed;',
+      'uniform float uProgress; uniform float uTime; uniform float uSize; uniform float uShift; uniform float uBreath;',
+      'varying float vH;',                                // 稜の高さ(密度)→ 彫りの明暗・朱
+      'void main(){',
+      '  float ph = aSeed * 6.2831853;',
+      '  vec3 wave = vec3(',                             // リサジュー波動(uShiftで毎回変わる)
+      '    sin(uTime*0.9 + ph*3.0 + uShift) * 1.0,',
+      '    sin(uTime*0.7 + ph*2.0 + 1.5708 + uShift) * 1.0,',
+      '    sin(uTime*1.1 + ph*5.0) * 0.5);',
+      '  float m = smoothstep(0.0, 1.0, uProgress);',     // 波 → 紋章へ収束(立ち上がる)
+      '  vec3 p = mix(wave, position, m);',
+      '  p *= (1.0 + 0.012*uBreath*m);',                  // ホールド中の微かな呼吸(膨縮)
+      '  vH = clamp(position.z/0.95 + 0.5, 0.0, 1.0);',
+      '  gl_Position = projectionMatrix * modelViewMatrix * vec4(p,1.0);',
+      '  gl_PointSize = uSize * (1.0 + 0.05*uBreath);',
+      '}'
+    ].join('\n'),
+    fragmentShader:[
+      'precision mediump float;',
+      'varying float vH; uniform float uGlow;',
+      'void main(){',
+      '  vec2 q = gl_PointCoord - 0.5;',
+      '  float d = length(q);',
+      '  if(d>0.5) discard;',
+      '  float soft = smoothstep(0.5, 0.0, d);',          // 丸いソフト点
+      '  float dens = pow(vH, 1.7);',                     // 密度を強調＝疎なヘイズを落とし輪郭を締める
+      '  vec3 white = vec3(1.0, 0.98, 0.95);',
+      '  vec3 shu = vec3(0.78, 0.27, 0.20);',
+      '  vec3 col = mix(white, shu, smoothstep(0.74, 1.0, vH) * 0.5);', // 最密部に微かな朱
+      '  gl_FragColor = vec4(col, soft * (0.10 + 0.52*dens) * uGlow);', // 疎点は薄く・密点は濃く
+      '}'
+    ].join('\n')
+  });
+  // 点群（密度重み付けで輪郭を締める）。線化は弦が潰れてベタ塗りになるので不可。
+  var pts=new THREE.Points(geo,mat); scene.add(pts);
+
+  // --- visible 2D composite (recorded) ---
+  var out=$('out'); out.width=W; out.height=H; var ctx=out.getContext('2d');
+
+  function computeMon(ty){
+    var a=ty.a,b=ty.b,c=ty.c,d=ty.d,i,nx,ny;
+    var x=0.1,y=0.1,minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
+    for(i=0;i<20000;i++){ nx=Math.sin(a*y)-Math.cos(b*x); ny=Math.sin(c*x)-Math.cos(d*y); x=nx;y=ny;
+      if(i>300){ if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; } }
+    var G=256, dens=new Float32Array(G*G), pxA=new Float32Array(N), pyA=new Float32Array(N);
+    var spanX=(maxX-minX)||1, spanY=(maxY-minY)||1, span=Math.max(spanX,spanY);
+    x=0.1;y=0.1;
+    for(i=0;i<N;i++){ nx=Math.sin(a*y)-Math.cos(b*x); ny=Math.sin(c*x)-Math.cos(d*y); x=nx;y=ny;
+      pxA[i]=x; pyA[i]=y;
+      var gx=((x-minX)/spanX*(G-1))|0, gy=((y-minY)/spanY*(G-1))|0;
+      if(gx>=0&&gx<G&&gy>=0&&gy<G) dens[gy*G+gx]++; }
+    var maxD=0,v; for(i=0;i<dens.length;i++){ v=dens[i]; if(v>maxD)maxD=v; }
+    var ld=Math.log(1+maxD)||1, SC=1.4/span, cx=(minX+maxX)/2, cy=(minY+maxY)/2, depth=0.95;
+    var pos=new Float32Array(N*3);
+    for(i=0;i<N;i++){
+      var gx2=((pxA[i]-minX)/spanX*(G-1))|0, gy2=((pyA[i]-minY)/spanY*(G-1))|0;
+      var dv=dens[gy2*G+gx2]||1, zt=Math.log(1+dv)/ld;
+      pos[i*3]=(pxA[i]-cx)*SC; pos[i*3+1]=(pyA[i]-cy)*SC; pos[i*3+2]=(zt-0.5)*depth;
+    }
+    return pos;
+  }
+
+  // --- 焼付プレート: 正典の焼き付け（almana-mon-card-studio.html / living-dejong）をそのまま移植。
+  //     多シード密度現像 + develop の「透明面」(SHIRO淡墨・α=密度)。黒動画にそのまま重なる。型ごとにキャッシュ。---
+  var bakedCache={}, SHIRO=[244,243,241];
+  function renderBaked(idx){
+    if(bakedCache[idx]) return bakedCache[idx];
+    var ty=TYPES[idx], a=ty.a,b=ty.b,c=ty.c,d=ty.d, i,nx,ny;
+    var RES=Math.round(W*0.66), PADF=0.16;
+    // bounds（warmup）
+    var x=0.1,y=0.1,minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
+    for(i=0;i<20000;i++){ nx=Math.sin(a*y)-Math.cos(b*x); ny=Math.sin(c*x)-Math.cos(d*y); x=nx;y=ny;
+      if(i>200){ if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; } }
+    var spanX=(maxX-minX)||1e-3, spanY=(maxY-minY)||1e-3;
+    var sc=Math.min(RES*(1-2*PADF)/spanX, RES*(1-2*PADF)/spanY);
+    var ox=(RES-spanX*sc)/2-minX*sc, oy=(RES-spanY*sc)/2-minY*sc;
+    // 多シードで均一充填（ヒゲ/ムラを消す）
+    var acc=new Float32Array(RES*RES), maxv=0, SEEDS=160, PER=50000, si, sx, sy, px, py, v, id2;
+    for(si=0;si<SEEDS;si++){
+      sx=si===0?0.1:Math.random()*0.4-0.2; sy=si===0?0.1:Math.random()*0.4-0.2;
+      for(i=0;i<40;i++){ nx=Math.sin(a*sy)-Math.cos(b*sx); ny=Math.sin(c*sx)-Math.cos(d*sy); sx=nx;sy=ny; }
+      for(i=0;i<PER;i++){
+        nx=Math.sin(a*sy)-Math.cos(b*sx); ny=Math.sin(c*sx)-Math.cos(d*sy); sx=nx;sy=ny;
+        px=(sx*sc+ox)|0; py=(sy*sc+oy)|0;
+        if(px>=0&&px<RES&&py>=0&&py<RES){ id2=py*RES+px; v=++acc[id2]; if(v>maxv)maxv=v; }
+      }
+    }
+    // develop（sumi面）: t=pow(log(1+v)/denom, 0.62), 墨地 SUMI→淡墨 SHIRO を補間（疎部も墨地として残り塊で読める）
+    var denom=Math.log(1+maxv)||1, gP=0.62, SUMI=[34,33,31];
+    var cv=document.createElement('canvas'); cv.width=RES; cv.height=RES;
+    var g=cv.getContext('2d'), img=g.createImageData(RES,RES), data=img.data, t,q;
+    for(i=0;i<acc.length;i++){
+      v=acc[i]; t=v<0.5?0:Math.pow(Math.log(1+v)/denom,gP);
+      q=i*4;
+      data[q]  =Math.round(SUMI[0]+(SHIRO[0]-SUMI[0])*t);
+      data[q+1]=Math.round(SUMI[1]+(SHIRO[1]-SUMI[1])*t);
+      data[q+2]=Math.round(SUMI[2]+(SHIRO[2]-SUMI[2])*t);
+      data[q+3]=255;
+    }
+    g.putImageData(img,0,0);
+    bakedCache[idx]=cv; return cv;
+  }
+  function drawBaked(alpha){
+    var cv=renderBaked(cur);
+    ctx.save(); ctx.globalAlpha=alpha; ctx.drawImage(cv,(W-cv.width)/2,(H-cv.height)/2); ctx.restore();
+  }
+
+  function loadType(idx){
+    cur=idx;
+    renderBaked(idx);                                         // 焼付紋を先に焼いておく(末尾の引っ掛かり防止)
+    var pos=computeMon(TYPES[idx]);
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+    if(!geo.getAttribute('aSeed')){
+      var seeds=new Float32Array(N); for(var si=0;si<N;si++) seeds[si]=Math.random();
+      geo.setAttribute('aSeed', new THREE.Float32BufferAttribute(seeds,1));
+    }
+    geo.setDrawRange(0,N);
+    updateCap();
+    Array.prototype.forEach.call($('types').children,function(b,i){ b.classList.toggle('on',i===idx); });
+    start();
+  }
+
+  function updateCap(){ $('cap').textContent=TYPES[cur].code+' · 9:16 · '+(DUR/1000).toFixed(1)+'s'; }
+
+  function drawText(alpha){
+    var lines=($('text').value||'').split('\n').filter(function(s){return s.length;});
+    if(!lines.length) return;
+    ctx.save(); ctx.globalAlpha=alpha; ctx.fillStyle='#f4f2ec';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    var fs=Math.round(W*0.052); ctx.font='400 '+fs+'px "Noto Serif JP", serif';
+    if('letterSpacing' in ctx) ctx.letterSpacing='2px';
+    var lh=fs*1.7, y0=H*0.5-(lines.length-1)*lh/2, k;
+    for(k=0;k<lines.length;k++) ctx.fillText(lines[k], W/2, y0+k*lh);
+    if('letterSpacing' in ctx) ctx.letterSpacing='0px';
+    ctx.restore();
+  }
+  function drawLogo(alpha){
+    ctx.save(); ctx.globalAlpha=alpha; ctx.textAlign='center'; ctx.textBaseline='middle';
+    var af=Math.round(W*0.040); ctx.fillStyle='#f4f2ec'; ctx.font='700 '+af+'px "Noto Serif JP", serif';
+    if('letterSpacing' in ctx) ctx.letterSpacing=(0.42*af).toFixed(0)+'px';
+    ctx.fillText('ALMANA', W/2+af*0.21, H*0.49);
+    if('letterSpacing' in ctx) ctx.letterSpacing='0px';
+    var mf=Math.round(W*0.019); ctx.fillStyle='#8c887f'; ctx.font='300 '+mf+'px "Noto Serif JP", serif';
+    if('letterSpacing' in ctx) ctx.letterSpacing=(0.26*mf).toFixed(0)+'px';
+    ctx.fillText('TO READ, NOT TO PREDICT', W/2, H*0.49+af*1.4);
+    if('letterSpacing' in ctx) ctx.letterSpacing='0px';
+    ctx.restore();
+  }
+
+  function frame(t){
+    var emS=P.lead, emE=emS+P.emerge, holdE=emE+P.hold, textE=holdE+P.text, logoE=textE+P.logo, END=DUR;
+    mat.uniforms.uTime.value = t/1000;
+    mat.uniforms.uProgress.value = clamp((t-emS)/P.emerge, 0, 1);   // 立ち上がる
+    var br=0.5+0.5*Math.sin(t*0.0014);                              // 静かな呼吸
+    mat.uniforms.uBreath.value = br;
+    mat.uniforms.uGlow.value = 0.90+0.10*br;
+    // 正面へ静定 → ホールド中はごく僅かに揺れる（正面シルエット=紋を読ませ続けつつ3Dの奥行きを保つ）
+    var settle = easeOut(clamp((t-emS)/(P.emerge+1200), 0, 1));
+    pts.rotation.y = (1.0-settle)*(-0.5) + Math.sin(t*0.00045)*0.16;
+    pts.rotation.x = 0.12 + 0.05*Math.sin(t*0.00028);
+    var camIn = easeOut(clamp((t-emS)/(P.emerge+800), 0, 1));
+    camera.position.z = 4.7 - camIn*0.62;
+    renderer.render(scene,camera);
+
+    ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
+
+    // ① パーティクル形成 → ホールド → 文章手前で溶暗
+    var pA;
+    if(t<emS+200) pA=0;
+    else if(t<emS+800) pA=(t-(emS+200))/600;
+    else if(t<=holdE+300) pA=1;
+    else pA=Math.max(0, 1-(t-(holdE+300))/700);
+    if(pA>0){ ctx.globalAlpha=pA; ctx.drawImage(glc,0,0,W,H); ctx.globalAlpha=1; }
+
+    // ② 文章（締めの言葉）
+    var tIn=holdE+500, tOut=textE-650, textA=0;
+    if(t>tIn) textA=Math.min(1,(t-tIn)/650);
+    if(t>tOut) textA=Math.max(0,1-(t-tOut)/600);
+    if(textA>0 && t<logoE) drawText(textA);
+
+    // ③ ALMANA ロゴ
+    var gIn=textE+200, gOut=logoE-650, logoA=0;
+    if(t>gIn) logoA=Math.min(1,(t-gIn)/650);
+    if(t>gOut) logoA=Math.max(0,1-(t-gOut)/600);
+    if(logoA>0 && t<END) drawLogo(logoA);
+
+    // ④ 焼き付け高画質デジョン紋（末尾＝この紋で静定＝SNSサムネ）
+    if(t>logoE){
+      var bakeA=Math.min(1, (t-logoE)/900);
+      drawBaked(bakeA);
+      var sear=(t>logoE+700 && t<logoE+1500) ? (1-Math.abs(t-(logoE+1100))/400) : 0;  // 焼き付く一瞬の静かな明るみ
+      if(sear>0){ ctx.save(); ctx.globalCompositeOperation='lighter'; drawBaked(0.35*sear); ctx.restore(); }
+    }
+  }
+
+  function drawHeld(){ frame(P.lead+P.emerge+P.hold*0.5); }   // idle: 呼吸するホールドを静止表示
+
+  function loop(now){
+    if(!playing) return;
+    var t=now-t0;
+    if(t>=DUR){ playing=false; if(onEnd){ frame(DUR); var f=onEnd; onEnd=null; f(); } else { drawHeld(); } return; }
+    frame(t); raf=requestAnimationFrame(loop);
+  }
+  var onEnd=null;
+  function start(cb){ cancelAnimationFrame(raf); onEnd=cb||null;
+    mat.uniforms.uShift.value=Math.random()*6.2831853;   // 毎回ゆらぎを変える
+    playing=true; t0=performance.now(); raf=requestAnimationFrame(loop); }
+
+  // --- record (WebM) ---
+  function record(){
+    if(playing && onEnd) return;
+    var stream=out.captureStream();
+    var mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')?'video/webm;codecs=vp9':'video/webm';
+    var rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:12000000});
+    var chunks=[]; rec.ondataavailable=function(ev){ if(ev.data.size)chunks.push(ev.data); };
+    rec.onstop=function(){
+      var blob=new Blob(chunks,{type:'video/webm'}); var a=document.createElement('a');
+      a.href=URL.createObjectURL(blob); a.download='almana_'+TYPES[cur].code.toLowerCase()+'_9x16.webm';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){URL.revokeObjectURL(a.href);},900);
+      $('stat').textContent='保存しました: '+a.download;
+    };
+    $('stat').textContent='録画中… '+(DUR/1000).toFixed(1)+'s';
+    rec.start();
+    start(function(){ setTimeout(function(){ rec.stop(); },140); });
+  }
+
+  // --- UI ---
+  TYPES.forEach(function(ty,i){
+    var b=document.createElement('button'); b.className='ty';
+    b.innerHTML=ty.code+'<span class="ja">'+ty.ja+'</span>';
+    b.addEventListener('click',function(){ loadType(i); });
+    $('types').appendChild(b);
+  });
+  function onSlider(){
+    P.emerge=+$('em').value; P.hold=+$('ho').value; DUR=totalDur();
+    $('emV').textContent=(P.emerge/1000).toFixed(1)+'s';
+    $('hoV').textContent=(P.hold/1000).toFixed(1)+'s';
+    updateCap();
+    if(!playing) drawHeld();
+  }
+  $('em').addEventListener('input',onSlider);
+  $('ho').addEventListener('input',onSlider);
+  $('play').addEventListener('click',function(){ start(); });
+  $('rec').addEventListener('click',record);
+
+  if(document.fonts&&document.fonts.ready){ document.fonts.ready.then(function(){ loadType(0); }); }
+  loadType(0);
+})();
+</script>
+</body>
+</html>

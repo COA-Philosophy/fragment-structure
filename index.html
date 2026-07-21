@@ -1158,7 +1158,7 @@
       still: ''
     },
     {
-      no: 'F071', version: 'v1', status: 'current',
+      no: 'F071', version: 'v1', status: 'archived',
       project: 'JINEN',
       use: '検体 No.004 / Specimen',
       ja: '螺鈿 / 干渉場',
@@ -1173,6 +1173,33 @@
       ja: '曜変 ⇄ 錆',
       en: 'Yohen ⇄ Sabi — DLA transplant (v3)',
       file: 'works/yohen_sabi_dla_v3.html',
+      still: ''
+    },
+    {
+      no: 'F071', version: 'v2', status: 'current',
+      project: 'JINEN',
+      use: '検体 No.004 / Specimen',
+      ja: '螺鈿 / 干渉場',
+      en: 'Nacre — Interference Field (crazing + relief)',
+      file: 'works/nacre_moire_field_v2.html',
+      still: ''
+    },
+    {
+      no: 'F073', version: 'v1', status: 'archived',
+      project: 'JINEN',
+      use: '検体 No.006 / Specimen',
+      ja: '津軽塗',
+      en: 'Tsugaru-nuri — Togidashi DLA (v0.1)',
+      file: 'works/tsugaru_togidashi_dla_v0_1.html',
+      still: ''
+    },
+    {
+      no: 'F073', version: 'v2', status: 'current',
+      project: 'JINEN',
+      use: '検体 No.006 / Specimen',
+      ja: '津軽塗',
+      en: 'Tsugaru-nuri — Togidashi RD islands (v0.8)',
+      file: 'works/tsugaru_togidashi_rd_v2.html',
       still: ''
     },
   ];
@@ -1262,6 +1289,9 @@
     'works/sabigaki-v1.html': { family: '材質レリーフ', tech: '参照抽出＋7層錆合成の写しパイプライン', how: '参照写真から錆斑・泡孔・亀裂を形態学抽出し、距離変換とfbmで7層合成、宣言光で陰影焼成' },
     'works/nacre_moire_field_v0.html': { family: '干渉場', tech: '滑らか厚み場の干渉次数モアレ', how: 'across-flowランプ＋fbmワープ＋眼のガウスで厚み場Hを作り、frac(H·密度)の端数を螺鈿色に読み、勾配大の谷を暗い縫い目にする' },
     'works/yohen_sabi_dla_v3.html': { family: '自己組織化', tech: '付着確率ダイヤルの多玉DLA凝集', how: 'アンカーに寄せた種を対数正規バジェットでDLA成長させ、付着確率で枝⇄丸玉を可変。密度場の等高線を光る縁に、玉ごとの潜在値で一部だけ青を開く' },
+    'works/nacre_moire_field_v2.html': { family: '干渉場', tech: '貫入プレート段差＋Blinn立体の干渉場', how: 'simplex fbmの帯＋眼で厚み場Hを作り、ボロノイ貫入でプレート段差を刻み、frac(H·密度)を螺鈿色に。法線からBlinn陰影で立体化し割れ目を暗線に' },
+    'works/tsugaru_togidashi_dla_v0_1.html': { family: '自己組織化', tech: '密度＝深さの研ぎ出し積層漆', how: 'DLA被覆をぼかして肉置きし密度を深さに、積層パレットへ離散写像して研ぎ面の層を露出、層断面をエッジ輪にし起伏の法線で漆の鏡面艶' },
+    'works/tsugaru_togidashi_rd_v2.html': { family: '自己組織化', tech: '反応拡散の島を研ぎ出す積層漆', how: 'Gray-Scott反応拡散のスポットをfBmで歪め、島の縁からの距離変換を深さに積層パレットへ離散写像、層断面を輪にし法線で漆艶と手研ぎムラ' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

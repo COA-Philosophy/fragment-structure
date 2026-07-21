@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>津軽塗 · 反応拡散の島 v0.8</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: #050507;
+    color: #b8b8bc;
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 22px 16px 56px;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1 { font-size: 15px; font-weight: 400; letter-spacing: 0.42em; color: #5a6478; margin-bottom: 4px; }
+  .sub { font-size: 10.5px; letter-spacing: 0.12em; color: #3a3a42; margin-bottom: 18px; font-family: ui-monospace, monospace; }
+  #view { width: min(760px, 92vw); height: auto; aspect-ratio: 1/1; display: block;
+    border: 1px solid #16161c; box-shadow: 0 0 70px rgba(20,30,60,0.22); background: #0a0a0c; }
+  .panel { margin-top: 20px; width: min(560px, 92vw); display: flex; flex-direction: column; gap: 11px; }
+  .group-label { font-size: 10px; letter-spacing: 0.2em; color: #4a5568; font-family: ui-monospace, monospace;
+    margin-top: 8px; margin-bottom: 2px; border-bottom: 1px solid #16161c; padding-bottom: 4px; }
+  .hint { font-size: 9.5px; color: #34343c; font-family: ui-monospace, monospace; letter-spacing: 0.03em; margin-top: -4px; }
+  .row { display: grid; grid-template-columns: 104px 1fr 54px; align-items: center; gap: 12px; }
+  .row label { font-size: 11px; letter-spacing: 0.05em; color: #6a6a72; font-family: ui-monospace, monospace; }
+  .row input[type=range] { width: 100%; accent-color: #3a5578; height: 2px; }
+  .row .val { font-size: 11px; color: #8a8a92; font-family: ui-monospace, monospace; text-align: right; }
+  .toggle-row { display: flex; align-items: center; gap: 12px; }
+  .toggle-row .tlabel { font-size: 11px; letter-spacing: 0.05em; color: #6a6a72; font-family: ui-monospace, monospace; width: 104px; }
+  .seg { display: flex; border: 1px solid #24242c; }
+  .seg button { background: transparent; border: none; color: #7a7a82; padding: 7px 20px; font-size: 11px;
+    letter-spacing: 0.14em; font-family: ui-monospace, monospace; cursor: pointer; transition: background 0.18s, color 0.18s; }
+  .seg button.on { background: #1a2233; color: #cad2e0; }
+  .buttons { display: flex; gap: 10px; margin-top: 12px; }
+  button.act { flex: 1; background: transparent; border: 1px solid #24242c; color: #9a9aa2; padding: 10px 12px;
+    font-size: 11px; letter-spacing: 0.15em; font-family: ui-monospace, monospace; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+  button.act:hover { border-color: #3a5578; color: #cacad2; }
+  button.act:disabled { opacity: 0.4; cursor: wait; }
+  .readout { font-size: 10px; color: #4a4a52; font-family: ui-monospace, monospace; letter-spacing: 0.04em; line-height: 1.7; margin-top: 10px; }
+  .readout b { color: #7a7a82; font-weight: 400; }
+  .readout .busy { color: #7a8aa8; }
+</style>
+</head>
+<body>
+  <h1>津 軽 塗</h1>
+  <div class="sub">REACTION–DIFFUSION · 研ぎ出しレンダラー · rd-islands v0.8</div>
+  <canvas id="view" width="760" height="760"></canvas>
+
+  <div class="panel">
+    <div class="group-label">REACTION–DIFFUSION — 反応拡散（濃度＝高さ場）</div>
+    <div class="row"><label>島の大きさ</label><input id="size" type="range" min="0" max="1" step="0.05" value="0.50"><span class="val" id="size-v">0.50</span></div>
+    <div class="hint">大きい＝大陸（大きな島・少数） / 小さい＝細かい斑（多数）</div>
+    <div class="row"><label>分離⇄連結</label><input id="sep" type="range" min="0" max="1" step="0.05" value="0.70"><span class="val" id="sep-v">0.70</span></div>
+    <div class="hint">高い＝独立した丸い島（teal参照） / 低い＝繋がった大理石（溜参照）</div>
+    <div class="row"><label>密度</label><input id="density" type="range" min="0" max="1" step="0.05" value="0.45"><span class="val" id="density-v">0.45</span></div>
+    <div class="hint">島の被覆。高い＝島が太って詰まる（参照の密な感じ） / 低い＝スカスカ（即反映）</div>
+    <div class="row"><label>大小のばらつき</label><input id="var" type="range" min="0" max="1" step="0.05" value="0.40"><span class="val" id="var-v">0.40</span></div>
+    <div class="hint">供給率に空間勾配。0＝均一な粒 / 高＝大小が混ざる（以前の壁を破る）</div>
+    <div class="row"><label>歪み</label><input id="warp" type="range" min="0" max="2" step="0.05" value="1.00"><span class="val" id="warp-v">1.00</span></div>
+    <div class="hint">格子由来の綺麗な円/四角を有機的に崩す。0＝素のスポット / 高＝アメーバ（強くすると溶ける・RD再計算なし・即反映）</div>
+
+    <div class="group-label">TOGIDASHI — 研ぎ出し（濃度＝深さ → 層）</div>
+    <div class="toggle-row">
+      <span class="tlabel">パレット</span>
+      <div class="seg" id="pal-seg">
+        <button data-p="ai" class="on">藍</button>
+        <button data-p="kara">唐塗</button>
+        <button data-p="tame">溜</button>
+        <button data-p="shu">朱</button>
+      </div>
+    </div>
+    <div class="hint">積層順（地→芯の色列）を固定。研ぎ面が深さで層を露出し、輪は濃度×積層から自生する</div>
+    <div class="row"><label>層数</label><input id="klayers" type="range" min="3" max="8" step="1" value="7"><span class="val" id="klayers-v">7</span></div>
+    <div class="hint">多い＝細かい同心の輪（溜寄り） / 少ない＝色数を絞った太い層（唐塗寄り）</div>
+    <div class="row"><label>削り</label><input id="carve" type="range" min="0" max="1" step="0.05" value="0.60"><span class="val" id="carve-v">0.60</span></div>
+    <div class="hint">研ぎ面の深さ。深い＝内側の層まで広く露出（いろんな色） / 浅い＝外周だけ（即反映）</div>
+    <div class="row"><label>縁線の強さ</label><input id="edge" type="range" min="0" max="2" step="0.1" value="1.0"><span class="val" id="edge-v">1.0</span></div>
+    <div class="hint">層断面のエッジ。藍/唐塗＝暗い髪線、溜＝発光する輪</div>
+    <div class="row"><label>艶</label><input id="gloss" type="range" min="0" max="1" step="0.05" value="0.22"><span class="val" id="gloss-v">0.22</span></div>
+    <div class="hint">研ぎ上げた漆の鏡面（起伏＝濃度から法線）。テクスチャを先に見たいときは低く</div>
+    <div class="row"><label>研ぎムラ</label><input id="togi" type="range" min="0" max="1" step="0.05" value="0.45"><span class="val" id="togi-v">0.45</span></div>
+    <div class="hint">手研ぎの不均一。低周波の柔らかいムラ＋微かな研ぎ筋を全面に。0＝刷ったように均一 / 高＝手で研いだ面（即反映）</div>
+
+    <div class="buttons">
+      <button class="act" id="reseed">RESEED 種を撒き直す</button>
+      <button class="act" id="export">高画質PNG 書き出し</button>
+    </div>
+    <div class="readout" id="readout"></div>
+  </div>
+
+<script>
+// ── 津軽塗 · 反応拡散の島 v0.1 ──────────────────────────────
+// v0からの追加＝ドメインワープ。RDのスポットは格子上で綺麗な円/角丸四角に落ち着き幾何的すぎる。
+// 反応拡散はそのまま、場を「読み出す座標」をfBmノイズで歪めて焼く → 円が非対称のローブに、
+// 四角の角が溶けて有機的な輪郭（アメーバ）になる。RDの計算に触れないので歪みは即反映。
+//   ・分離⇄連結 = kill率 k / 島の大きさ = 反応格子解像度 / ばらつき = 供給率Fの空間勾配
+//   ・歪み = 読み出し座標のfBm変位（種と連動・進行中は素のまま見せ、完成で適用）
+
+const RLIVE  = 440;   // ライブの場の解像度
+const REXPORT= 1800;  // 書き出しの場の解像度
+const VIEW   = 760;   // 表示ピクセル
+
+let SEED;
+let P = { size: 0.50, sep: 0.70, var: 0.40, density: 0.45, warp: 1.00, carve: 0.60, K: 7, edge: 1.0, gloss: 0.22, togi: 0.45 };
+let PAL = 'ai';
+
+const PALETTES = {
+  ai:   { label: '藍',
+    layers: [[12,109,107],[47,122,48],[201,161,58],[178,58,38],[110,35,24],[56,32,15],[10,10,12]],
+    natK: 7, edgeMode: 'dark', grain: 2.2, gloss: 0.22 },
+  kara: { label: '唐塗',
+    layers: [[202,150,30],[58,96,54],[188,58,36],[96,30,22],[14,11,10]],
+    natK: 5, edgeMode: 'dark', grain: 2.0, gloss: 0.26 },
+  tame: { label: '溜',
+    layers: [[24,15,10],[92,132,52],[206,154,54],[190,64,36],[12,10,8]],
+    natK: 5, edgeMode: 'glow', edgeGlow: [200,150,70], grain: 1.8, gloss: 0.40 },
+  shu:  { label: '朱',
+    layers: [[206,74,34],[238,212,150],[178,44,30],[14,11,10]],
+    natK: 4, edgeMode: 'dark', grain: 2.0, gloss: 0.30 },
+};
+
+let rdV = null, rdN = 0;
+let simGen = 0;
+let simBusy = false;
+
+const view = document.getElementById('view');
+
+// ── PRNG（mulberry32・種で再現） ──────────────────────────
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+let rng = mulberry32(1);
+const rnd = () => rng();
+
+const clamp   = (v,a,b)=> v<a?a:(v>b?b:v);
+const clamp01 = v => v<0?0:(v>1?1:v);
+const smoothstep = (a,b,x)=>{ const t=clamp01((x-a)/(b-a)); return t*t*(3-2*t); };
+function hash2(x,y){ let h=(x*374761393+y*668265263)|0; h=Math.imul(h^(h>>>13),1274126177); return ((h^(h>>>16))>>>0)/4294967296; }
+
+// ── 値ノイズ / fBm（ドメインワープ用・種で再現） ──────────
+function hashS(xi, yi, s){
+  let h = (xi*374761393 + yi*668265263 + s*2246822519)|0;
+  h = Math.imul(h ^ (h>>>13), 1274126177);
+  return ((h ^ (h>>>16))>>>0)/4294967296;
+}
+function vnoise(x, y, s){
+  const xi=Math.floor(x), yi=Math.floor(y);
+  const xf=x-xi, yf=y-yi;
+  const u=xf*xf*(3-2*xf), v=yf*yf*(3-2*yf);
+  const a=hashS(xi,yi,s), b=hashS(xi+1,yi,s), c=hashS(xi,yi+1,s), d=hashS(xi+1,yi+1,s);
+  return (a*(1-u)+b*u)*(1-v) + (c*(1-u)+d*u)*v;
+}
+function fbm2(x, y, s){
+  let sum=0, amp=0.5, fr=1;
+  for(let o=0;o<3;o++){ sum += amp*vnoise(x*fr, y*fr, s+o*1013); amp*=0.5; fr*=2.1; }
+  return sum; // ~0..0.875, mean ~0.44
+}
+
+// ── 供給率 F の空間場（低周波ノイズ・大小のばらつき） ──────
+function makeFfield(N){
+  const F0 = 0.030, amp = P.var*0.010;
+  const F = new Float32Array(N*N);
+  if(amp <= 1e-6){ F.fill(F0); return F; }
+  const M = 6;
+  const cp = new Float32Array(M*M);
+  for(let i=0;i<M*M;i++) cp[i] = rnd();
+  for(let y=0;y<N;y++){
+    const gy = y/(N-1)*(M-1); let y0=gy|0; const fy=gy-y0; const y1=y0+1<M?y0+1:M-1;
+    for(let x=0;x<N;x++){
+      const gx = x/(N-1)*(M-1); let x0=gx|0; const fx=gx-x0; const x1=x0+1<M?x0+1:M-1;
+      const a = cp[x0+y0*M]*(1-fx)+cp[x1+y0*M]*fx;
+      const b = cp[x0+y1*M]*(1-fx)+cp[x1+y1*M]*fx;
+      const n = a*(1-fy)+b*fy;
+      let f = F0 + (n-0.5)*amp;
+      F[x+y*N] = f<0.018?0.018:(f>0.048?0.048:f);
+    }
+  }
+  return F;
+}
+
+// ── Gray-Scott 1ステップ（9点ラプラシアン・トーラス境界） ──
+function stepGS(U,V,U2,V2,N,Du,Dv,dt,Ff,k){
+  for(let y=0;y<N;y++){
+    const ym=(y-1+N)%N, yp=(y+1)%N;
+    const row=y*N, rowm=ym*N, rowp=yp*N;
+    for(let x=0;x<N;x++){
+      const xm=(x-1+N)%N, xp=(x+1)%N;
+      const c=row+x;
+      const u=U[c], v=V[c];
+      const lapU = (U[row+xm]+U[row+xp]+U[rowm+x]+U[rowp+x])*0.2
+                 + (U[rowm+xm]+U[rowm+xp]+U[rowp+xm]+U[rowp+xp])*0.05 - u;
+      const lapV = (V[row+xm]+V[row+xp]+V[rowm+x]+V[rowp+x])*0.2
+                 + (V[rowm+xm]+V[rowm+xp]+V[rowp+xm]+V[rowp+xp])*0.05 - v;
+      const F = Ff[c];
+      const uvv = u*v*v;
+      let nu = u + dt*(Du*lapU - uvv + F*(1-u));
+      let nv = v + dt*(Dv*lapV + uvv - (F+k)*v);
+      U2[c] = nu<0?0:(nu>1?1:nu);
+      V2[c] = nv<0?0:nv;
+    }
+  }
+}
+
+// ── 反応拡散を回す（チャンク＝島が湧く様子を描きながら収束） ──
+function simulateRD(){
+  const myGen = ++simGen;
+  const N = Math.round(300 - P.size*170);
+  rng = mulberry32(SEED);
+  const NN = N*N;
+  let U = new Float32Array(NN), V = new Float32Array(NN);
+  let U2 = new Float32Array(NN), V2 = new Float32Array(NN);
+  U.fill(1);
+
+  const Ff = makeFfield(N);
+
+  const seedProb = 0.0016;
+  for(let i=0;i<NN;i++){
+    if(rnd() < seedProb){ V[i]=0.6; U[i]=0.4; }
+    U[i] += (rnd()-0.5)*0.01;
+  }
+
+  const Du=0.16, Dv=0.08, dt=1.0;
+  const k = 0.057 + P.sep*0.006;
+  const totalSteps = clamp(Math.round(N*11), 2000, 3400);
+  rdN = N;
+  let done = 0;
+
+  simBusy = true;
+  setButtonsBusy(true);
+
+  function chunk(){
+    if(myGen !== simGen) return;
+    const per = 50;
+    for(let it=0; it<per && done<totalSteps; it++, done++){
+      stepGS(U,V,U2,V2,N,Du,Dv,dt,Ff,k);
+      let t=U; U=U2; U2=t; t=V; V=V2; V2=t;
+    }
+    rdV = V;
+    if(done < totalSteps){
+      render(buildFields(RLIVE, true), view, VIEW, VIEW);  // 進行中は素のスポットで見せる
+      updateReadout(Math.round(done/totalSteps*100));
+      requestAnimationFrame(chunk);
+    } else {
+      render(buildFields(RLIVE), view, VIEW, VIEW);         // 完成＝歪みを適用
+      simBusy = false; setButtonsBusy(false);
+      updateReadout(-1);
+    }
+  }
+  requestAnimationFrame(chunk);
+}
+
+// ── 濃度場V → 高さ場dens ──────────────────────────────────
+// preview: 進行中の速い簡易表示（歪み・距離変換なし）
+// full   : ドメインワープ→島マスク→縁からの距離を高さに（研ぎ面が縁→中心へ層を順に露出）
+function buildFields(R, preview){
+  const V = rdV, N = rdN;
+  const warpN = preview ? 0 : P.warp*0.060;   // 正規化変位（歪み最大2.0で〜12%）
+  const swrl = SEED & 0xffff;                 // ワープ場の種（RESEEDで連動）
+  const freqW = 11.0;                         // ワープの空間周波数
+  const up = new Float32Array(R*R);
+  for(let dy=0;dy<R;dy++){
+    const nyv = dy/(R-1);
+    for(let dx=0;dx<R;dx++){
+      const nxv = dx/(R-1);
+      let sxn = nxv, syn = nyv;
+      if(warpN>1e-6){
+        const wx = (fbm2(nxv*freqW, nyv*freqW, swrl+11)  - 0.44) * warpN;
+        const wy = (fbm2(nxv*freqW, nyv*freqW, swrl+617) - 0.44) * warpN;
+        sxn = nxv + wx; syn = nyv + wy;
+        if(sxn<0) sxn=0; else if(sxn>1) sxn=1;
+        if(syn<0) syn=0; else if(syn>1) syn=1;
+      }
+      const sx = sxn*(N-1), sy = syn*(N-1);
+      const x0=sx|0, y0=sy|0;
+      const fx=sx-x0, fy=sy-y0;
+      const x1=x0+1<N?x0+1:N-1, y1=y0+1<N?y0+1:N-1;
+      const v00=V[x0+y0*N], v10=V[x1+y0*N], v01=V[x0+y1*N], v11=V[x1+y1*N];
+      up[dx+dy*R] = (v00*(1-fx)+v10*fx)*(1-fy) + (v01*(1-fx)+v11*fx)*fy;
+    }
+  }
+  const rb = Math.max(1, Math.round(R*0.004));
+  boxBlur(up, R, rb, 1);
+  let mx=0; for(let i=0;i<R*R;i++) if(up[i]>mx) mx=up[i]; if(mx<=0) mx=1;
+
+  if(preview){
+    const dens = new Float32Array(R*R);
+    for(let i=0;i<R*R;i++) dens[i] = smoothstep(0.08, 0.50, up[i]/mx);
+    return { R, dens };
+  }
+
+  // 島マスク → 縁からの距離を高さに（縁で浅く中心で深い＝層が縁→中心へ順に露出）
+  const t = 0.62 - P.density*0.47;   // 密度：高いほど閾値が下がり島が太って詰まる
+  const mask = new Uint8Array(R*R);
+  for(let i=0;i<R*R;i++) mask[i] = (up[i]/mx > t) ? 1 : 0;
+  const dist = distanceTransform(mask, R);
+  let dmax=0; for(let i=0;i<R*R;i++) if(dist[i]>dmax) dmax=dist[i]; if(dmax<=0) dmax=1;
+  const Dnorm = dmax * (0.35 + P.carve*0.75);   // 削り＝島サイズに対する層の広がり（大きい島も比例して幅広リング＝色が潰れない）
+  const inv = 1/Dnorm;
+  const dens = new Float32Array(R*R);
+  for(let i=0;i<R*R;i++){ const d = dist[i]*inv; dens[i] = d>1?1:d; }
+  boxBlur(dens, R, 1, 1);                       // チャンファの微小段差をAA
+  return { R, dens };
+}
+
+// ── 距離変換（2passチャンファ・島内の縁からの距離） ──────────
+function distanceTransform(mask, R){
+  const INF = 1e9;
+  const d = new Float32Array(R*R);
+  for(let i=0;i<R*R;i++) d[i] = mask[i] ? INF : 0;
+  const a = 1.0, b = 1.4142135;
+  for(let y=0;y<R;y++){
+    for(let x=0;x<R;x++){
+      const i = x+y*R;
+      if(d[i]===0) continue;
+      let m = d[i];
+      if(x>0)          { const v=d[i-1]+a;   if(v<m) m=v; }
+      if(y>0)          { const v=d[i-R]+a;   if(v<m) m=v; }
+      if(x>0 && y>0)   { const v=d[i-R-1]+b; if(v<m) m=v; }
+      if(x<R-1 && y>0) { const v=d[i-R+1]+b; if(v<m) m=v; }
+      d[i] = m;
+    }
+  }
+  for(let y=R-1;y>=0;y--){
+    for(let x=R-1;x>=0;x--){
+      const i = x+y*R;
+      if(d[i]===0) continue;
+      let m = d[i];
+      if(x<R-1)          { const v=d[i+1]+a;   if(v<m) m=v; }
+      if(y<R-1)          { const v=d[i+R]+a;   if(v<m) m=v; }
+      if(x<R-1 && y<R-1) { const v=d[i+R+1]+b; if(v<m) m=v; }
+      if(x>0 && y<R-1)   { const v=d[i+R-1]+b; if(v<m) m=v; }
+      d[i] = m;
+    }
+  }
+  return d;
+}
+
+// スライディング窓の箱ぼかし（半径によらず O(N)）
+function boxBlur(src, R, radius, passes){
+  const tmp = new Float32Array(R*R);
+  for(let p=0;p<passes;p++){ boxH(src,tmp,R,radius); boxV(tmp,src,R,radius); }
+}
+function boxH(src,dst,R,r){
+  const norm = 1/(2*r+1);
+  for(let y=0;y<R;y++){
+    const off=y*R; let sum=0;
+    for(let k=-r;k<=r;k++){ const xx=k<0?0:(k>R-1?R-1:k); sum+=src[off+xx]; }
+    for(let x=0;x<R;x++){
+      dst[off+x]=sum*norm;
+      const xout=x-r<0?0:x-r, xin=x+r+1>R-1?R-1:x+r+1;
+      sum += src[off+xin]-src[off+xout];
+    }
+  }
+}
+function boxV(src,dst,R,r){
+  const norm = 1/(2*r+1);
+  for(let x=0;x<R;x++){
+    let sum=0;
+    for(let k=-r;k<=r;k++){ const yy=k<0?0:(k>R-1?R-1:k); sum+=src[x+yy*R]; }
+    for(let y=0;y<R;y++){
+      dst[x+y*R]=sum*norm;
+      const yout=y-r<0?0:y-r, yin=y+r+1>R-1?R-1:y+r+1;
+      sum += src[x+yin*R]-src[x+yout*R];
+    }
+  }
+}
+
+// ── 層数Kに合わせて積層を最近傍で再標本化（色は離散に保つ） ──
+function buildStack(layers, K){
+  const stack = [];
+  const M = layers.length;
+  for(let k=0;k<K;k++){
+    const t = K===1 ? 0 : k/(K-1);
+    let idx = Math.round(t*(M-1));
+    if(idx<0) idx=0; if(idx>M-1) idx=M-1;
+    stack.push(layers[idx]);
+  }
+  return stack;
+}
+
+// ── レンダリング（研ぎ出し） ──────────────────────────────
+let _buf = null, _bufR = 0;
+function getBuffer(R){
+  if(!_buf || _bufR !== R){ _buf = document.createElement('canvas'); _buf.width=R; _buf.height=R; _bufR=R; }
+  return _buf;
+}
+
+function render(fld, target, W, H){
+  const { R, dens } = fld;
+  const buf = getBuffer(R);
+  const bctx = buf.getContext('2d');
+  const img = bctx.createImageData(R, R);
+  const px = img.data;
+
+  const pal = PALETTES[PAL];
+  const K = P.K;
+  const stack = buildStack(pal.layers, K);
+  const edge = P.edge;
+  const gloss = P.gloss;
+  const togi = P.togi;
+  const gseed = SEED & 0xffff;
+  const grainAmt = pal.grain;
+  const lineW = 0.9 * edge;
+  const eg = pal.edgeGlow || [150,120,50];
+
+  const lx=-0.42, ly=-0.60, lz=0.68;
+  const llen = 1/Math.sqrt(lx*lx+ly*ly+lz*lz);
+  const Lx=lx*llen, Ly=ly*llen, Lz=lz*llen;
+  let hx=Lx, hy=Ly, hz=Lz+1; const hlen=1/Math.sqrt(hx*hx+hy*hy+hz*hz);
+  hx*=hlen; hy*=hlen; hz*=hlen;
+
+  for(let y=0;y<R;y++){
+    for(let x=0;x<R;x++){
+      const i = x + y*R;
+      const d = dens[i];
+
+      const xm = x>0?x-1:0, xp = x<R-1?x+1:R-1;
+      const ym = y>0?y-1:0, yp = y<R-1?y+1:R-1;
+      const gxv = dens[xp+y*R] - dens[xm+y*R];
+      const gyv = dens[x+yp*R] - dens[x+ym*R];
+      const gmag = Math.sqrt(gxv*gxv + gyv*gyv);
+
+      const f = d*(K-1);
+      let band = Math.floor(f);
+      if(band<0) band=0; if(band>K-1) band=K-1;
+      let frac = f - band;
+      if(band===K-1) frac = 0;
+
+      const col = stack[band];
+      let r = col[0], g = col[1], b = col[2];
+
+      const gradF = (K-1)*gmag + 1e-6;
+      let lineAmt = 0;
+      if(band>0){
+        const cb = stack[band-1];
+        if(cb[0]!==col[0]||cb[1]!==col[1]||cb[2]!==col[2]){
+          const la = 1 - smoothstep(0, lineW, frac/gradF);
+          if(la>lineAmt) lineAmt = la;
+        }
+      }
+      if(band<K-1){
+        const cb = stack[band+1];
+        if(cb[0]!==col[0]||cb[1]!==col[1]||cb[2]!==col[2]){
+          const la = 1 - smoothstep(0, lineW, (1-frac)/gradF);
+          if(la>lineAmt) lineAmt = la;
+        }
+      }
+      if(lineAmt>0){
+        if(pal.edgeMode==='glow'){
+          const on = lineAmt * edge * 130;
+          r += eg[0]/255*on; g += eg[1]/255*on; b += eg[2]/255*on;
+        } else {
+          const dk = 1 - lineAmt * 0.62 * Math.min(1.6, edge);
+          r *= dk; g *= dk; b *= dk;
+        }
+      }
+
+      const nx = x/R - 0.5, ny = y/R - 0.5;
+      const gw = 1 - smoothstep(0.14, 0.5, d);
+      if(gw>0){
+        const grain = (hash2(x>>1, y>>1) - 0.5) * grainAmt;
+        r += grain*gw; g += grain*gw; b += grain*gw;
+      }
+
+      if(gloss>0){
+        const Sn = 3.6;
+        let nxv = -gxv*Sn, nyv = -gyv*Sn, nzv = 1;
+        const ninv = 1/Math.sqrt(nxv*nxv+nyv*nyv+nzv*nzv);
+        nxv*=ninv; nyv*=ninv; nzv*=ninv;
+        const ndh = Math.max(0, nxv*hx+nyv*hy+nzv*hz);
+        const spec = Math.pow(ndh, 40) * gloss * 235;
+        const ndl = Math.max(0, nxv*Lx+nyv*Ly+nzv*Lz);
+        const sheen = ndl * gloss * 12;
+        r += spec + sheen*0.6; g += spec + sheen*0.6; b += spec + sheen*0.72;
+      }
+
+      // 研ぎムラ：手研ぎの不均一（低周波の柔らかいムラ＋微かな研ぎ筋・全面）
+      if(togi>0){
+        const nxr = x/R, nyr = y/R;
+        const mura   = fbm2(nxr*3.5 + 4.0, nyr*3.5 + 9.0, gseed+201) - 0.44;               // 広いムラ
+        const streak = fbm2((nxr+nyr)*22.0 + 3.0, (nxr-nyr)*3.0 + 7.0, gseed+809) - 0.44;  // 斜めの研ぎ筋
+        const mod = 1 + (mura*0.34 + streak*0.14) * togi;
+        r *= mod; g *= mod; b *= mod;
+      }
+
+      const vg = 1 - (nx*nx + ny*ny) * 0.8;
+      const vv = clamp01(vg*0.28 + 0.72);
+      r*=vv; g*=vv; b*=vv;
+
+      const o = i*4;
+      px[o]   = clamp(r,0,255);
+      px[o+1] = clamp(g,0,255);
+      px[o+2] = clamp(b,0,255);
+      px[o+3] = 255;
+    }
+  }
+
+  bctx.putImageData(img, 0, 0);
+  const dctx = target.getContext('2d');
+  dctx.imageSmoothingEnabled = true;
+  dctx.imageSmoothingQuality = 'high';
+  dctx.clearRect(0,0,W,H);
+  dctx.drawImage(buf, 0, 0, W, H);
+}
+
+// ── 制御 ─────────────────────────────────────────────────
+function rerender(){ if(rdV) render(buildFields(RLIVE), view, VIEW, VIEW); updateReadout(-1); }
+
+function updateReadout(progress){
+  const pal = PALETTES[PAL];
+  const head = (progress >= 0)
+    ? `<span class="busy">反応拡散 計算中… ${progress}%</span><br>`
+    : `大きさ <b>${(P.size*100)|0}%</b>  分離 <b>${(P.sep*100)|0}%</b>  密度 <b>${(P.density*100)|0}%</b>  ばらつき <b>${(P.var*100)|0}%</b>  歪み <b>${(P.warp*100)|0}%</b>  格子 <b>${rdN}</b><br>`;
+  document.getElementById('readout').innerHTML =
+    head + `パレット <b>${pal.label}</b>  層数 <b>${P.K}</b>  削り <b>${(P.carve*100)|0}%</b>  艶 <b>${(P.gloss*100)|0}%</b>  研ぎムラ <b>${(P.togi*100)|0}%</b>  seed <b>#${SEED}</b>`;
+}
+
+function setButtonsBusy(b){
+  document.getElementById('reseed').disabled = b;
+  document.getElementById('export').disabled = b;
+}
+
+function bindSim(id, key, dec){
+  const el = document.getElementById(id), out = document.getElementById(id+'-v');
+  el.addEventListener('input',  () => { P[key] = parseFloat(el.value); out.textContent = P[key].toFixed(dec); });
+  el.addEventListener('change', () => { P[key] = parseFloat(el.value); out.textContent = P[key].toFixed(dec); simulateRD(); });
+}
+function bindRender(id, key, dec){
+  const el = document.getElementById(id), out = document.getElementById(id+'-v');
+  el.addEventListener('input', () => { P[key] = parseFloat(el.value); out.textContent = P[key].toFixed(dec); rerender(); });
+}
+
+bindSim('size', 'size', 2);
+bindSim('sep',  'sep',  2);
+bindSim('var',  'var',  2);
+bindRender('density', 'density', 2);
+bindRender('warp',    'warp',  2);
+bindRender('carve',   'carve', 2);
+bindRender('klayers', 'K',     0);
+bindRender('edge',    'edge',  1);
+bindRender('gloss',   'gloss', 2);
+bindRender('togi',    'togi',  2);
+
+document.getElementById('pal-seg').addEventListener('click', (e) => {
+  const btn = e.target.closest('button'); if(!btn) return;
+  PAL = btn.dataset.p;
+  [...document.querySelectorAll('#pal-seg button')].forEach(b => b.classList.toggle('on', b === btn));
+  const pal = PALETTES[PAL];
+  P.K = pal.natK; P.gloss = pal.gloss;
+  const kl = document.getElementById('klayers'); kl.value = P.K; document.getElementById('klayers-v').textContent = P.K;
+  const gl = document.getElementById('gloss'); gl.value = P.gloss; document.getElementById('gloss-v').textContent = P.gloss.toFixed(2);
+  rerender();
+});
+
+document.getElementById('reseed').addEventListener('click', () => {
+  if(simBusy) return;
+  SEED = (Math.random()*1e6)|0; simulateRD();
+});
+
+document.getElementById('export').addEventListener('click', () => {
+  if(simBusy || !rdV) return;
+  const btn = document.getElementById('export');
+  const orig = btn.textContent;
+  btn.textContent = '書き出し中…'; btn.disabled = true;
+  setTimeout(() => {
+    try {
+      const fe = buildFields(REXPORT);
+      const oc = document.createElement('canvas'); oc.width = REXPORT; oc.height = REXPORT;
+      render(fe, oc, REXPORT, REXPORT);
+      const a = document.createElement('a');
+      a.href = oc.toDataURL('image/png');
+      a.download = `tsugaru_rd_${PAL}_${SEED}.png`;
+      a.click();
+    } catch(err){ console.error(err); }
+    btn.textContent = orig; btn.disabled = false;
+  }, 30);
+});
+
+// 初期化
+SEED = (Math.random()*1e6)|0;
+simulateRD();
+</script>
+</body>
+</html>

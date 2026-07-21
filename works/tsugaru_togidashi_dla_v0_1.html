@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>津軽塗 · 研ぎ出しDLA v0.1</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: #050507;
+    color: #b8b8bc;
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 22px 16px 56px;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1 { font-size: 15px; font-weight: 400; letter-spacing: 0.42em; color: #5a6478; margin-bottom: 4px; }
+  .sub { font-size: 10.5px; letter-spacing: 0.12em; color: #3a3a42; margin-bottom: 18px; font-family: ui-monospace, monospace; }
+  #view { width: min(760px, 92vw); height: auto; aspect-ratio: 1/1; display: block;
+    border: 1px solid #16161c; box-shadow: 0 0 70px rgba(20,30,60,0.22); background: #0a0a0c; }
+  .panel { margin-top: 20px; width: min(560px, 92vw); display: flex; flex-direction: column; gap: 11px; }
+  .group-label { font-size: 10px; letter-spacing: 0.2em; color: #4a5568; font-family: ui-monospace, monospace;
+    margin-top: 8px; margin-bottom: 2px; border-bottom: 1px solid #16161c; padding-bottom: 4px; }
+  .hint { font-size: 9.5px; color: #34343c; font-family: ui-monospace, monospace; letter-spacing: 0.03em; margin-top: -4px; }
+  .row { display: grid; grid-template-columns: 104px 1fr 54px; align-items: center; gap: 12px; }
+  .row label { font-size: 11px; letter-spacing: 0.05em; color: #6a6a72; font-family: ui-monospace, monospace; }
+  .row input[type=range] { width: 100%; accent-color: #3a5578; height: 2px; }
+  .row .val { font-size: 11px; color: #8a8a92; font-family: ui-monospace, monospace; text-align: right; }
+  .toggle-row { display: flex; align-items: center; gap: 12px; }
+  .toggle-row .tlabel { font-size: 11px; letter-spacing: 0.05em; color: #6a6a72; font-family: ui-monospace, monospace; width: 104px; }
+  .seg { display: flex; border: 1px solid #24242c; }
+  .seg button { background: transparent; border: none; color: #7a7a82; padding: 7px 20px; font-size: 11px;
+    letter-spacing: 0.14em; font-family: ui-monospace, monospace; cursor: pointer; transition: background 0.18s, color 0.18s; }
+  .seg button.on { background: #1a2233; color: #cad2e0; }
+  .buttons { display: flex; gap: 10px; margin-top: 12px; }
+  button.act { flex: 1; background: transparent; border: 1px solid #24242c; color: #9a9aa2; padding: 10px 12px;
+    font-size: 11px; letter-spacing: 0.15em; font-family: ui-monospace, monospace; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+  button.act:hover { border-color: #3a5578; color: #cacad2; }
+  button.act:disabled { opacity: 0.5; cursor: wait; }
+  .readout { font-size: 10px; color: #4a4a52; font-family: ui-monospace, monospace; letter-spacing: 0.04em; line-height: 1.7; margin-top: 10px; }
+  .readout b { color: #7a7a82; font-weight: 400; }
+</style>
+</head>
+<body>
+  <h1>津 軽 塗</h1>
+  <div class="sub">DLA AGGREGATION · 研ぎ出しレンダラー · togidashi-proto v0.1</div>
+  <canvas id="view" width="760" height="760"></canvas>
+
+  <div class="panel">
+    <div class="group-label">AGGREGATION — 凝集（仕掛けの高さ場）</div>
+    <div class="row"><label>付着確率</label><input id="stick" type="range" min="0.05" max="1.0" step="0.01" value="0.35"><span class="val" id="stick-v">0.35</span></div>
+    <div class="hint">低い＝奥まで詰まって丸い斑 / 高い＝触れて固まる枝（珊瑚の骨格）</div>
+    <div class="row"><label>斑の数</label><input id="seeds" type="range" min="4" max="40" step="1" value="24"><span class="val" id="seeds-v">24</span></div>
+    <div class="row"><label>大小のばらつき</label><input id="svar" type="range" min="0.0" max="1.2" step="0.05" value="0.50"><span class="val" id="svar-v">0.50</span></div>
+
+    <div class="group-label">TOGIDASHI — 研ぎ出し（密度＝深さ → 層）</div>
+    <div class="row"><label>丸み</label><input id="round" type="range" min="0" max="1" step="0.05" value="0.35"><span class="val" id="round-v">0.35</span></div>
+    <div class="hint">肉置き。低い＝珊瑚（生き物感） / 高い＝バカ塗りの丸い島。中間＝生物感あるバカ塗り</div>
+    <div class="toggle-row">
+      <span class="tlabel">パレット</span>
+      <div class="seg" id="pal-seg">
+        <button data-p="ai" class="on">藍</button>
+        <button data-p="kara">唐塗</button>
+        <button data-p="tame">溜</button>
+      </div>
+    </div>
+    <div class="hint">積層順（地→芯の色列）を固定。研ぎ面が深さで層を露出し、輪は密度×積層から自生する</div>
+    <div class="row"><label>層数</label><input id="klayers" type="range" min="3" max="8" step="1" value="7"><span class="val" id="klayers-v">7</span></div>
+    <div class="hint">多い＝細かい同心の輪（溜寄り） / 少ない＝色数を絞った太い層（唐塗寄り）</div>
+    <div class="row"><label>縁線の強さ</label><input id="edge" type="range" min="0" max="2" step="0.1" value="1.0"><span class="val" id="edge-v">1.0</span></div>
+    <div class="hint">層断面のエッジ。藍/唐塗＝暗い髪線、溜＝発光する輪</div>
+    <div class="row"><label>艶</label><input id="gloss" type="range" min="0" max="1" step="0.05" value="0.22"><span class="val" id="gloss-v">0.22</span></div>
+    <div class="hint">研ぎ上げた漆の鏡面（起伏＝密度から法線）。テクスチャを先に見たいときは低く</div>
+
+    <div class="buttons">
+      <button class="act" id="reseed">RESEED 種を撒き直す</button>
+      <button class="act" id="export">高画質PNG 書き出し</button>
+    </div>
+    <div class="readout" id="readout"></div>
+  </div>
+
+<script>
+// ── 津軽塗 · 研ぎ出しDLA v0.1 ──────────────────────────────
+// 目標＝「生物感あるバカ塗り」。DLAの枝・つながり（自生の生き物感）は殺さず、
+// 漆の肉を足して研ぎ出しの断面（芯＋縁の輪）を出す。
+//
+// 生成側(DLA凝集)は据置。密度場を「仕掛けの高さ/層の厚み」として扱う。
+// v0.1で追加＝凝集とレンダの間の「肉置き(丸め)」段：
+//   ・被覆をblur（丸みで太らせ半径up）＝細い骨格を肉のあるローブに
+//   ・plateau remap（smoothstep窓を丸みで可変）
+//       低い丸み＝広い窓 → 珊瑚のグラデを維持（生き物感）
+//       高い丸み＝狭い窓 → 平らな芯＋縁だけ輪（クリーンなバカ塗りの島）
+// 研ぎ出しレンダラー：密度=深さ → 積層カラーマップ、輪=層断面のエッジ。色は深さの純関数。
+
+const AGG_GRID = 300;   // DLA成長格子
+const RLIVE    = 440;   // ライブの場の解像度
+const REXPORT  = 1800;  // 書き出しの場の解像度
+const VIEW     = 760;   // 表示ピクセル
+const RING_BLUR = 0.012;// 場の基準ぼかし半径（丸み0の下限）
+
+let SEED;
+let P = { stick: 0.35, seeds: 24, svar: 0.50, round: 0.35, K: 7, edge: 1.0, gloss: 0.22 };
+let PAL = 'ai';
+
+// ── 積層パレット（地→芯の色列＝漆の層順） ────────────────
+const PALETTES = {
+  ai:   { label: '藍',
+    layers: [[12,109,107],[47,122,48],[201,161,58],[178,58,38],[110,35,24],[56,32,15],[10,10,12]],
+    natK: 7, edgeMode: 'dark', grain: 2.2, gloss: 0.22 },
+  kara: { label: '唐塗',
+    layers: [[198,148,28],[154,106,30],[154,51,36],[58,34,20],[11,11,11]],
+    natK: 5, edgeMode: 'dark', grain: 2.0, gloss: 0.26 },
+  tame: { label: '溜',
+    layers: [[30,16,8],[74,107,42],[184,134,44],[106,51,32],[13,10,8]],
+    natK: 5, edgeMode: 'glow', edgeGlow: [150,120,50], grain: 1.8, gloss: 0.40 },
+};
+
+let aggX = [], aggY = [];
+let clusterCount = 0;
+
+let fldLive = null;
+const view = document.getElementById('view');
+
+// ── PRNG（mulberry32・種で再現） ──────────────────────────
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+let rng = mulberry32(1);
+const rnd = () => rng();
+function gauss(){ let u=0,v=0; while(u===0)u=rnd(); while(v===0)v=rnd(); return Math.sqrt(-2*Math.log(u))*Math.cos(6.28318530718*v); }
+
+const clamp   = (v,a,b)=> v<a?a:(v>b?b:v);
+const clamp01 = v => v<0?0:(v>1?1:v);
+const smoothstep = (a,b,x)=>{ const t=clamp01((x-a)/(b-a)); return t*t*(3-2*t); };
+function hash2(x,y){ let h=(x*374761393+y*668265263)|0; h=Math.imul(h^(h>>>13),1274126177); return ((h^(h>>>16))>>>0)/4294967296; }
+
+// ── DLA 凝集体を成長させる（効率DLA・据置） ────────────────
+function buildAggregate(){
+  rng = mulberry32(SEED);
+  const G = AGG_GRID;
+  const occ = new Int32Array(G*G).fill(-1);
+  aggX = []; aggY = [];
+
+  const pad = 0.10;
+  const nSeeds = P.seeds;
+  const nAnchor = Math.max(1, Math.round(nSeeds/3));
+  const anchors = [];
+  for(let a=0;a<nAnchor;a++) anchors.push([pad+rnd()*(1-2*pad), pad+rnd()*(1-2*pad)]);
+
+  const TOTAL_CAP = 16000;
+  let placedTotal = 0;
+  let cid = 0;
+
+  for(let s=0; s<nSeeds; s++){
+    if(placedTotal >= TOTAL_CAP) break;
+    const an = anchors[Math.floor(rnd()*anchors.length)];
+    let sxN = clamp(an[0] + gauss()*0.13, pad, 1-pad);
+    let syN = clamp(an[1] + gauss()*0.13, pad, 1-pad);
+    let sx = Math.floor(sxN*G), sy = Math.floor(syN*G);
+    if(occ[sx+sy*G] !== -1) continue;
+
+    const c = cid++;
+
+    let budget = Math.round(620 * Math.exp(gauss()*P.svar));
+    budget = clamp(budget, 120, 4200);
+    if(placedTotal + budget > TOTAL_CAP) budget = TOTAL_CAP - placedTotal;
+
+    let sumX = 0, sumY = 0, cnt = 0;
+    const seedOffsets = [[0,0],[1,0],[-1,0],[0,1],[0,-1]];
+    for(let so=0; so<seedOffsets.length; so++){
+      const px = sx+seedOffsets[so][0], py = sy+seedOffsets[so][1];
+      if(px<1||py<1||px>=G-1||py>=G-1) continue;
+      if(occ[px+py*G] !== -1) continue;
+      occ[px+py*G] = c;
+      aggX.push((px+0.5)/G); aggY.push((py+0.5)/G);
+      sumX += px; sumY += py; cnt++; placedTotal++;
+    }
+    if(cnt === 0) continue;
+    let placed = cnt;
+    let cx = sumX/cnt, cy = sumY/cnt, Rc = 2;
+
+    const TWO_PI = 6.28318530718;
+    let guard = 0;
+    const maxGuard = budget * 8;
+
+    while(placed < budget && guard < maxGuard){
+      guard++;
+      let launchR = Rc + 3;
+      let wx = 0, wy = 0, tries = 0, ok = false;
+      while(launchR < G*0.5){
+        const a = rnd()*TWO_PI;
+        wx = Math.round(cx + Math.cos(a)*launchR);
+        wy = Math.round(cy + Math.sin(a)*launchR);
+        if(wx>=1 && wy>=1 && wx<G-1 && wy<G-1 && occ[wx+wy*G] === -1){ ok = true; break; }
+        if(++tries > 8){ launchR += 2; tries = 0; }
+      }
+      if(!ok) continue;
+
+      const killR2 = (launchR*1.8 + 8) * (launchR*1.8 + 8);
+      let steps = 0;
+      const maxSteps = 3000;
+
+      while(steps < maxSteps){
+        steps++;
+        if(sameNbr(occ, wx, wy, c, G)){
+          if(rnd() < P.stick){
+            occ[wx+wy*G] = c;
+            aggX.push((wx+0.5)/G); aggY.push((wy+0.5)/G);
+            placed++; placedTotal++;
+            sumX += wx; sumY += wy; cnt++;
+            cx = sumX/cnt; cy = sumY/cnt;
+            const dd = Math.hypot(wx-cx, wy-cy);
+            if(dd+1 > Rc) Rc = Math.min(dd+1, G*0.5);
+            break;
+          }
+        }
+        const dx = wx - cx, dy = wy - cy;
+        const outside = (dx*dx + dy*dy) > (Rc+1)*(Rc+1);
+        let dir;
+        if(outside && rnd() < 0.55){
+          dir = (Math.abs(dx) >= Math.abs(dy)) ? (dx>0?1:0) : (dy>0?3:2);
+        } else {
+          dir = (rnd()*4)|0;
+        }
+        const nxp = wx + (dir===0?1:dir===1?-1:0);
+        const nyp = wy + (dir===2?1:dir===3?-1:0);
+        if(nxp>=1 && nyp>=1 && nxp<G-1 && nyp<G-1 && occ[nxp+nyp*G] === -1){ wx=nxp; wy=nyp; }
+        if(((wx-cx)*(wx-cx) + (wy-cy)*(wy-cy)) > killR2){
+          const a = rnd()*TWO_PI;
+          wx = Math.round(cx + Math.cos(a)*launchR);
+          wy = Math.round(cy + Math.sin(a)*launchR);
+          if(wx<1||wy<1||wx>=G-1||wy>=G-1) break;
+        }
+      }
+    }
+  }
+  clusterCount = cid;
+}
+
+function sameNbr(occ, x, y, c, G){
+  for(let dy=-1; dy<=1; dy++){
+    for(let dx=-1; dx<=1; dx++){
+      if(dx===0 && dy===0) continue;
+      const xx=x+dx, yy=y+dy;
+      if(xx<0||yy<0||xx>=G||yy>=G) continue;
+      if(occ[xx+yy*G] === c) return true;
+    }
+  }
+  return false;
+}
+
+// ── 場を焼く（任意解像度 R・肉置き段つき） ──────────────────
+function buildFields(R){
+  const cov = new Float32Array(R*R);
+  const n = aggX.length;
+  for(let k=0;k<n;k++){
+    const gx = Math.min(R-1, (aggX[k]*R)|0);
+    const gy = Math.min(R-1, (aggY[k]*R)|0);
+    cov[gx + gy*R] += 1;
+  }
+
+  // 肉置き：丸みで太らせ半径を上げる（骨格を漆の肉のあるローブへ）
+  const rd = P.round;
+  const r1 = Math.max(1, Math.round(R*(RING_BLUR + rd*0.030))); // rd0→0.012, rd1→0.042
+  boxBlur(cov, R, r1, 2);
+
+  // 被覆を正規化
+  let mx=0; for(let i=0;i<R*R;i++) if(cov[i]>mx) mx=cov[i]; if(mx<=0) mx=1;
+  for(let i=0;i<R*R;i++) cov[i] = cov[i]/mx;
+
+  // plateau remap：高い被覆を平らな芯へ。丸みが上がるほど窓を狭め島化。
+  //   rd0 → 窓0.62（広い＝珊瑚のグラデ維持） / rd1 → 窓0.20（狭い＝平らな芯＋縁の輪）
+  const tlo = 0.07;
+  const thi = tlo + (0.62 - rd*0.42);
+  const dens = new Float32Array(R*R);
+  for(let i=0;i<R*R;i++) dens[i] = smoothstep(tlo, thi, cov[i]);
+
+  return { R, dens };
+}
+
+// スライディング窓の箱ぼかし（半径によらず O(N)）
+function boxBlur(src, R, radius, passes){
+  const tmp = new Float32Array(R*R);
+  for(let p=0;p<passes;p++){ boxH(src,tmp,R,radius); boxV(tmp,src,R,radius); }
+}
+function boxH(src,dst,R,r){
+  const norm = 1/(2*r+1);
+  for(let y=0;y<R;y++){
+    const off=y*R; let sum=0;
+    for(let k=-r;k<=r;k++){ const xx=k<0?0:(k>R-1?R-1:k); sum+=src[off+xx]; }
+    for(let x=0;x<R;x++){
+      dst[off+x]=sum*norm;
+      const xout = x-r<0?0:x-r;
+      const xin  = x+r+1>R-1?R-1:x+r+1;
+      sum += src[off+xin] - src[off+xout];
+    }
+  }
+}
+function boxV(src,dst,R,r){
+  const norm = 1/(2*r+1);
+  for(let x=0;x<R;x++){
+    let sum=0;
+    for(let k=-r;k<=r;k++){ const yy=k<0?0:(k>R-1?R-1:k); sum+=src[x+yy*R]; }
+    for(let y=0;y<R;y++){
+      dst[x+y*R]=sum*norm;
+      const yout = y-r<0?0:y-r;
+      const yin  = y+r+1>R-1?R-1:y+r+1;
+      sum += src[x+yin*R] - src[x+yout*R];
+    }
+  }
+}
+
+// ── 層数Kに合わせて積層を最近傍で再標本化（色は補間せず離散に保つ） ──
+function buildStack(layers, K){
+  const stack = [];
+  const M = layers.length;
+  for(let k=0;k<K;k++){
+    const t = K===1 ? 0 : k/(K-1);
+    let idx = Math.round(t*(M-1));
+    if(idx<0) idx=0; if(idx>M-1) idx=M-1;
+    stack.push(layers[idx]);
+  }
+  return stack;
+}
+
+// ── レンダリング（研ぎ出し） ──────────────────────────────
+let _buf = null, _bufR = 0;
+function getBuffer(R){
+  if(!_buf || _bufR !== R){ _buf = document.createElement('canvas'); _buf.width=R; _buf.height=R; _bufR=R; }
+  return _buf;
+}
+
+function render(fld, target, W, H){
+  const { R, dens } = fld;
+  const buf = getBuffer(R);
+  const bctx = buf.getContext('2d');
+  const img = bctx.createImageData(R, R);
+  const px = img.data;
+
+  const pal = PALETTES[PAL];
+  const K = P.K;
+  const stack = buildStack(pal.layers, K);
+  const edge = P.edge;
+  const gloss = P.gloss;
+  const grainAmt = pal.grain;
+  const lineW = 0.9 * edge;
+  const eg = pal.edgeGlow || [150,120,50];
+
+  // 漆光源（左上・高め）
+  const lx=-0.42, ly=-0.60, lz=0.68;
+  const llen = 1/Math.sqrt(lx*lx+ly*ly+lz*lz);
+  const Lx=lx*llen, Ly=ly*llen, Lz=lz*llen;
+  let hx=Lx, hy=Ly, hz=Lz+1; const hlen=1/Math.sqrt(hx*hx+hy*hy+hz*hz);
+  hx*=hlen; hy*=hlen; hz*=hlen;
+
+  for(let y=0;y<R;y++){
+    for(let x=0;x<R;x++){
+      const i = x + y*R;
+      const d = dens[i];
+
+      const xm = x>0?x-1:0, xp = x<R-1?x+1:R-1;
+      const ym = y>0?y-1:0, yp = y<R-1?y+1:R-1;
+      const gxv = dens[xp+y*R] - dens[xm+y*R];
+      const gyv = dens[x+yp*R] - dens[x+ym*R];
+      const gmag = Math.sqrt(gxv*gxv + gyv*gyv);
+
+      // 深さ → バンド（研ぎ面）
+      const f = d*(K-1);
+      let band = Math.floor(f);
+      if(band<0) band=0; if(band>K-1) band=K-1;
+      let frac = f - band;
+      if(band===K-1) frac = 0;
+
+      const col = stack[band];
+      let r = col[0], g = col[1], b = col[2];
+
+      // 層断面のエッジ線（隣接バンドで色が変わる境界にだけ・∇密度で均一幅に）
+      const gradF = (K-1)*gmag + 1e-6;
+      let lineAmt = 0;
+      if(band>0){
+        const cb = stack[band-1];
+        if(cb[0]!==col[0]||cb[1]!==col[1]||cb[2]!==col[2]){
+          const la = 1 - smoothstep(0, lineW, frac/gradF);
+          if(la>lineAmt) lineAmt = la;
+        }
+      }
+      if(band<K-1){
+        const cb = stack[band+1];
+        if(cb[0]!==col[0]||cb[1]!==col[1]||cb[2]!==col[2]){
+          const la = 1 - smoothstep(0, lineW, (1-frac)/gradF);
+          if(la>lineAmt) lineAmt = la;
+        }
+      }
+      if(lineAmt>0){
+        if(pal.edgeMode==='glow'){
+          const on = lineAmt * edge * 130;
+          r += eg[0]/255*on; g += eg[1]/255*on; b += eg[2]/255*on;
+        } else {
+          const dk = 1 - lineAmt * 0.62 * Math.min(1.6, edge);
+          r *= dk; g *= dk; b *= dk;
+        }
+      }
+
+      // 研ぎ地の細かい粒(斑の内側では消える・織り目にならない等方の微粒)
+      const nx = x/R - 0.5, ny = y/R - 0.5;
+      const gw = 1 - smoothstep(0.14, 0.5, d);
+      if(gw>0){
+        const grain = (hash2(x>>1, y>>1) - 0.5) * grainAmt;
+        r += grain*gw; g += grain*gw; b += grain*gw;
+      }
+
+      // 漆の艶：研ぎ上げた起伏（高さ=密度）の鏡面
+      if(gloss>0){
+        const Sn = 3.6;
+        let nxv = -gxv*Sn, nyv = -gyv*Sn, nzv = 1;
+        const ninv = 1/Math.sqrt(nxv*nxv+nyv*nyv+nzv*nzv);
+        nxv*=ninv; nyv*=ninv; nzv*=ninv;
+        const ndh = Math.max(0, nxv*hx+nyv*hy+nzv*hz);
+        const spec = Math.pow(ndh, 40) * gloss * 235;
+        const ndl = Math.max(0, nxv*Lx+nyv*Ly+nzv*Lz);
+        const sheen = ndl * gloss * 12;
+        r += spec + sheen*0.6; g += spec + sheen*0.6; b += spec + sheen*0.72;
+      }
+
+      // ごく淡い沈み
+      const vg = 1 - (nx*nx + ny*ny) * 0.8;
+      const vv = clamp01(vg*0.28 + 0.72);
+      r*=vv; g*=vv; b*=vv;
+
+      const o = i*4;
+      px[o]   = clamp(r,0,255);
+      px[o+1] = clamp(g,0,255);
+      px[o+2] = clamp(b,0,255);
+      px[o+3] = 255;
+    }
+  }
+
+  bctx.putImageData(img, 0, 0);
+  const dctx = target.getContext('2d');
+  dctx.imageSmoothingEnabled = true;
+  dctx.imageSmoothingQuality = 'high';
+  dctx.clearRect(0,0,W,H);
+  dctx.drawImage(buf, 0, 0, W, H);
+}
+
+// ── 制御 ─────────────────────────────────────────────────
+function rebuild(){ buildAggregate(); fldLive = buildFields(RLIVE); render(fldLive, view, VIEW, VIEW); updateReadout(); }
+function refield(){ if(aggX.length){ fldLive = buildFields(RLIVE); render(fldLive, view, VIEW, VIEW); updateReadout(); } }
+function rerender(){ if(fldLive) render(fldLive, view, VIEW, VIEW); updateReadout(); }
+
+function updateReadout(){
+  const pal = PALETTES[PAL];
+  document.getElementById('readout').innerHTML =
+    `付着 <b>${P.stick.toFixed(2)}</b>  斑 <b>${clusterCount}</b>  粒子 <b>${aggX.length.toLocaleString()}</b>  丸み <b>${(P.round*100)|0}%</b><br>` +
+    `パレット <b>${pal.label}</b>  層数 <b>${P.K}</b>  艶 <b>${(P.gloss*100)|0}%</b>  seed <b>#${SEED}</b>`;
+}
+
+function bindStructural(id, key, dec){
+  const el = document.getElementById(id), out = document.getElementById(id+'-v');
+  el.addEventListener('input', () => { P[key] = parseFloat(el.value); out.textContent = P[key].toFixed(dec); });
+  el.addEventListener('change', () => { P[key] = parseFloat(el.value); out.textContent = P[key].toFixed(dec); rebuild(); });
+}
+function bindField(id, key, dec){
+  const el = document.getElementById(id), out = document.getElementById(id+'-v');
+  el.addEventListener('input', () => { P[key] = parseFloat(el.value); out.textContent = P[key].toFixed(dec); refield(); });
+}
+function bindRender(id, key, dec){
+  const el = document.getElementById(id), out = document.getElementById(id+'-v');
+  el.addEventListener('input', () => { P[key] = parseFloat(el.value); out.textContent = P[key].toFixed(dec); rerender(); });
+}
+
+bindStructural('stick', 'stick', 2);
+bindStructural('seeds', 'seeds', 0);
+bindStructural('svar',  'svar',  2);
+bindField('round', 'round', 2);
+bindRender('klayers', 'K',     0);
+bindRender('edge',    'edge',  1);
+bindRender('gloss',   'gloss', 2);
+
+document.getElementById('pal-seg').addEventListener('click', (e) => {
+  const btn = e.target.closest('button'); if(!btn) return;
+  PAL = btn.dataset.p;
+  [...document.querySelectorAll('#pal-seg button')].forEach(b => b.classList.toggle('on', b === btn));
+  const pal = PALETTES[PAL];
+  P.K = pal.natK; P.gloss = pal.gloss;
+  const kl = document.getElementById('klayers'); kl.value = P.K; document.getElementById('klayers-v').textContent = P.K;
+  const gl = document.getElementById('gloss'); gl.value = P.gloss; document.getElementById('gloss-v').textContent = P.gloss.toFixed(2);
+  rerender();
+});
+
+document.getElementById('reseed').addEventListener('click', () => {
+  SEED = (Math.random()*1e6)|0; rebuild();
+});
+
+document.getElementById('export').addEventListener('click', () => {
+  const btn = document.getElementById('export');
+  const orig = btn.textContent;
+  btn.textContent = '書き出し中…'; btn.disabled = true;
+  setTimeout(() => {
+    try {
+      const fe = buildFields(REXPORT);
+      const oc = document.createElement('canvas'); oc.width = REXPORT; oc.height = REXPORT;
+      render(fe, oc, REXPORT, REXPORT);
+      const a = document.createElement('a');
+      a.href = oc.toDataURL('image/png');
+      a.download = `tsugaru_${PAL}_${SEED}.png`;
+      a.click();
+    } catch(err){ console.error(err); }
+    btn.textContent = orig; btn.disabled = false;
+  }, 30);
+});
+
+// 初期化
+SEED = (Math.random()*1e6)|0;
+rebuild();
+</script>
+</body>
+</html>

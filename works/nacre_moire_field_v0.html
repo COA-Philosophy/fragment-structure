@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>螺鈿 / 干渉場 — MOIRÉ FIELD v0</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: #050507;
+    color: #b8b8bc;
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 22px 16px 56px;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1 { font-size: 15px; font-weight: 400; letter-spacing: 0.42em; color: #4a6070; margin-bottom: 4px; }
+  .sub { font-size: 10.5px; letter-spacing: 0.12em; color: #3a3a42; margin-bottom: 18px; font-family: ui-monospace, monospace; }
+  #view { width: min(760px, 92vw); height: auto; aspect-ratio: 1/1; display: block;
+    border: 1px solid #16161c; box-shadow: 0 0 70px rgba(20,60,70,0.22); background: #0a0a0c; }
+  .panel { margin-top: 20px; width: min(560px, 92vw); display: flex; flex-direction: column; gap: 11px; }
+  .group-label { font-size: 10px; letter-spacing: 0.2em; color: #4a6068; font-family: ui-monospace, monospace;
+    margin-top: 8px; margin-bottom: 2px; border-bottom: 1px solid #16161c; padding-bottom: 4px; }
+  .hint { font-size: 9.5px; color: #34343c; font-family: ui-monospace, monospace; letter-spacing: 0.03em; margin-top: -4px; }
+  .row { display: grid; grid-template-columns: 104px 1fr 54px; align-items: center; gap: 12px; }
+  .row label { font-size: 11px; letter-spacing: 0.05em; color: #6a6a72; font-family: ui-monospace, monospace; }
+  .row input[type=range] { width: 100%; accent-color: #2f6a6a; height: 2px; }
+  .row .val { font-size: 11px; color: #8a8a92; font-family: ui-monospace, monospace; text-align: right; }
+  .toggle-row { display: flex; align-items: center; gap: 12px; }
+  .toggle-row .tlabel { font-size: 11px; letter-spacing: 0.05em; color: #6a6a72; font-family: ui-monospace, monospace; width: 104px; }
+  .seg { display: flex; border: 1px solid #24242c; }
+  .seg button { background: transparent; border: none; color: #7a7a82; padding: 7px 18px; font-size: 11px;
+    letter-spacing: 0.14em; font-family: ui-monospace, monospace; cursor: pointer; transition: background 0.18s, color 0.18s; }
+  .seg button.on { background: #163030; color: #cae0e0; }
+  .buttons { display: flex; gap: 10px; margin-top: 12px; }
+  button.act { flex: 1; background: transparent; border: 1px solid #24242c; color: #9a9aa2; padding: 10px 12px;
+    font-size: 11px; letter-spacing: 0.15em; font-family: ui-monospace, monospace; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+  button.act:hover { border-color: #2f6a6a; color: #cacad2; }
+  button.act:disabled { opacity: 0.5; cursor: wait; }
+  .readout { font-size: 10px; color: #4a4a52; font-family: ui-monospace, monospace; letter-spacing: 0.04em; line-height: 1.7; margin-top: 10px; }
+  .readout b { color: #7a7a82; font-weight: 400; }
+</style>
+</head>
+<body>
+  <h1>螺 鈿 / 干 渉 場</h1>
+  <div class="sub">MOIRÉ FIELD · 塗り／線 · v0</div>
+  <canvas id="view" width="760" height="760"></canvas>
+
+  <div class="panel">
+    <div class="group-label">FIELD — 滑らか場（帯＝方向性うねり / 眼＝局所極値）</div>
+    <div class="row"><label>縞の密度</label><input id="band" type="range" min="4" max="44" step="1" value="16"><span class="val" id="band-v">16</span></div>
+    <div class="row"><label>流れの歪み</label><input id="warp" type="range" min="0.0" max="0.9" step="0.05" value="0.40"><span class="val" id="warp-v">0.40</span></div>
+    <div class="row"><label>眼の数</label><input id="eyes" type="range" min="0" max="70" step="1" value="26"><span class="val" id="eyes-v">26</span></div>
+    <div class="row"><label>色相回し</label><input id="hue" type="range" min="0.0" max="1.0" step="0.02" value="0.00"><span class="val" id="hue-v">0.00</span></div>
+
+    <div class="group-label">RENDER — 読み方（同じ場の二読み）</div>
+    <div class="toggle-row">
+      <span class="tlabel">読み</span>
+      <div class="seg" id="mode-seg">
+        <button data-m="fill" class="on">塗り 螺鈿</button>
+        <button data-m="line">線 曜変</button>
+      </div>
+    </div>
+    <div class="hint">塗り＝色を面全体に（帯・眼が発色し、線は帯の継ぎ目の暗い縫い目）／線＝縁だけ光り地は黒</div>
+    <div class="toggle-row">
+      <span class="tlabel">地</span>
+      <div class="seg" id="ground-seg">
+        <button data-g="sumi" class="on">墨</button>
+        <button data-g="blanc">BLANC 紙</button>
+      </div>
+    </div>
+    <div class="row"><label>線幅</label><input id="lw" type="range" min="0.5" max="4.0" step="0.1" value="1.2"><span class="val" id="lw-v">1.2</span></div>
+
+    <div class="buttons">
+      <button class="act" id="reseed">RESEED 種を撒き直す</button>
+      <button class="act" id="export">高画質PNG 書き出し</button>
+    </div>
+    <div class="readout" id="readout"></div>
+  </div>
+
+<script>
+// ── 螺鈿 / 干渉場 v0 ─────────────────────────────────────────
+// 生成側を DLA(凝集) から「なめらかな厚み場」へ交換。真珠層の干渉縞と同じ物理:
+//   ・帯 = 方向性のあるうねり（across-flow のランプ＋領域ワープで蛇行）
+//   ・眼 = 局所の膨らみ/窪み（ガウス）→ 干渉次数が局所的にずれ、同心リング
+// 場 H を作り、次数 o = frac(H·縞密度 + 色相) を読む。
+//   塗りモード: 色 = 干渉色を面全体に、線は帯の継ぎ目（暗い縫い目）＝螺鈿・アワビ
+//   線モード:   継ぎ目だけを発光させ地は黒＝曜変（＝同じ場のもう一つの読み）
+// H は構成上なめらか（ブラー不要）。正規化座標で持つので任意解像度で焼き直せる。
+
+const RLIVE   = 440;
+const REXPORT = 1400;
+const VIEW    = 760;
+
+let SEED;
+let P = { band: 16, warp: 0.40, eyes: 26, hue: 0.00, lw: 1.2 };
+let MODE = 'fill';    // 'fill' | 'line'
+let GROUND = 'sumi';  // 'sumi' | 'blanc'
+
+let flowAngle = 0;
+let eyes = [];
+let fldLive = null;
+const view = document.getElementById('view');
+
+// ── PRNG（種で再現） ─────────────────────────────────────────
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+let rng = mulberry32(1);
+
+const clamp01 = v => v<0?0:(v>1?1:v);
+const lerp    = (a,b,t)=> a+(b-a)*t;
+const smoothstep = (a,b,x)=>{ const t=clamp01((x-a)/(b-a)); return t*t*(3-2*t); };
+function hash2(x,y){ let h=(x*374761393+y*668265263)|0; h=Math.imul(h^(h>>>13),1274126177); return ((h^(h>>>16))>>>0)/4294967296; }
+
+// ── 値ノイズ（種依存・なめらか） ────────────────────────────
+function fade(t){ return t*t*(3-2*t); }
+function lhash(i,j){
+  let h = (i*374761393 + j*668265263 + SEED*2246822519) | 0;
+  h = Math.imul(h ^ (h>>>13), 1274126177);
+  return ((h ^ (h>>>16))>>>0)/4294967296;
+}
+function vnoise(x,y){
+  const x0=Math.floor(x), y0=Math.floor(y);
+  const xf=x-x0, yf=y-y0;
+  const u=fade(xf), v=fade(yf);
+  const n00=lhash(x0,y0), n10=lhash(x0+1,y0), n01=lhash(x0,y0+1), n11=lhash(x0+1,y0+1);
+  const a=n00+(n10-n00)*u, b=n01+(n11-n01)*u;
+  return a+(b-a)*v;
+}
+function fbm(x,y,oct){ let s=0,amp=0.5,f=1,norm=0; for(let o=0;o<oct;o++){ s+=amp*vnoise(x*f,y*f); norm+=amp; amp*=0.5; f*=2; } return s/norm; }
+
+// ── 場を作る（任意解像度 R） ────────────────────────────────
+function buildField(R){
+  rng = mulberry32(SEED);
+  flowAngle = rng()*Math.PI;
+  const ca = Math.cos(flowAngle), sa = Math.sin(flowAngle);
+
+  // 眼（局所極値）を撒く
+  const nEyes = Math.round(P.eyes);
+  eyes = [];
+  for(let e=0;e<nEyes;e++){
+    eyes.push({
+      x: 0.06 + rng()*0.88,
+      y: 0.06 + rng()*0.88,
+      s: 0.02 + rng()*0.06,                          // 尺度（場の割合）
+      a: (rng()<0.5?-1:1)*(0.12 + rng()*0.35)        // 膨らみ/窪み × 振幅
+    });
+  }
+
+  const H = new Float32Array(R*R);
+  const warpFreq = 3.0;
+  for(let gy=0; gy<R; gy++){
+    for(let gx=0; gx<R; gx++){
+      const nx = gx/R, ny = gy/R;
+      // across-flow 座標（回転）→ 帯はこの勾配方向に直交して流れる
+      const across = (-(nx-0.5)*sa + (ny-0.5)*ca) + 0.5;
+      // 低周波ワープで帯を蛇行させる
+      const w = fbm(nx*warpFreq + 3.1, ny*warpFreq + 7.7, 3);
+      let h = across + (w - 0.5) * P.warp * 2.0;
+      // わずかな有機的ラフネス
+      h += (fbm(nx*6.0 + 21.0, ny*6.0 + 5.0, 3) - 0.5) * 0.06;
+      H[gx+gy*R] = h;
+    }
+  }
+  // 眼を有界サポートで加算（ニュートンリング状の同心）
+  for(let e=0;e<eyes.length;e++){
+    const ey = eyes[e];
+    const cxp = ey.x*R, cyp = ey.y*R, sp = ey.s*R;
+    const rad = Math.ceil(sp*3);
+    const x0 = Math.max(0, Math.floor(cxp-rad)), x1 = Math.min(R-1, Math.ceil(cxp+rad));
+    const y0 = Math.max(0, Math.floor(cyp-rad)), y1 = Math.min(R-1, Math.ceil(cyp+rad));
+    const inv2s2 = 1/(2*sp*sp);
+    for(let yy=y0; yy<=y1; yy++){
+      for(let xx=x0; xx<=x1; xx++){
+        const dx = xx-cxp, dy = yy-cyp;
+        H[xx+yy*R] += ey.a * Math.exp(-(dx*dx+dy*dy)*inv2s2);
+      }
+    }
+  }
+  return { R, H };
+}
+
+// ── 干渉色（螺鈿パレット・青緑〜藍〜菫〜金を循環） ───────────
+const TAU = 6.28318530718;
+function nacre(o){
+  const a = o*TAU;
+  let r = 0.45 + 0.42*Math.sin(a + 4.6);
+  let g = 0.50 + 0.42*Math.sin(a + 2.6);
+  let b = 0.55 + 0.40*Math.sin(a + 0.6);
+  // 彩度を少し立てる
+  const m = (r+g+b)/3;
+  r = m + (r-m)*1.3; g = m + (g-m)*1.3; b = m + (b-m)*1.3;
+  return [clamp01(r), clamp01(g), clamp01(b)];
+}
+
+// ── レンダリング ─────────────────────────────────────────────
+let _buf = null, _bufR = 0;
+function getBuffer(R){
+  if(!_buf || _bufR !== R){ _buf = document.createElement('canvas'); _buf.width=R; _buf.height=R; _bufR=R; }
+  return _buf;
+}
+
+function render(fld, target, W, Hh){
+  const { R, H } = fld;
+  const buf = getBuffer(R);
+  const bctx = buf.getContext('2d');
+  const img = bctx.createImageData(R, R);
+  const px = img.data;
+
+  const bandD = P.band, hueSh = P.hue;
+  const seamPx = 1.4 * P.lw;
+  const linePx = 2.0 * P.lw;
+
+  for(let gy=0; gy<R; gy++){
+    for(let gx=0; gx<R; gx++){
+      const i = gx + gy*R;
+      const h = H[i];
+      const xm = gx>0?gx-1:0, xp = gx<R-1?gx+1:R-1;
+      const ym = gy>0?gy-1:0, yp = gy<R-1?gy+1:R-1;
+      const ghx = H[xp+gy*R] - H[xm+gy*R];
+      const ghy = H[gx+yp*R] - H[gx+ym*R];
+      const gmag = Math.sqrt(ghx*ghx + ghy*ghy);
+
+      const order = h*bandD + hueSh;
+      const fo = order - Math.floor(order);        // 0..1（次数の端数）
+      const bp = fo < 0.5 ? fo : 1-fo;             // 帯の継ぎ目(fo=0)までの距離
+      const gO = gmag*bandD;                        // 1セルあたりの次数変化
+      const distPx = bp/(gO + 1e-4);                // 継ぎ目までのスクリーン距離(px)
+
+      const [cr, cg, cb] = nacre(fo);
+
+      let r, g, b;
+
+      if(MODE === 'fill'){
+        // 帯は発色、継ぎ目は暗い縫い目
+        const seam = smoothstep(0, seamPx, distPx);  // 0=継ぎ目(暗) → 1=帯の中(色)
+        if(GROUND === 'sumi'){
+          const lum = 0.14 + 0.86*seam;              // 縫い目の底＝ほぼ黒
+          const glow = 1 + 0.25*seam;                // 帯中央をわずかに輝かせる
+          r = cr*lum*glow*255; g = cg*lum*glow*255; b = cb*lum*glow*255;
+        } else {
+          const grain = (hash2(gx,gy)-0.5)*3.0;
+          const pr = 244+grain, pg = 240+grain, pb = 232+grain;
+          const mixR = lerp(pr, cr*255, 0.55), mixG = lerp(pg, cg*255, 0.55), mixB = lerp(pb, cb*255, 0.55);
+          r = lerp(46, mixR, seam); g = lerp(44, mixG, seam); b = lerp(42, mixB, seam);
+        }
+      } else {
+        // 継ぎ目だけを描く（＝干渉輪郭）
+        const line = smoothstep(linePx, 0, distPx);  // 1=継ぎ目(明) → 0=帯の中(暗)
+        if(GROUND === 'sumi'){
+          r = 7 + cr*line*248; g = 8 + cg*line*248; b = 12 + cb*line*250;
+        } else {
+          const grain = (hash2(gx,gy)-0.5)*3.0;
+          const pr = 244+grain, pg = 240+grain, pb = 232+grain;
+          r = lerp(pr, 50, line); g = lerp(pg, 48, line); b = lerp(pb, 46, line);
+        }
+      }
+
+      const o = i*4;
+      px[o]   = r<0?0:(r>255?255:r);
+      px[o+1] = g<0?0:(g>255?255:g);
+      px[o+2] = b<0?0:(b>255?255:b);
+      px[o+3] = 255;
+    }
+  }
+
+  bctx.putImageData(img, 0, 0);
+  const dctx = target.getContext('2d');
+  dctx.imageSmoothingEnabled = true;
+  dctx.imageSmoothingQuality = 'high';
+  dctx.clearRect(0,0,W,Hh);
+  dctx.drawImage(buf, 0, 0, W, Hh);
+}
+
+// ── 制御 ─────────────────────────────────────────────────────
+function rebuild(){ fldLive = buildField(RLIVE); render(fldLive, view, VIEW, VIEW); updateReadout(); }
+function rerender(){ if(fldLive) render(fldLive, view, VIEW, VIEW); }
+
+function updateReadout(){
+  document.getElementById('readout').innerHTML =
+    `縞 <b>${P.band}</b>  眼 <b>${eyes.length}</b>  歪み <b>${P.warp.toFixed(2)}</b>  流れ <b>${(flowAngle*180/Math.PI)|0}°</b><br>` +
+    `読み <b>${MODE==='fill'?'塗り':'線'}</b>  地 <b>${GROUND==='sumi'?'墨':'BLANC'}</b>  seed <b>#${SEED}</b>`;
+}
+
+function bindRebuild(id, key, dec){
+  const el = document.getElementById(id), out = document.getElementById(id+'-v');
+  el.addEventListener('input', () => { P[key] = parseFloat(el.value); out.textContent = P[key].toFixed(dec); });
+  el.addEventListener('change', () => { P[key] = parseFloat(el.value); out.textContent = P[key].toFixed(dec); rebuild(); });
+}
+function bindRender(id, key, dec){
+  const el = document.getElementById(id), out = document.getElementById(id+'-v');
+  el.addEventListener('input', () => { P[key] = parseFloat(el.value); out.textContent = P[key].toFixed(dec); rerender(); });
+}
+
+bindRender('band', 'band', 0);   // 縞密度は描画時に掛けるだけ → 焼き直し不要
+bindRebuild('warp', 'warp', 2);  // 場の形が変わる → 焼き直し
+bindRebuild('eyes', 'eyes', 0);
+bindRender('hue',  'hue',  2);
+bindRender('lw',   'lw',   1);
+
+document.getElementById('mode-seg').addEventListener('click', (e) => {
+  const btn = e.target.closest('button'); if(!btn) return;
+  MODE = btn.dataset.m;
+  [...document.querySelectorAll('#mode-seg button')].forEach(x => x.classList.toggle('on', x === btn));
+  rerender(); updateReadout();
+});
+document.getElementById('ground-seg').addEventListener('click', (e) => {
+  const btn = e.target.closest('button'); if(!btn) return;
+  GROUND = btn.dataset.g;
+  [...document.querySelectorAll('#ground-seg button')].forEach(x => x.classList.toggle('on', x === btn));
+  rerender(); updateReadout();
+});
+
+document.getElementById('reseed').addEventListener('click', () => { SEED = (Math.random()*1e6)|0; rebuild(); });
+
+document.getElementById('export').addEventListener('click', () => {
+  const btn = document.getElementById('export');
+  const orig = btn.textContent;
+  btn.textContent = '書き出し中…'; btn.disabled = true;
+  setTimeout(() => {
+    try {
+      const fe = buildField(REXPORT);
+      const oc = document.createElement('canvas'); oc.width = REXPORT; oc.height = REXPORT;
+      render(fe, oc, REXPORT, REXPORT);
+      const a = document.createElement('a');
+      a.href = oc.toDataURL('image/png');
+      a.download = `nacre_${GROUND}_${MODE}_${SEED}.png`;
+      a.click();
+    } catch(err){ console.error(err); }
+    btn.textContent = orig; btn.disabled = false;
+  }, 30);
+});
+
+// 初期化
+SEED = (Math.random()*1e6)|0;
+rebuild();
+</script>
+</body>
+</html>

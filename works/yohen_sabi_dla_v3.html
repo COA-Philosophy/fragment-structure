@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>曜変 ⇄ 錆 — DLA移植プロト v3</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: #050507;
+    color: #b8b8bc;
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 22px 16px 56px;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1 { font-size: 15px; font-weight: 400; letter-spacing: 0.42em; color: #5a6478; margin-bottom: 4px; }
+  .sub { font-size: 10.5px; letter-spacing: 0.12em; color: #3a3a42; margin-bottom: 18px; font-family: ui-monospace, monospace; }
+  #view { width: min(760px, 92vw); height: auto; aspect-ratio: 1/1; display: block;
+    border: 1px solid #16161c; box-shadow: 0 0 70px rgba(20,30,60,0.22); background: #0a0a0c; }
+  .panel { margin-top: 20px; width: min(560px, 92vw); display: flex; flex-direction: column; gap: 11px; }
+  .group-label { font-size: 10px; letter-spacing: 0.2em; color: #4a5568; font-family: ui-monospace, monospace;
+    margin-top: 8px; margin-bottom: 2px; border-bottom: 1px solid #16161c; padding-bottom: 4px; }
+  .hint { font-size: 9.5px; color: #34343c; font-family: ui-monospace, monospace; letter-spacing: 0.03em; margin-top: -4px; }
+  .row { display: grid; grid-template-columns: 104px 1fr 54px; align-items: center; gap: 12px; }
+  .row label { font-size: 11px; letter-spacing: 0.05em; color: #6a6a72; font-family: ui-monospace, monospace; }
+  .row input[type=range] { width: 100%; accent-color: #3a5578; height: 2px; }
+  .row .val { font-size: 11px; color: #8a8a92; font-family: ui-monospace, monospace; text-align: right; }
+  .toggle-row { display: flex; align-items: center; gap: 12px; }
+  .toggle-row .tlabel { font-size: 11px; letter-spacing: 0.05em; color: #6a6a72; font-family: ui-monospace, monospace; width: 104px; }
+  .seg { display: flex; border: 1px solid #24242c; }
+  .seg button { background: transparent; border: none; color: #7a7a82; padding: 7px 18px; font-size: 11px;
+    letter-spacing: 0.14em; font-family: ui-monospace, monospace; cursor: pointer; transition: background 0.18s, color 0.18s; }
+  .seg button.on { background: #1a2233; color: #cad2e0; }
+  .buttons { display: flex; gap: 10px; margin-top: 12px; }
+  button.act { flex: 1; background: transparent; border: 1px solid #24242c; color: #9a9aa2; padding: 10px 12px;
+    font-size: 11px; letter-spacing: 0.15em; font-family: ui-monospace, monospace; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+  button.act:hover { border-color: #3a5578; color: #cacad2; }
+  button.act:disabled { opacity: 0.5; cursor: wait; }
+  .readout { font-size: 10px; color: #4a4a52; font-family: ui-monospace, monospace; letter-spacing: 0.04em; line-height: 1.7; margin-top: 10px; }
+  .readout b { color: #7a7a82; font-weight: 400; }
+</style>
+</head>
+<body>
+  <h1>曜 変 ⇄ 錆</h1>
+  <div class="sub">DLA AGGREGATION · 付着確率ダイヤル · v3-proto</div>
+  <canvas id="view" width="760" height="760"></canvas>
+
+  <div class="panel">
+    <div class="group-label">AGGREGATION — 凝集（錆の庭から移植）</div>
+    <div class="row"><label>付着確率</label><input id="stick" type="range" min="0.05" max="1.0" step="0.01" value="0.40"><span class="val" id="stick-v">0.40</span></div>
+    <div class="hint">低い＝奥まで潜って詰まる（曜変の丸い玉） / 高い＝触れた瞬間に固まる（錆の枝）</div>
+    <div class="row"><label>斑の数</label><input id="seeds" type="range" min="4" max="40" step="1" value="16"><span class="val" id="seeds-v">16</span></div>
+    <div class="row"><label>大小のばらつき</label><input id="svar" type="range" min="0.0" max="1.2" step="0.05" value="0.60"><span class="val" id="svar-v">0.60</span></div>
+
+    <div class="group-label">RENDER — 三階層レンダラー（v2流用）</div>
+    <div class="toggle-row">
+      <span class="tlabel">地</span>
+      <div class="seg" id="ground-seg">
+        <button data-g="blanc" class="on">BLANC 紙</button>
+        <button data-g="sumi">墨</button>
+      </div>
+    </div>
+    <div class="hint">BLANC＝引き算（墨線が沈む・青は淡い干渉艶） / 墨＝足し算（縁が銀白に光る・青は発光）</div>
+    <div class="row"><label>縁の強さ</label><input id="rim" type="range" min="0.4" max="3.0" step="0.1" value="1.4"><span class="val" id="rim-v">1.4</span></div>
+    <div class="row"><label>曜変の青</label><input id="blue" type="range" min="0.0" max="1.0" step="0.05" value="0.40"><span class="val" id="blue-v">0.40</span></div>
+    <div class="hint">玉ごとに割り当てた潜在値を開いていく（位置ランプではない・一部の玉だけ強く青光る）</div>
+
+    <div class="buttons">
+      <button class="act" id="reseed">RESEED 種を撒き直す</button>
+      <button class="act" id="export">高画質PNG 書き出し</button>
+    </div>
+    <div class="readout" id="readout"></div>
+  </div>
+
+<script>
+// ── 曜変 ⇄ 錆 : DLA移植プロト v3 ─────────────────────────────
+// 生成側を Gray-Scott から DLA（拡散律速凝集・錆の庭 No.000 の機構）へ差し替え。
+//   ・種を離してクラスタ状に撒く → 孤立した斑
+//   ・粒子数(バジェット)を分布から引く → 大玉・小玉が混ざる（Gray-Scottの壁を越える）
+//   ・付着確率 = 錆↔曜変ダイヤル（高=枝/デンドライト、低=詰まった丸い玉＋ギザついた縁）
+// レンダラーは v2 の三階層（墨地/光る縁/一部だけ青）を流用。地は 墨/Blanc トグル。
+//   ・Blanc は光を足せないので引き算モデルへ反転（紙・墨線・淡い干渉ティント）。
+// 凝集体は正規化座標で保持 → 任意解像度で場を焼き直せる（高画質書き出しが素直）。
+
+const AGG_GRID = 300;   // DLA成長格子
+const RLIVE    = 440;   // ライブの場の解像度
+const REXPORT  = 1800;  // 書き出しの場の解像度
+const VIEW     = 760;   // 表示ピクセル
+
+let SEED;
+let P = { stick: 0.40, seeds: 16, svar: 0.60, rim: 1.4, blue: 0.40 };
+let GROUND = 'blanc';
+
+// 凝集体（正規化座標のフラット配列）＋ クラスタ属性
+let aggX = [], aggY = [], aggC = [];
+let clBluePot = [], clHue = [];
+let clusterCount = 0;
+
+let fldLive = null;
+const view = document.getElementById('view');
+
+// ── PRNG（mulberry32・種で再現） ──────────────────────────
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+let rng = mulberry32(1);
+const rnd = () => rng();
+function gauss(){ let u=0,v=0; while(u===0)u=rnd(); while(v===0)v=rnd(); return Math.sqrt(-2*Math.log(u))*Math.cos(6.28318530718*v); }
+
+const clamp   = (v,a,b)=> v<a?a:(v>b?b:v);
+const clamp01 = v => v<0?0:(v>1?1:v);
+const lerp    = (a,b,t)=> a+(b-a)*t;
+const smoothstep = (a,b,x)=>{ const t=clamp01((x-a)/(b-a)); return t*t*(3-2*t); };
+function hash2(x,y){ let h=(x*374761393+y*668265263)|0; h=Math.imul(h^(h>>>13),1274126177); return ((h^(h>>>16))>>>0)/4294967296; }
+
+// ── DLA 凝集体を成長させる ───────────────────────────────
+function buildAggregate(){
+  rng = mulberry32(SEED);
+  const G = AGG_GRID;
+  const occ = new Int32Array(G*G).fill(-1);
+  aggX = []; aggY = []; aggC = [];
+  clBluePot = []; clHue = [];
+
+  const pad = 0.10;
+  const nSeeds = P.seeds;
+  // 斑（クラスタ）: いくつかのアンカーの周りに種を寄せて撒く
+  const nAnchor = Math.max(1, Math.round(nSeeds/3));
+  const anchors = [];
+  for(let a=0;a<nAnchor;a++) anchors.push([pad+rnd()*(1-2*pad), pad+rnd()*(1-2*pad)]);
+
+  const TOTAL_CAP = 16000;
+  let placedTotal = 0;
+  let cid = 0;
+
+  for(let s=0; s<nSeeds; s++){
+    if(placedTotal >= TOTAL_CAP) break;
+    const an = anchors[Math.floor(rnd()*anchors.length)];
+    let sxN = clamp(an[0] + gauss()*0.13, pad, 1-pad);
+    let syN = clamp(an[1] + gauss()*0.13, pad, 1-pad);
+    let sx = Math.floor(sxN*G), sy = Math.floor(syN*G);
+    if(occ[sx+sy*G] !== -1) continue;
+
+    const c = cid++;
+    clBluePot[c] = rnd();            // 青の潜在値（レンダー時に閾値で開く）
+    clHue[c]     = rnd();            // 干渉色相のオフセット
+
+    // バジェット = 対数正規（大小まちまち）
+    let budget = Math.round(620 * Math.exp(gauss()*P.svar));
+    budget = clamp(budget, 120, 4200);
+    if(placedTotal + budget > TOTAL_CAP) budget = TOTAL_CAP - placedTotal;
+
+    // 種を小塊で置く（最初の的）＋ 重心・半径を追跡
+    let sumX = 0, sumY = 0, cnt = 0;
+    const seedOffsets = [[0,0],[1,0],[-1,0],[0,1],[0,-1]];
+    for(let so=0; so<seedOffsets.length; so++){
+      const px = sx+seedOffsets[so][0], py = sy+seedOffsets[so][1];
+      if(px<1||py<1||px>=G-1||py>=G-1) continue;
+      if(occ[px+py*G] !== -1) continue;
+      occ[px+py*G] = c;
+      aggX.push((px+0.5)/G); aggY.push((py+0.5)/G); aggC.push(c);
+      sumX += px; sumY += py; cnt++; placedTotal++;
+    }
+    if(cnt === 0) continue;
+    let placed = cnt;
+    let cx = sumX/cnt, cy = sumY/cnt, Rc = 2;
+
+    const TWO_PI = 6.28318530718;
+    let guard = 0;
+    const maxGuard = budget * 8;      // 効率DLAなので試行上限は低くてよい
+
+    // 効率DLA: 重心追従のタイトなlaunch円／遠方は重心へドリフト／迷い子は再入射（捨てない）
+    while(placed < budget && guard < maxGuard){
+      guard++;
+      let launchR = Rc + 3;
+      let wx = 0, wy = 0, tries = 0, ok = false;
+      while(launchR < G*0.5){
+        const a = rnd()*TWO_PI;
+        wx = Math.round(cx + Math.cos(a)*launchR);
+        wy = Math.round(cy + Math.sin(a)*launchR);
+        if(wx>=1 && wy>=1 && wx<G-1 && wy<G-1 && occ[wx+wy*G] === -1){ ok = true; break; }
+        if(++tries > 8){ launchR += 2; tries = 0; }
+      }
+      if(!ok) continue;
+
+      const killR2 = (launchR*1.8 + 8) * (launchR*1.8 + 8);
+      let steps = 0;
+      const maxSteps = 3000;
+
+      while(steps < maxSteps){
+        steps++;
+        if(sameNbr(occ, wx, wy, c, G)){
+          if(rnd() < P.stick){
+            occ[wx+wy*G] = c;
+            aggX.push((wx+0.5)/G); aggY.push((wy+0.5)/G); aggC.push(c);
+            placed++; placedTotal++;
+            sumX += wx; sumY += wy; cnt++;
+            cx = sumX/cnt; cy = sumY/cnt;
+            const dd = Math.hypot(wx-cx, wy-cy);
+            if(dd+1 > Rc) Rc = Math.min(dd+1, G*0.5);
+            break;
+          }
+          // 付着せず潜り込む（低付着ほど詰まって丸くなる＝曜変側）
+        }
+        // ウォーク: 遠方(境界の外)は重心へドリフトで効率化、境界近傍は素の乱歩で形態(枝/塊)を残す
+        const dx = wx - cx, dy = wy - cy;
+        const outside = (dx*dx + dy*dy) > (Rc+1)*(Rc+1);
+        let dir;
+        if(outside && rnd() < 0.55){
+          dir = (Math.abs(dx) >= Math.abs(dy)) ? (dx>0?1:0) : (dy>0?3:2);
+        } else {
+          dir = (rnd()*4)|0;
+        }
+        const nxp = wx + (dir===0?1:dir===1?-1:0);
+        const nyp = wy + (dir===2?1:dir===3?-1:0);
+        if(nxp>=1 && nyp>=1 && nxp<G-1 && nyp<G-1 && occ[nxp+nyp*G] === -1){ wx=nxp; wy=nyp; }
+        // 迷い子は殺さず launch円へ再入射
+        if(((wx-cx)*(wx-cx) + (wy-cy)*(wy-cy)) > killR2){
+          const a = rnd()*TWO_PI;
+          wx = Math.round(cx + Math.cos(a)*launchR);
+          wy = Math.round(cy + Math.sin(a)*launchR);
+          if(wx<1||wy<1||wx>=G-1||wy>=G-1) break;
+        }
+      }
+    }
+  }
+  clusterCount = cid;
+}
+
+function sameNbr(occ, x, y, c, G){
+  for(let dy=-1; dy<=1; dy++){
+    for(let dx=-1; dx<=1; dx++){
+      if(dx===0 && dy===0) continue;
+      const xx=x+dx, yy=y+dy;
+      if(xx<0||yy<0||xx>=G||yy>=G) continue;
+      if(occ[xx+yy*G] === c) return true;
+    }
+  }
+  return false;
+}
+
+// ── 場を焼く（任意解像度 R） ─────────────────────────────
+function buildFields(R){
+  const dens = new Float32Array(R*R);
+  const bpot = new Float32Array(R*R);
+  const hacc = new Float32Array(R*R);
+  const n = aggX.length;
+  for(let k=0;k<n;k++){
+    const gx = Math.min(R-1, (aggX[k]*R)|0);
+    const gy = Math.min(R-1, (aggY[k]*R)|0);
+    const idx = gx + gy*R;
+    const c = aggC[k];
+    const bp = clBluePot[c];
+    dens[idx] += 1;
+    bpot[idx] += bp;
+    hacc[idx] += bp * clHue[c];
+  }
+  const r = Math.max(1, Math.round(R*0.010));
+  boxBlur(dens, R, r, 2);
+  boxBlur(bpot, R, r, 2);
+  boxBlur(hacc, R, r, 2);
+
+  // 色相 = 潜在値で重み付けした平均（正規化前の比で）
+  const hue = new Float32Array(R*R);
+  for(let i=0;i<R*R;i++) hue[i] = hacc[i] / (bpot[i] + 1e-6);
+
+  // 密度正規化（外周の最低レベルが全ての玉の縁を捉えるよう少し持ち上げ）
+  let mx=0; for(let i=0;i<R*R;i++) if(dens[i]>mx) mx=dens[i]; if(mx<=0) mx=1;
+  for(let i=0;i<R*R;i++) dens[i] = clamp01(dens[i]/mx*1.25);
+
+  // 密度フロア（疎な残渣のもやを紙へ戻す）
+  const dfloor = 0.07;
+  for(let i=0;i<R*R;i++){ const dv=(dens[i]-dfloor)/(1-dfloor); dens[i] = dv<0?0:dv; }
+
+  // 青の潜在場を正規化（閾値の安定化）
+  let mb=0; for(let i=0;i<R*R;i++) if(bpot[i]>mb) mb=bpot[i]; if(mb<=0) mb=1;
+  for(let i=0;i<R*R;i++) bpot[i] = clamp01(bpot[i]/mb);
+
+  return { R, dens, bpot, hue };
+}
+
+// スライディング窓の箱ぼかし（半径によらず O(N)）
+function boxBlur(src, R, radius, passes){
+  const tmp = new Float32Array(R*R);
+  for(let p=0;p<passes;p++){ boxH(src,tmp,R,radius); boxV(tmp,src,R,radius); }
+}
+function boxH(src,dst,R,r){
+  const norm = 1/(2*r+1);
+  for(let y=0;y<R;y++){
+    const off=y*R; let sum=0;
+    for(let k=-r;k<=r;k++){ const xx=k<0?0:(k>R-1?R-1:k); sum+=src[off+xx]; }
+    for(let x=0;x<R;x++){
+      dst[off+x]=sum*norm;
+      const xout = x-r<0?0:x-r;
+      const xin  = x+r+1>R-1?R-1:x+r+1;
+      sum += src[off+xin] - src[off+xout];
+    }
+  }
+}
+function boxV(src,dst,R,r){
+  const norm = 1/(2*r+1);
+  for(let x=0;x<R;x++){
+    let sum=0;
+    for(let k=-r;k<=r;k++){ const yy=k<0?0:(k>R-1?R-1:k); sum+=src[x+yy*R]; }
+    for(let y=0;y<R;y++){
+      dst[x+y*R]=sum*norm;
+      const yout = y-r<0?0:y-r;
+      const yin  = y+r+1>R-1?R-1:y+r+1;
+      sum += src[x+yin*R] - src[x+yout*R];
+    }
+  }
+}
+
+// ── レンダリング ─────────────────────────────────────────
+let _buf = null, _bufR = 0;
+function getBuffer(R){
+  if(!_buf || _bufR !== R){ _buf = document.createElement('canvas'); _buf.width=R; _buf.height=R; _bufR=R; }
+  return _buf;
+}
+
+function render(fld, target, W, H){
+  const { R, dens, bpot, hue } = fld;
+  const buf = getBuffer(R);
+  const bctx = buf.getContext('2d');
+  const img = bctx.createImageData(R, R);
+  const px = img.data;
+
+  const rimI = P.rim;
+  const T = 1 - P.blue;                 // 青の閾値（P.blue大 → T小 → 多く開く）
+  const levels = [0.25, 0.5, 0.75];
+  const w = 0.055, gK = 9.0;
+  const TAU = 6.28318530718;
+
+  for(let y=0;y<R;y++){
+    for(let x=0;x<R;x++){
+      const i = x + y*R;
+      const d = dens[i];
+      const xm = x>0?x-1:0, xp = x<R-1?x+1:R-1;
+      const ym = y>0?y-1:0, yp = y<R-1?y+1:R-1;
+      const gx = dens[xp+y*R] - dens[xm+y*R];
+      const gy = dens[x+yp*R] - dens[x+ym*R];
+      const grad = Math.sqrt(gx*gx + gy*gy);
+
+      // 等高線リング（複数レベルの内で最も強い縁）
+      let ring = 0;
+      for(let L=0;L<3;L++){
+        const nr = 1 - Math.abs(d - levels[L]) / w;
+        if(nr > 0){ const rr = nr * Math.min(1, grad*gK); if(rr>ring) ring=rr; }
+      }
+
+      const bvis = smoothstep(T-0.12, T+0.08, bpot[i]);
+      const blueRim = ring * bvis;
+
+      const nx = x/R - 0.5, ny = y/R - 0.5;
+      const vg = 1 - (nx*nx + ny*ny) * 1.15;
+
+      let r, g, b;
+
+      if(GROUND === 'sumi'){
+        // 足し算：墨地に光を足す
+        r = 7; g = 8; b = 12;
+        const rb = ring * rimI * 230;
+        r += rb*0.82; g += rb*0.87; b += rb*0.97;   // 銀白の縁
+        r += d*5; g += d*5; b += d*8;               // 地のわずかな持ち上げ
+        if(blueRim > 0){
+          const a = (d*3.0 + hue[i]) * TAU;
+          const ir = clamp01(0.34 + 0.30*Math.sin(a+4.4));
+          const ig = clamp01(0.55 + 0.33*Math.sin(a+2.2));
+          const ib = clamp01(0.74 + 0.24*Math.sin(a+0.3));
+          const on = blueRim * rimI * 180;
+          r += ir*on; g += ig*on; b += ib*on;       // 縁に乗る曜変の青
+          const haze = bvis * Math.max(0, d-0.32) * 34;
+          r += ir*haze*0.4; g += ig*haze*0.6; b += ib*haze*0.95; // 宇宙の霞
+        }
+        const vv = clamp01(vg*0.5 + 0.55);          // 碗の沈み
+        r*=vv; g*=vv; b*=vv;
+      } else {
+        // 引き算：紙に墨を沈める（Blanc）
+        const grain = (hash2(x,y) - 0.5) * 4.5;
+        const tone  = Math.sin(nx*6.2 + 1.0) * Math.cos(ny*5.3 + 0.4) * 2.5;
+        const pr = 244 + grain + tone;
+        const pg = 240 + grain + tone;
+        const pb = 232 + grain + tone*0.8;
+        const ink = clamp01(d*0.5 + ring*rimI*0.5);  // 溜まり＋濃い縁線
+        r = lerp(pr, 54, ink); g = lerp(pg, 50, ink); b = lerp(pb, 46, ink); // 温かい墨
+        if(blueRim > 0){
+          const cool = blueRim * rimI * 26;          // 淡い寒色の艶（螺鈿/古漆の一瞬）
+          r -= cool*0.16; g += cool*0.01; b += cool*0.30;
+        }
+        const lift = (vg - 0.4) * 3;                  // ごく僅かな中央の持ち上げ
+        r += lift; g += lift; b += lift;
+      }
+
+      const o = i*4;
+      px[o]   = clamp(r,0,255);
+      px[o+1] = clamp(g,0,255);
+      px[o+2] = clamp(b,0,255);
+      px[o+3] = 255;
+    }
+  }
+
+  bctx.putImageData(img, 0, 0);
+  const dctx = target.getContext('2d');
+  dctx.imageSmoothingEnabled = true;
+  dctx.imageSmoothingQuality = 'high';
+  dctx.clearRect(0,0,W,H);
+  dctx.drawImage(buf, 0, 0, W, H);
+}
+
+// ── 制御 ─────────────────────────────────────────────────
+function rebuild(){ buildAggregate(); fldLive = buildFields(RLIVE); render(fldLive, view, VIEW, VIEW); updateReadout(); }
+function rerender(){ if(fldLive) render(fldLive, view, VIEW, VIEW); }
+
+function updateReadout(){
+  document.getElementById('readout').innerHTML =
+    `付着 <b>${P.stick.toFixed(2)}</b>  斑 <b>${clusterCount}</b>  粒子 <b>${aggX.length.toLocaleString()}</b>  青 <b>${(P.blue*100)|0}%</b><br>` +
+    `地 <b>${GROUND==='blanc'?'BLANC':'墨'}</b>  格子 <b>${AGG_GRID}</b>  seed <b>#${SEED}</b>`;
+}
+
+function bindStructural(id, key, dec){
+  const el = document.getElementById(id), out = document.getElementById(id+'-v');
+  el.addEventListener('input', () => { P[key] = parseFloat(el.value); out.textContent = P[key].toFixed(dec); });
+  el.addEventListener('change', () => { P[key] = parseFloat(el.value); out.textContent = P[key].toFixed(dec); rebuild(); });
+}
+function bindRender(id, key, dec){
+  const el = document.getElementById(id), out = document.getElementById(id+'-v');
+  el.addEventListener('input', () => { P[key] = parseFloat(el.value); out.textContent = P[key].toFixed(dec); rerender(); });
+}
+
+bindStructural('stick', 'stick', 2);
+bindStructural('seeds', 'seeds', 0);
+bindStructural('svar',  'svar',  2);
+bindRender('rim',  'rim',  1);
+bindRender('blue', 'blue', 2);
+
+document.getElementById('ground-seg').addEventListener('click', (e) => {
+  const btn = e.target.closest('button'); if(!btn) return;
+  GROUND = btn.dataset.g;
+  [...document.querySelectorAll('#ground-seg button')].forEach(b => b.classList.toggle('on', b === btn));
+  rerender(); updateReadout();
+});
+
+document.getElementById('reseed').addEventListener('click', () => {
+  SEED = (Math.random()*1e6)|0; rebuild();
+});
+
+document.getElementById('export').addEventListener('click', () => {
+  const btn = document.getElementById('export');
+  const orig = btn.textContent;
+  btn.textContent = '書き出し中…'; btn.disabled = true;
+  setTimeout(() => {
+    try {
+      const fe = buildFields(REXPORT);
+      const oc = document.createElement('canvas'); oc.width = REXPORT; oc.height = REXPORT;
+      render(fe, oc, REXPORT, REXPORT);
+      const a = document.createElement('a');
+      a.href = oc.toDataURL('image/png');
+      a.download = `yohen_sabi_${GROUND}_${SEED}.png`;
+      a.click();
+    } catch(err){ console.error(err); }
+    btn.textContent = orig; btn.disabled = false;
+  }, 30);
+});
+
+// 初期化
+SEED = (Math.random()*1e6)|0;
+rebuild();
+</script>
+</body>
+</html>

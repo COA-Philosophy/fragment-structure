@@ -1157,6 +1157,24 @@
       file: 'works/sabigaki-v1.html',
       still: ''
     },
+    {
+      no: 'F071', version: 'v1', status: 'current',
+      project: 'JINEN',
+      use: '検体 No.004 / Specimen',
+      ja: '螺鈿 / 干渉場',
+      en: 'Nacre — Interference Field',
+      file: 'works/nacre_moire_field_v0.html',
+      still: ''
+    },
+    {
+      no: 'F072', version: 'v3', status: 'current',
+      project: 'JINEN',
+      use: '検体 No.005 / Specimen',
+      ja: '曜変 ⇄ 錆',
+      en: 'Yohen ⇄ Sabi — DLA transplant (v3)',
+      file: 'works/yohen_sabi_dla_v3.html',
+      still: ''
+    },
   ];
 
   // ── 技法メタ（各作品のコードから命名 / works/<file> をキーに WORKS へマージ）──
@@ -1242,6 +1260,8 @@
     'works/sabigaki.html': { family: '自己組織化', tech: '腐蝕圧×塗膜臨界の多場風化窯', how: '亀裂と腐蝕圧Uを場で育て、U+応力が付着×膜厚を超えた点から露出・浮き・膨れへ分岐。錆汁は多幅拡散と重力移流で滲む' },
     'works/tsuchime-v1.html': { family: '材質レリーフ', tech: '打点時系列の鍛造ハイトフィールド', how: '打点を配列順に高さ場へ局所上書きし凹面と潰れ痕を鍛造。曲率場×fbmで燻し、法線からBlinn陰影' },
     'works/sabigaki-v1.html': { family: '材質レリーフ', tech: '参照抽出＋7層錆合成の写しパイプライン', how: '参照写真から錆斑・泡孔・亀裂を形態学抽出し、距離変換とfbmで7層合成、宣言光で陰影焼成' },
+    'works/nacre_moire_field_v0.html': { family: '干渉場', tech: '滑らか厚み場の干渉次数モアレ', how: 'across-flowランプ＋fbmワープ＋眼のガウスで厚み場Hを作り、frac(H·密度)の端数を螺鈿色に読み、勾配大の谷を暗い縫い目にする' },
+    'works/yohen_sabi_dla_v3.html': { family: '自己組織化', tech: '付着確率ダイヤルの多玉DLA凝集', how: 'アンカーに寄せた種を対数正規バジェットでDLA成長させ、付着確率で枝⇄丸玉を可変。密度場の等高線を光る縁に、玉ごとの潜在値で一部だけ青を開く' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

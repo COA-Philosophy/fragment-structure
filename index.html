@@ -1202,6 +1202,24 @@
       file: 'works/tsugaru_togidashi_rd_v2.html',
       still: ''
     },
+    {
+      no: 'F074', version: 'v1', status: 'current',
+      project: 'JINEN',
+      use: '検体 No.006 / Specimen',
+      ja: '津軽塗 紋紗塗',
+      en: 'Tsugaru-nuri — Monsha (v0.6)',
+      file: 'works/tsugaru_monsha_v0_6.html',
+      still: ''
+    },
+    {
+      no: 'F075', version: 'v1', status: 'current',
+      project: 'JINEN',
+      use: '検体 No.006 / Specimen',
+      ja: '津軽塗 七々子',
+      en: 'Tsugaru-nuri — Nanako (v0.2)',
+      file: 'works/tsugaru_nanako_v0_2.html',
+      still: ''
+    },
   ];
 
   // ── 技法メタ（各作品のコードから命名 / works/<file> をキーに WORKS へマージ）──
@@ -1292,6 +1310,8 @@
     'works/nacre_moire_field_v2.html': { family: '干渉場', tech: '貫入プレート段差＋Blinn立体の干渉場', how: 'simplex fbmの帯＋眼で厚み場Hを作り、ボロノイ貫入でプレート段差を刻み、frac(H·密度)を螺鈿色に。法線からBlinn陰影で立体化し割れ目を暗線に' },
     'works/tsugaru_togidashi_dla_v0_1.html': { family: '自己組織化', tech: '密度＝深さの研ぎ出し積層漆', how: 'DLA被覆をぼかして肉置きし密度を深さに、積層パレットへ離散写像して研ぎ面の層を露出、層断面をエッジ輪にし起伏の法線で漆の鏡面艶' },
     'works/tsugaru_togidashi_rd_v2.html': { family: '自己組織化', tech: '反応拡散の島を研ぎ出す積層漆', how: 'Gray-Scott反応拡散のスポットをfBmで歪め、島の縁からの距離変換を深さに積層パレットへ離散写像、層断面を輪にし法線で漆艶と手研ぎムラ' },
+    'works/tsugaru_monsha_v0_6.html': { family: '自己組織化', tech: '紋紗塗・質感対比の研ぎ出し', how: 'Gray-Scott反応拡散の島と迷路を歪め距離変換で層化、地は炭粒の法線陰影でマット、図だけ鏡面' },
+    'works/tsugaru_nanako_v0_2.html': { family: '自己組織化', tech: '菜種蒔きの同心輪・研ぎ出し', how: 'ポアソン円充填の各粒で縁からの深さを高さ場にし、偏心円錐と層ごとの独立ノイズで同心輪を削り出す' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

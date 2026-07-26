@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>蒸留 v1.4 — 一筆の中を変える</title>
+<!-- ══════════════════════════════════════════════════════════════
+     蒸留 v0.1
+
+     写し（凍結済み）から、世界の原則を一度に一つだけ変える。
+     成長の骨格・乱数の引き順・表現はすべて写しのまま。
+
+       切替A 地をひとつに … 全系統が同じ一枚の地を読む
+                            （原典は粗さの違う6枚を系統ごとに読み分ける）
+       切替B 場を消費する … 通った先端が栄養を引き出し、地から減る
+                            （原典の場は位置の純関数で、何度通っても減らない）
+
+     B は A を前提にする。争う土地が共通でなければ競合は成立しない。
+     B のとき台帳が立つ: 投入 ＝ 消費 ＋ 残存（合格線は誤差 0.001% 未満）
+
+     v0.2 の修正（v0.1 で系が停止したことへの答え）:
+       ・引き出す量を「絶対量」から「その場にある量の割合」へ。
+         k 回通った格子には (1-f)^k が残るので収入がゼロにならず、
+         枯渇が崖ではなく勾配になる。
+       ・飢えによる死を入れた。原典は無限の場を前提にしていたので
+         餓死の規則を持たず、動けなくなった先端が死なずに凍りつき、
+         同時上限の枠を占有して系全体を止めていた。
+       この二つは別々の変更に見えて、どちらも「資源が有限である」
+       という一つの原則の帰結。片方だけでは世界が閉じない。
+       消費を切れば規則ごと無効になり、挙動は写しと完全に一致する。
+
+     v0.3 の修正（v0.2 で飢えが 0% だったことへの答え）:
+       ・吸収に半径を持たせた。v0.2 は先端が立っている一格子だけを
+         削っていたので、枯れ跡が線一本ぶんの幅しかなく、半格子
+         隣にはいつでも手つかずの地が残っていた。だから領土が
+         生まれず、誰も飢えなかった。半径を持たせると枯れ跡は帯に
+         なり、隣を通る者どうしが同じ地を奪い合う。
+       ・収入を「地から取った分」と等しくした。v0.2 は場を読むのが
+         無料で、削るのはその副作用だった（読んだ値がそのまま糧に
+         なり、地は別途少し痩せるだけ）。取った分だけが糧になれば
+         台帳が経済そのものになる。
+       半径を 0、収入を切れば v0.2 の挙動に戻る。
+
+     v0.4 の修正（v0.3 で飢えが 1% どまりだったことへの答え）:
+       v0.3 は「一格子ぶんに相当する量を円板ぜんたいから比例配分で
+       取る」形にしたので、枯れ跡は広がったが一格子あたりは 50 分の
+       一しか減らなくなった。広く浅く、では土地は使えなくならない。
+       改めて、円板の各格子から割合ぶんを引く形にした。局所の枯渇が
+       深くなる代わりに、一歩あたりに剥ぎ取る総量は跳ね上がる。
+       そこで摂取に上限を置いた。剥ぎ取った量のうち上限までが糧に
+       なり、超えた分は「占有による損耗」として地から失われる。
+       生き物は使える以上に土地を痩せさせる、という当たり前のこと。
+       台帳は 投入 ＝ 摂取 ＋ 損耗 ＋ 残存 で閉じる。
+
+     v0.5 の修正（「飢えても表現は変わらない」への答え）:
+       原典の走性は「過去最良を更新できなくなったら分岐する」＝
+       止める規則であって、向きを決める規則ではなかった。方向は
+       親から継いだ向きと微小な揺らぎだけで決まり、分岐の角度も
+       場を見ていない。だから場は先端を止めることと割ることは
+       できても、曲げることができない。資源が彫れるのは輪郭だけで、
+       線そのものには触れられなかった。
+       そこで分岐のときだけ場を味見させた。直進中の挙動は原典の
+       ままなので、あの伸びやかな直線は保たれる。
+         二分岐 … 前方の数方向を味見し、濃い方へ対の軸を寄せる
+         爆発  … 扇の各方角を味見し、痩せた方角には子を出さない
+       走性の強さ 0 で原典と完全に一致する（味見もしない）。
+
+     v0.6 — 複数の勢力:
+       起点を増やし、勢力ごとに形質（方位分割・爆発閾値・撒き間隔）を
+       同じ空間から独立に引く。色では分けない。形で分かれるかを見る。
+       境界を引く規則は一行も書いていない。枯れた土地は誰にとっても
+       行き先から外れるので、二つの前線が近づけば互いに逸れる。
+       そのあいだに誰も通らない帯が残れば、それが対峙線になる。
+       勢力の数 1 で v0.5 と完全に一致する（余分な乱数も引かない）。
+
+     v0.7 の修正:
+       ・同時上限（281本）と全滅よけ（生存5未満で強制分岐）が
+         勢力をまたいで共有されていた。先に走り出した勢力が枠を
+         占め、出遅れた勢力は土地を奪われる前に「枠が無い」だけで
+         消えていた（3本で終わる勢力が出た）。これは世界の物理では
+         なく装置の都合なので、どちらも勢力ごとに分けた。
+         共有するのは土地だけにする。
+       ・開示の色分けが作品パレットの端を拾っていたため、勢力0が
+         地色とほぼ同じ暗色になって見えなかった。開示専用の
+         判別しやすい色に差し替えた。
+
+     v0.8 — 顔料を自前にする:
+       原典の15組のパレットは JMY が選んだ色なので、蒸留から先へは
+       持ち越せない。かわりに顔料を選ばず、朽ち方の違う金属を置く。
+         金泥 … 朽ちない
+         銀泥 … 黒変して地に沈む
+         赤銅 … 緑青を吹く（緑は選んだ色ではなく、起きてしまった色）
+         群青 … 深く沈む
+       朽ちは齢で進む。先に置かれたものほど長く曝されているので、
+       核が最も朽ち、伸びている先端が最も若い。新しい変数は一つも
+       足していない。齢はもともと系にあった。
+       開示: causal＝齢／interpretive＝金属の割り当てと変色曲線
+
+     v0.9 の修正（「まだ緑」への答え）:
+       v0.8 は朽ちを齢（世代の深さ）に結びつけた。これが誤り。
+       世代の深さの分布は勢力ごとに違うので、勢力まるごとが変色
+       曲線の一点に貼り付き、territory が単色に潰れた。赤銅は
+       最初から最後まで緑で、赤銅の顔を一度も見せなかった。
+       朽ちは土地から来る。使い尽くされた地の上のものほど朽ち、
+       手つかずの地へ伸びた先端は生地のまま光る。
+         色相 ＝ 血統（金属）
+         変質 ＝ 土地（その場所がどれだけ使われたか）
+         明度 ＝ 時間（若い先端ほど明るい）
+       消費を切れば土地の履歴が無いので朽ちも起きない。
+
+     v1.0 の修正（「形状が同じだとつまらない」への答え）:
+       v0.6〜0.9 が勢力ごとに変えていたのは 方位分割・爆発閾値・
+       撒き間隔 の三つで、これらは形を決める力が弱い。とくに土地が
+       枯れてくると爆発がほぼ起きなくなるので、閾値と間隔の差は
+       絵に出ない。肝心の四つ——走性・吸収の半径・自己回避・寿命——
+       は世界の設定として全勢力で共有していた。だから四つの領土が
+       同じ肌になった。
+       その四つを勢力の形質に移した。つまみは中心値を決め、勢力
+       ごとの倍率は種から引く。
+         走性が強い ＝ 尾根を狙って進む狩人
+         半径が大きい ＝ 面で薙ぎ払う大食らい
+         自己回避が広い ＝ 疎な透かし。狭い ＝ 密な felt
+         寿命が長い ＝ 遠くまで走る
+       勢力は色違いではなく、別の生き物になる。
+
+     v1.1 — 描画の重さ:
+       原典は 15ms のあいだ全個体の update を何周も回し、その update
+       のたびに仮層へ経路まるごとを引き直していた。原典の同時上限は
+       281本なので成立していたが、勢力を4つにすると 1124本になり、
+       一フレームに数十万〜百万の頂点を描くことになる。
+       物理は一切変えずに、仮層への描画を毎フレーム一度だけにした。
+       さらに生きている個体は直近の尾だけを引く（定着層には死んだ
+       ときに経路まるごとが焼き付くので、最終画は変わらない）。
+
+     v1.2 — さらに軽く（物理も最終画も変えない）:
+       ・衝突の升目を素のオブジェクトから型付き配列に替えた。数値を
+         鍵にしたオブジェクトは辞書化して遅くなる。齢と帯は生涯
+         不変なので、参照を持たず値を控えるだけで同じ判定になる。
+       ・吸収の円板を平坦な添字の並びにし、画布の内側では毎セルの
+         範囲検査を省いた。
+       ・焼成の速さをつまみにした。原典は 1フレーム 15ms 固定で、
+         これは速い機械ほど早く焼き上がるという機械依存でもあった。
+         明示的に置くことで、時間の形が設計対象になる。
+
+     v1.3 — 勢力の違いを広げる:
+       ・形質を独立に引くのをやめ、**重ならないように配る**。四つが
+         独立に引かれると値が中央に寄って似てしまう。範囲を勢力の
+         数で割り、どの形質でも必ず一つは端に立つようにした。
+         競い合う種は形質が離れる（形質置換）ので、これは装置の
+         都合ではなく生態の側の理屈でもある。
+       ・振れ幅そのものを広げた。とくに爆発閾値は 2〜55 まで開いた
+         ので、ほぼ爆発しない系統（二分岐だけの叉状）と、絶えず
+         爆発する系統（星状）が同居する。
+       ・**歩幅**を形質に加えた。同じ規則でも歩幅が違えば線の粗さが
+         変わる。
+       ・**筆の太さを吸収の半径から導いた**。面で薙ぐ大きな体は太く、
+         細かく漁る体は細い。選んだのではなく体格から出る。
+         これで大中小の尺度の階層も同時に立つ。
+
+     v1.4 — 一筆の中に変化を入れる:
+       これまでは一本の線が端から端まで同じ太さ・同じ色だった。
+       変化は線と線のあいだにしかなく、そこが「描かれた」と
+       「生成された」を分けていた。
+       経路を十頂点ごとに切り、一頂点だけ重ねて繋いで引く。
+       その節ごとに——
+         太さ … 筆の含み（直近に吸えた量の滑らかな残り）
+                含みが減れば細く掠れ、吸えば太る
+         色  … その節が置かれた土地の使われ具合
+                一本の線が枯れ地から手つかずへ渡れば、途中で色が変わる
+       分岐したての子は含みが薄いので細く始まり、吸って太る。
+       節の切り方だけの違いなので、線の滑らかさは保たれる。
+     ════════════════════════════════════════════════════════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.0.0/p5.min.js"></script>
+<style>
+  :root{--ink:#0d0e10;--ash:#6a6459;--dim:#3c3934;--bone:#cfc7b8}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--ink);color:var(--ash);overflow:hidden}
+  body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;
+       display:flex;flex-direction:column}
+  #stage{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center}
+  canvas{display:block}
+  #bar{flex:0 0 auto;display:flex;gap:16px;align-items:center;flex-wrap:wrap;
+       padding:10px 15px 12px;font-size:11px;letter-spacing:.09em;
+       border-top:1px solid var(--dim)}
+  label{color:var(--dim);white-space:nowrap}
+  input{background:transparent;border:none;border-bottom:1px solid var(--dim);
+        color:var(--bone);font:inherit;letter-spacing:.06em;padding:2px 0;outline:none}
+  #hash{width:min(430px,44vw)}
+  input:focus{border-bottom-color:var(--bone)}
+  button,a.btn{background:transparent;border:1px solid var(--dim);color:var(--ash);
+    font:inherit;letter-spacing:.14em;padding:5px 12px;cursor:pointer;text-decoration:none;transition:.15s}
+  button:hover,button:focus-visible,a.btn:hover{border-color:var(--bone);color:var(--bone);outline:none}
+  .note{margin-left:auto;color:var(--dim);font-size:10px}
+  #world{flex:0 0 auto;display:flex;gap:20px;align-items:center;flex-wrap:wrap;
+    padding:0 15px 12px;font-size:11px;letter-spacing:.08em;color:var(--ash)}
+  #world label{color:var(--ash);cursor:pointer;display:flex;gap:6px;align-items:center}
+  #world .sub{display:flex;gap:7px;align-items:center;color:var(--dim)}
+  #world input[type=range]{width:96px;accent-color:var(--ash);border:none}
+  #world b{color:var(--bone);font-weight:400;font-variant-numeric:tabular-nums;min-width:26px}
+  #dna{position:absolute;top:10px;right:10px;padding:14px 16px;font-size:10.5px;line-height:1.8;
+    background:rgba(13,14,16,.94);border:1px solid var(--dim);color:var(--ash);
+    font-variant-numeric:tabular-nums;opacity:0;transition:.16s;pointer-events:none;max-height:88%;overflow:auto}
+  body.reveal #dna{opacity:1}
+  #dna h2{margin:0 0 8px;font-size:10px;letter-spacing:.2em;color:var(--dim);font-weight:400}
+  #dna .r{display:flex;justify-content:space-between;gap:16px}
+  #dna .r b{font-weight:400;color:var(--bone)}
+</style>
+</head>
+<body>
+<div id="stage"><div id="dna"></div></div>
+<div id="bar">
+  <label for="hash">種（token hash）</label>
+  <input id="hash" type="text" spellcheck="false"
+    value="0x2ced0da7c99ca8a2ae9b4db8a65f0863d251f73dca05d208ae9fc67ae8012a88">
+  <button id="go">焼成</button>
+  <button id="save">書き出し</button>
+  <span class="note">D＝開示レイヤ</span>
+</div>
+<div id="world">
+  <label><input type="checkbox" id="one" checked> 地をひとつに</label>
+  <span class="sub">粗さ <input type="range" id="band" min="0" max="5" value="1"><b id="bandV">1</b></span>
+  <label><input type="checkbox" id="consume"> 場を消費する</label>
+  <span class="sub">引き出す割合 <input type="range" id="rate" min="1" max="40" value="8"><b id="rateV">.08</b></span>
+  <span class="sub">飢えの猶予 <input type="range" id="starve" min="3" max="120" value="20"><b id="starveV">20</b></span>
+  <span class="sub">吸収の半径 <input type="range" id="radius" min="0" max="8" value="3"><b id="radiusV">3</b></span>
+  <span class="sub">摂取の上限 <input type="range" id="cap" min="10" max="300" value="80"><b id="capV">.80</b></span>
+  <label><input type="checkbox" id="earned" checked> 収入＝取った分</label>
+  <span class="sub">走性の強さ <input type="range" id="trop" min="0" max="100" value="60"><b id="tropV">.60</b></span>
+  <span class="sub">勢力の数 <input type="range" id="ncol" min="1" max="4" value="1"><b id="ncolV">1</b></span>
+  <span class="sub">焼成の速さ <input type="range" id="mspf" min="8" max="140" value="30"><b id="mspfV">30</b></span>
+  <label><input type="checkbox" id="metal" checked> 顔料を金属にする</label>
+  <label><input type="checkbox" id="showcol"> 開示: 勢力を色で分ける</label>
+</div>
+
+<script>
+'use strict';
+/* ────────────────────────────────────────────────────────────
+   転写にあたっての方針
+   - 乱数の引き順を一歩も変えない（変えると別の絵になる）
+   - 原典の癖もそのまま残す（下の「※癖」を参照）
+   - 名前とコメントだけを可読化する
+   ──────────────────────────────────────────────────────── */
+
+let TAU2;                       // TWO_PI（setup後に確定）
+const MA = 2;                   // 時間の粗さ（寿命の除数・初手の歩幅）
+const gs = .618, gs2 = .382;    // 起点候補に使う黄金比
+
+/* ── 乱数：sfc32。ハッシュから4語を取って初期化する ───────── */
+const sfc32 = (a, b, c, d) => () => {
+  a |= 0; b |= 0; c |= 0; d |= 0;
+  let t = (a + b | 0) + d | 0;
+  d = d + 1 | 0;
+  a = b ^ b >>> 9;
+  b = c + (c << 3) | 0;
+  c = (c << 21 | c >>> 11);
+  c = c + t | 0;
+  return (t >>> 0) / 4294967296;
+};
+
+let R;                          // 一様乱数 [0,1)
+/* ※癖: 第0語は "0x2ced0d" のように接頭辞ごと切り出される（6桁ぶんしか効かない）。
+        原典の挙動なのでそのまま残す。 */
+const word = (h, i) => parseInt(h.substr(8 * i, 8), 16);
+
+const rf = (hi = 1, lo = 0) => lo < hi ? R() * (lo - hi) + hi : R() * (hi - lo) + lo;  // 実数
+const ri = (hi = 1, lo = 0) => parseInt(lo < hi ? rf(lo, hi + 1) : rf(hi, lo + 1));    // 整数（両端含む）
+const clampv = (lo, v, hi) => Math.min(hi, Math.max(lo, v));
+const sinn = v => .5 * Math.sin(TAU2 * v) + .5;   // 0..1 に均した正弦
+
+/* ── 画布の計量 ────────────────────────────────────────────
+   T=1600 を基準単位にする。歩幅も筆幅もここから割り出すので、
+   実際のピクセル寸法を変えても図形は変わらない（解像度独立）。 */
+function metrics(aspect, T = 1600) {
+  const stage = document.getElementById('stage');
+  const w = Math.min(stage.clientWidth, stage.clientHeight * aspect);
+  return {
+    T, w, h: w / aspect,
+    r: 1 / aspect,        // 縦の正規化上限（0.8 なら 1.25）
+    pen: w / T,           // 筆幅
+    step: 1 / T,          // 一歩の長さ（正規化）
+    x: v => w * v, y: v => w * v,
+  };
+}
+
+/* ── 栄養場 ────────────────────────────────────────────────
+   ランダムな中心から広がる同心円の正弦波を数本重ねて平均する。
+   干渉縞のような濃淡が空間にできる。位置の純関数であって、
+   通っても減らない（＝資源競合は存在しない）。ここが後で効く。 */
+function nutrientField(waveCount, maxHz) {
+  const waves = [], raw = [];
+  for (let k = waveCount; k--;) {
+    const center = createVector(rf(), rf());   // ※癖: 中心は [0,1]² 内。縦は 1.25 まであるので上寄り
+    const freq = rf(1, maxHz);
+    const amp = rf(.5, 1);
+    raw.push({ cx: center.x, cy: center.y, freq, amp });
+    waves.push(p => sinn(p.dist(center) * freq) * amp);
+  }
+  const fn = p => waves.reduce((acc, w) => acc + w(p), 1) / waveCount;
+  fn.raw = raw; fn.n = waveCount;    // 格子を速く作るための素の値（乱数の引き順は不変）
+  return fn;
+}
+
+/* ── 二層の描画面 ──────────────────────────────────────────
+   0 = 定着層（死んだ先端の経路がここに焼き付く）
+   1 = 仮層（生きている先端。毎フレーム消える） */
+let mainCanvas = null, gfx = [];
+function makeSurface(C) {
+  if (!mainCanvas) { mainCanvas = createCanvas(C.w, C.h); mainCanvas.parent('stage'); }
+  else resizeCanvas(C.w, C.h);
+  for (const g of gfx) g.remove();
+  const layer = [];
+  for (let i = 0; i < 2; i++) layer.push(createGraphics(C.w, C.h));
+  for (const g of layer) {
+    g.noFill(); g.strokeWeight(C.pen); g.strokeCap(ROUND); g.strokeJoin(ROUND);
+  }
+  gfx = layer;
+  return {
+    L: i => layer[i],
+    flush() {
+      clear();
+      for (let i = 0; i < layer.length; i++) {
+        image(layer[i], 0, 0);
+        if (i % 2) layer[i].clear();
+      }
+    }
+  };
+}
+
+/* ── 衝突ハッシュ ──────────────────────────────────────────
+   空間を粗い格子に量子化して、一つの升に一本しか通さない。
+   ただし「世代が近い」ものどうしだけが衝突する。古い経路の上は
+   すり抜けられる＝この緩さが網目に見える正体。 */
+function makeCollision(C, DNA) {
+  const q = C.T / MA, OFF = 200000, CN = 1300000;
+  const id = new Int32Array(CN), bd = new Int8Array(CN), lf = new Float32Array(CN);
+  const key = p => Math.round((p.x + Math.floor(p.y * q)) * q) + OFF;
+  return {
+    hits(tip) {
+      const k = key(tip.P);
+      if (k < 0 || k >= CN) return false;
+      const occ = id[k];
+      // 齢(lifetime)と帯(band)は生涯不変なので、控えた値で原典と同じ判定になる
+      if (occ !== 0 && bd[k] === tip.band && Math.abs(tip.lifetime - lf[k]) < tip.collim) return true;
+      id[k] = tip.id + 1; bd[k] = tip.band; lf[k] = tip.lifetime;
+      return false;
+    },
+    release(path) {
+      for (const p of path) { const k = key(p); if (k >= 0 && k < CN) id[k] = 0; }
+    }
+  };
+}
+
+/* ── 先端 ──────────────────────────────────────────────── */
+let app, C, surface, collision, DNA, palette, field = [], colony = {}, nextId = 0;
+
+/* ══ 世界の設定（ここだけが写しとの差） ═══════════════════════
+   ONE     : 全系統が同じ一枚の地を読む
+   BAND    : その一枚をどの粗さにするか（0=最も滑らか 〜 5=最も細かい）
+   CONSUME : 通った先端が栄養を引き出し、地から減る
+   ═════════════════════════════════════════════════════════ */
+let ONE = true, BAND = 1, CONSUME = false, FRAC = 0.25, STARVE = 20;
+let RADIUS = 3, EARNED = true, CAP = 0.8, TROPISM = 0.6, starved = 0, MSPF = 30;
+let probe = null, NCOL = 1, SHOWCOL = false;
+let clanBirths = {}, clanTraits = [], clanLive = {};
+const CLANCOL = ['#7fb2d9', '#e0a34a', '#8fbf7a', '#d1798f'];  // 開示専用の判別色
+
+/* 顔料＝朽ち方の違う金属。色を選ぶのでなく、時間の見え方を選ぶ */
+const METALS = [
+  { name: '金泥', fresh: '#d8ac4a', aged: '#c49a3c' },
+  { name: '銀泥', fresh: '#d5dbe0', aged: '#2e2f34' },
+  { name: '赤銅', fresh: '#c26a41', aged: '#4f9e83' },
+  { name: '群青', fresh: '#4a6fc4', aged: '#26365c' },
+];
+let METALPIG = true;
+let intook = 0, wasted = 0;
+
+/* 消費するには地を格子にする必要がある（純関数は減らせない）。
+   格子はそのまま台帳になる: 投入 ＝ 消費 ＋ 残存 */
+const GW = 1000, GH = 1250;
+let grid = null, grid0 = null, total0 = 0, consumed = 0;
+
+function buildGrid(fn) {
+  grid = new Float64Array(GW * GH);
+  grid0 = new Float32Array(GW * GH);
+  const raw = fn.raw, n = fn.n, inv = 1 / GW;
+  total0 = 0;
+  for (let y = 0; y < GH; y++) {
+    const py = y * inv;
+    for (let x = 0; x < GW; x++) {
+      const px = x * inv;
+      let s = 1;
+      for (let k = 0; k < n; k++) {
+        const w = raw[k], dx = px - w.cx, dy = py - w.cy;
+        s += (0.5 * Math.sin(TAU2 * Math.sqrt(dx * dx + dy * dy) * w.freq) + 0.5) * w.amp;
+      }
+      const v = s / n;
+      grid[y * GW + x] = v; grid0[y * GW + x] = v; total0 += v;
+    }
+  }
+  consumed = 0; intook = 0; wasted = 0;
+}
+const cellOf = P => {
+  const gx = (P.x * GW) | 0, gy = (P.y * GW) | 0;
+  return (gx < 0 || gy < 0 || gx >= GW || gy >= GH) ? -1 : gy * GW + gx;
+};
+/* 吸収の円板。中心ほど濃く、縁ほど薄く取る。半径0なら一格子だけ */
+let discs = [];
+function buildDiscs() { discs = []; for (let r = 0; r <= 8; r++) discs.push(makeDisc(r)); }
+function makeDisc(r) {
+  const a = [];
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    const d = Math.sqrt(dx * dx + dy * dy);
+    if (d > r) continue;
+    const w = 1 - d / (r + 1);
+    a.push(dx, dy, w);
+  }
+  return Float64Array.from(a);
+}
+
+/* 地から引き出し、引き出した量を返す。
+   一格子ぶんに相当する量を円板ぜんたいから比例配分で取るので、
+   枯れ跡は帯になり、同じ地を通る者どうしが奪い合うことになる。 */
+function absorbAt(P, r) {
+  const rr = r < 0 ? 0 : r > 8 ? 8 : r;
+  const disc = discs[rr];
+  const gx = (P.x * GW) | 0, gy = (P.y * GW) | 0;
+  let got = 0;
+  if (gx >= rr && gy >= rr && gx < GW - rr && gy < GH - rr) {
+    // 画布の内側では範囲検査を省ける
+    const base = gy * GW + gx;
+    for (let i = 0; i < disc.length; i += 3) {
+      const c = base + disc[i + 1] * GW + disc[i];
+      const t = grid[c] * disc[i + 2] * FRAC;
+      if (t > 0) { grid[c] -= t; got += t; }
+    }
+  } else {
+    for (let i = 0; i < disc.length; i += 3) {
+      const x = gx + disc[i], y = gy + disc[i + 1];
+      if (x < 0 || y < 0 || x >= GW || y >= GH) continue;
+      const c = y * GW + x;
+      const t = grid[c] * disc[i + 2] * FRAC;
+      if (t > 0) { grid[c] -= t; got += t; }
+    }
+  }
+  consumed += got;
+  const take = got < CAP ? got : CAP;         // 糧になるのは上限まで
+  intook += take; wasted += got - take;       // 超えた分は占有による損耗
+  return take;
+}
+function remaining() { let s = 0; for (let i = 0; i < grid.length; i++) s += grid[i]; return s; }
+
+/* その場所がどれだけ使われたか（0=手つかず 1=使い尽くされた）。
+   朽ちの原因はこれ。土地の履歴が金属の表面に出る。 */
+function landSpent(P) {
+  if (!(ONE && CONSUME) || !grid) return 0;
+  const i = cellOf(P); if (i < 0) return 0;
+  const g0 = grid0[i];
+  if (!(g0 > 0)) return 1;
+  const r = 1 - grid[i] / g0;
+  return r < 0 ? 0 : r > 1 ? 1 : r;
+}
+
+/* n個の値を範囲に重ならないよう配る。競い合う種は形質が離れる（形質置換） */
+function dealt(n, lo, hi) {
+  const idx = [];
+  for (let i = 0; i < n; i++) idx.push(i);
+  for (let i = n - 1; i > 0; i--) { const j = ri(0, i), t = idx[i]; idx[i] = idx[j]; idx[j] = t; }
+  return idx.map(k => lo + (hi - lo) * ((k + rf()) / n));
+}
+
+/* 先端が読む栄養。世界の設定で読み先が変わる */
+function nutrientAt(take, P) {
+  if (!ONE) return field[take](P);
+  if (!CONSUME) return field[BAND](P);
+  const i = cellOf(P);
+  return i < 0 ? 0 : grid[i];
+}
+
+/* 味見: いまの位置から dirUnits の方角へ少し先を見て、そこの栄養を読む。
+   分岐のときだけ使う。直進中は一切使わないので線の質は変わらない。 */
+const LOOK = 24;   // 何歩ぶん先を見るか
+function taste(P, dirUnits, angle, take) {
+  const th = TAU2 * dirUnits / angle, d = C.step * LOOK;
+  probe.set(P.x + Math.cos(th) * d, P.y + Math.sin(th) * d);
+  return nutrientAt(take, probe);
+}
+
+class Tip {
+  constructor(id, seedProps, parent) {
+    this.parent = parent;
+    this.children = [];
+    this.resetSplit();                       // ※癖: この時点で angle は未定義なので split は NaN。
+                                             //       序盤の force() が引き直して正常化する。
+    this.life = parent ? parent.life + 1 : 0;
+    this.assign({
+      band: 0, take: 0, id, age: 0, best: .5, hunger: 0,
+      clan: 0, metal: 0, frt: DNA.FRT, explode: DNA.explode,
+      trop: TROPISM, radius: RADIUS, collim: DNA.collimit, lifeMul: 1, stepMul: 1, wet: 0.5,
+      dir: ri(0, DNA.angle),
+      store: new Array(DNA.bands).fill(0),
+      E: 1,
+    });
+    this.assign(seedProps);
+    clanBirths[this.clan] = (clanBirths[this.clan] || 0) + 1;
+    clanLive[this.clan] = (clanLive[this.clan] || 0) + 1;
+    this.lifespan = DNA.lifespan / MA * this.lifeMul;
+    this.V = [this.P.copy()];
+    this.W = [this.load()];
+    this.advance(MA);
+  }
+  assign(o) { for (const k in o) this[k] = o[k]; }
+
+  get onCanvas() { return this.P.x > -.25 && this.P.x < 1.25 && this.P.y > -.25 && this.P.y < 1.25 * C.r; }
+  get lifetime() { return this.life / this.lifespan; }
+  get nutrition() { return this.store[this.take]; }
+
+  /* 同じ帯で、生まれた時期が近いものだけが衝突する */
+  conflictsWith(other) {
+    return this.band === other.band && Math.abs(this.lifetime - other.lifetime) < this.collim;
+  }
+
+  update() {
+    if (this.life > this.lifespan) return this.die(true);
+    this.eat();
+    if (this.E > 1) {
+      this.hunger = 0;
+      this.E--;
+      const verdict = this.travel();
+      if (verdict === 0) this.mark();       // 登り続けている
+      else if (app.clanSize(this.clan) < 5) this.force();  // 全滅よけ（勢力ごと）
+      else if (verdict === 1) this.die(true);              // ぶつかった
+      else if (verdict === 2) this.divide();               // 下り始めた → 分岐
+    }
+    else if (CONSUME && ++this.hunger > STARVE) { starved++; return this.die(true); }
+    if (this.age++ > DNA.TTL || this.E < 0 || !this.onCanvas) this.die(true);
+    // 仮層への描画は毎フレーム一度だけ（app.draw の末尾）へ移した
+  }
+
+  /* 筆の含み。0=渇いた 1=満ちた */
+  load() {
+    const ref = (ONE && CONSUME) ? (CAP > .02 ? CAP : .02) : .9;
+    const v = this.wet / ref;
+    return v < 0 ? 0 : v > 1 ? 1 : v;
+  }
+  mark() { this.V.push(this.P.copy()); this.W.push(this.load()); }
+
+  /* 場の値を帯ごとに溜める。担当帯で 0.1 貯まるごとにエネルギーが1増える */
+  eat() {
+    let shared = null;
+    if (ONE && CONSUME) {
+      const got = absorbAt(this.P, this.radius);   // 地から引き出す
+      shared = EARNED ? got : nutrientAt(0, this.P);  // 取った分を糧にするか、読むだけか
+    } else if (ONE) shared = nutrientAt(0, this.P);
+    for (let i = 0; i < DNA.bands; i++) {
+      this.store[i] += (shared !== null) ? shared : field[i](this.P);
+      if (this.store[i] >= .1 && i === this.take) { this.E++; this.store[i] -= .1; }
+    }
+    const feed = (shared !== null) ? shared : field[this.take](this.P);
+    this.wet = this.wet * .86 + feed * .14;   // 直近の取り分の滑らかな残り＝含み
+  }
+
+  /* 走性の核心。※癖: 比較に使う値は「動く前の位置」で読んだもの。 */
+  travel() {
+    const here = nutrientAt(this.take, this.P);
+    this.dir += rf(-.1, .1);
+    this.advance(1);
+    if (collision.hits(this)) return 1;
+    if (here > this.best) { this.best = here; return 0; }
+    return 2;
+  }
+
+  advance(n) {
+    this.P.add(createVector(C.step * n * this.stepMul, 0).rotate(TAU2 * this.dir / this.angle));
+  }
+
+  force() { this.resetSplit(); this.divide(); }
+  resetSplit() { const s = rf(1, this.angle / 4); this.split = [s, -s]; }
+
+  divide() {
+    const rich = this.nutrition > this.frt;
+    const nextTake = rich ? (this.take + DNA.bandStep) % DNA.bands : this.take;
+    this.mark();
+    if (rich) {
+      // 栄養が閾値を超えている：全周に撒く（担当帯もずらす＝色が変わる）
+      const j = DNA.splitJit, cap = this.angle / 4;
+      this.split[0] = clampv(1, this.split[0] + rf(-j, j), cap);
+      this.split[1] = -this.split[0];
+      if (this.trop > 0) {
+        // 扇の各方角を味見し、痩せた方角には子を出さない＝扇が食べ物の側へ開く
+        const dirs = [], vs = [];
+        for (let a = 0; a < this.angle; a += this.explode) {
+          dirs.push(a); vs.push(taste(this.P, this.dir + a, this.angle, nextTake));
+        }
+        let lo = Infinity, hi = -Infinity;
+        for (const v of vs) { if (v < lo) lo = v; if (v > hi) hi = v; }
+        const gate = lo + this.trop * 0.6 * (hi - lo);
+        for (let k = 0; k < dirs.length; k++) if (vs[k] >= gate) this.bud(dirs[k], nextTake);
+      } else {
+        for (let a = 0; a < this.angle; a += this.explode) this.bud(a, nextTake);
+      }
+    } else {
+      // 痩せている：左右に2本だけ。1本目が作れなければ2本目も作らない
+      let base = 0;
+      if (this.trop > 0) {
+        // 前方のいくつかを味見して、対の軸を濃い方へ寄せる
+        const u = this.angle / 8;
+        let bestV = -Infinity, bestO = 0;
+        for (const o of [-2 * u, -u, 0, u, 2 * u]) {
+          const v = taste(this.P, this.dir + o, this.angle, nextTake);
+          if (v > bestV) { bestV = v; bestO = o; }
+        }
+        base = this.trop * bestO;
+      }
+      let blocked = 0;
+      for (let i = 0; i < this.split.length; i++)
+        blocked = (this.bud(base + this.split[i], nextTake, blocked) === false);
+    }
+    return this.die(true);
+  }
+
+  /* 子を1本。人口が上限に達していれば作られない（＝淘汰） */
+  bud(offset, take, blocked) {
+    const child = app.divide({
+      band: this.band, take, angle: this.angle, split: this.split,
+      dir: this.dir + offset, E: this.E / 2, P: this.P.copy(),
+      clan: this.clan, metal: this.metal, frt: this.frt, explode: this.explode,
+      trop: this.trop, radius: this.radius, collim: this.collim, lifeMul: this.lifeMul, stepMul: this.stepMul,
+      wet: this.wet * 0.7,   // 分かれた子は含みが薄い＝細く始まる
+    }, this, blocked);
+    if (child) this.children.push(child);
+    return child !== 0;
+  }
+
+  die(permanent) {
+    // ※原典はカンマ演算子なので、延命(force)を試みた場合でも削除まで到達する
+    if (!this.onCanvas && app.clanSize(this.clan) < 5 && this.life < this.lifespan) this.force();
+    else if (permanent) this.paint(true);
+    else collision.release(this.V);
+    return app.die(this);
+  }
+
+  /* 経路まるごとを一筆で引く。だから線が刻まれず伸びやかに見える。 */
+  paint(permanent = false) {
+    const g = surface.L(permanent ? 0 : 1);
+    const V = this.V, W = this.W;
+    // 定着層には経路まるごと。仮層（生きているもの）は直近の尾だけ
+    const from = permanent ? 0 : Math.max(0, V.length - 48);
+    const body = C.pen * (0.5 + 0.30 * this.radius);   // 体の太さ＝薙ぐ幅
+    const flat = SHOWCOL && NCOL > 1 ? CLANCOL[this.clan % CLANCOL.length] : null;
+    const SEG = 10;
+    // 十頂点ごとに切り、一頂点だけ重ねて繋ぐ。節ごとに含みと土地が効く
+    for (let i = from; i < V.length - 1; i += SEG) {
+      const end = Math.min(V.length - 1, i + SEG);
+      let acc = 0;
+      for (let k = i; k <= end; k++) acc += W[k] || 0;
+      const load = acc / (end - i + 1);
+      g.strokeWeight(body * (0.3 + 0.95 * load));       // 含みが減れば細く掠れる
+      g.stroke(flat || this.colorAt(this.lifetime, V[(i + end) >> 1]));
+      g.beginShape();
+      for (let k = i; k <= end; k++) g.vertex(C.x(V[k].x), C.y(V[k].y));
+      g.endShape();
+    }
+  }
+
+  colorAt(t, at) {
+    if (METALPIG) {
+      const m = METALS[this.metal];
+      const rust = landSpent(at || this.P);              // 変質＝その節が置かれた土地
+      const c = lerpColor(color(m.fresh), color(m.aged), rust);
+      const dull = 0.62 + 0.38 * (t < 0 ? 0 : t > 1 ? 1 : t);  // 明度＝時間（若い先端ほど明るい）
+      return color(red(c) * dull, green(c) * dull, blue(c) * dull);
+    }
+    const last = palette.length - 1;
+    if (t >= 1) return '#' + palette[last];
+    const seg = 1 / last, i = parseInt(t / seg);
+    return lerpColor(color('#' + palette[i]), color('#' + palette[i + 1]), (t - i * seg) / seg);
+  }
+}
+
+/* ── 一炉ぶんの焼成 ────────────────────────────────────── */
+function App() {
+  const PAL = [
+    [RGB,'1a1a1a','F4869E','F4606C','F24444','C72C41','A41E4C','791F4C','4D1E4C','291E4C','F4C6C2'],
+    [RGB,'1a1a1a','5e6dbc','295967','50704f','f9eea1','e75d53','d0d2c4','605643'],
+    [RGB,'1a1a1a','8950ad','d04c48','ffdf80'],
+    [RGB,'1f1f19','b22725','c85b3b','b67b4c','27271f','ffd691'],
+    [RGB,'1f1f19','e7d222','c7653a','25b261','1e2625','ffd691'],
+    [RGB,'1a1726','2c6049','deb188','dbb15f','d23428'],
+    [HSB,'172930','ff463f','e07d55','c1af82','f0f0e0','4a4a3a'],
+    [RGB,'2f2323','ffb600','9c3451','ffb600','9c3451','d9c08b'],
+    [RGB,'1f1f19','0e4044','25a6b2','c7653a','4cb5a4','1e2625','ffd691'],
+    [HSB,'26251f','ff2020','8f8f85','322832','313228','ff2020'],
+    [RGB,'171d26','21d8ff','271f33','12a062','ff511c'],
+    [RGB,'191a1d','286086','79a399','ae643c','d4b453','c6bca2'],
+    [RGB,'1b2a2d','bdc968','e1d894','c6e5d0','b6d7a1','d66646','ad4b52','c47673'],
+    [RGB,'1f1c1d','2b1d1a','ad4d38','ff8e43','ff9cc6'],
+    [RGB,'171d26','5facc8','098a74','e29e23','e47820','e3072a'],
+  ];
+  const PNT = [[[gs,gs]],[[gs2,gs]],[[gs,gs2]],[[gs2,gs2]],[[.5,.5]]];
+
+  // ここでの引き順が絵を決める。並べ替え厳禁。
+  DNA = {
+    angle:    ri(16, 64),   // 方位の分割数＝枝の角ばり具合
+    bands:    6,            // 栄養場の帯（各先端は1本だけ読む）
+    startBand:ri(5),
+    maxTips:  ri(225, 350), // 同時生存の上限＝淘汰の強さ
+    pal:      ri(0, PAL.length - 1),
+    pnt:      PNT[ri(PNT.length - 1)],
+    maxHz:    ri(2, 15),    // 場の最高周波数
+    TTL:      1500,
+    FRT:      ri(3, 20),    // 全周に撒くのに要る栄養
+    explode:  ri(1, 8),     // 撒く間隔（小さいほど密）
+    splitJit: rf(.1, 1),
+    lifespan: ri(1500, 3e3),
+    bandStep: ri(0, 3),     // 爆発時に帯をいくつずらすか
+  };
+  if (!DNA.bandStep && !DNA.startBand) DNA.startBand = ri(1, 5);
+
+  palette = PAL[DNA.pal];
+  C = metrics(.8, 1600);
+  probe = createVector(0, 0);
+  surface = makeSurface(C);
+  DNA.collimit = 1 / 3;
+  collision = makeCollision(C, DNA);
+  colorMode(palette.shift(), 1, 1, 1);              // 先頭は色空間
+  surface.L(0).background('#' + palette.shift());   // 次が地色
+
+  field = [];
+  for (let i = 0; i < DNA.bands; i++) field.push(nutrientField(ri(1 + i, 3 * (i + 1)), DNA.maxHz));
+  starved = 0; clanBirths = {}; clanLive = {};
+  buildDiscs();
+  if (ONE && CONSUME) buildGrid(field[BAND]);
+
+  const count = () => Object.keys(colony).length;
+  app = {
+    get size() { return count(); },
+    draw() {
+      for (const t0 = millis(); millis() - t0 < MSPF;)
+        for (const k in colony) colony[k].update();
+      for (const k in colony) colony[k].paint();   // 仮層は一フレームに一度
+      surface.flush();
+    },
+    init() {
+      if (NCOL > 1) {
+        // 勢力ごとの形質を、原典と同じ空間から独立に引く（色では分けない）
+        const rot = rf() * TAU2, R = rf(.30, .22), pool = [0, 1, 2, 3];
+        // 形質は独立に引かず、重ならないように配る
+        const dTrop = dealt(NCOL, .15, 2.3), dRad = dealt(NCOL, .3, 2.5),
+              dColl = dealt(NCOL, .12, 3.2), dLife = dealt(NCOL, .35, 2.6),
+              dAng = dealt(NCOL, 10, 90), dFrt = dealt(NCOL, 2, 55),
+              dExp = dealt(NCOL, 1, 9), dStep = dealt(NCOL, .55, 2.3);
+        clanTraits = [];
+        for (let i = 0; i < NCOL; i++) {
+          const th = rot + i * TAU2 / NCOL;
+          const t = {
+            angle: Math.round(dAng[i]), frt: Math.round(dFrt[i]), explode: Math.round(dExp[i]),
+            trop: Math.min(1, TROPISM * dTrop[i]),
+            radius: Math.max(0, Math.min(8, Math.round(RADIUS * dRad[i]))),
+            collim: DNA.collimit * dColl[i],
+            lifeMul: dLife[i],
+            stepMul: dStep[i],
+          };
+          t.metal = pool.splice(ri(0, pool.length - 1), 1)[0];   // 金属も重複させない
+          clanTraits.push(t);
+          colony[nextId] = new Tip(nextId++, {
+            band: 1, take: DNA.startBand, clan: i, metal: t.metal,
+            angle: t.angle, frt: t.frt, explode: t.explode,
+            trop: t.trop, radius: t.radius, collim: t.collim, lifeMul: t.lifeMul, stepMul: t.stepMul,
+            P: createVector(.5 + Math.cos(th) * R, .5 * C.r + Math.sin(th) * R),
+          });
+        }
+      } else {
+        // 一勢力のときは既に引いた値から導く（余分な乱数を引かない）
+        const m0 = DNA.pal % METALS.length;
+        clanTraits = [{ angle: DNA.angle, frt: DNA.FRT, explode: DNA.explode, metal: m0 }];
+        for (const pt of DNA.pnt) {
+          const seed = { band: 1, take: DNA.startBand, angle: DNA.angle, metal: m0,
+                         P: createVector(pt[0], pt[1] * C.r) };
+          colony[nextId] = new Tip(nextId++, seed);
+        }
+      }
+      return app;
+    },
+    die(t) {
+      delete colony[t.id];
+      clanLive[t.clan] = (clanLive[t.clan] || 1) - 1;
+      if (!count()) { noLoop(); surface.flush(); showDNA(); }
+    },
+    clanSize: (c) => clanLive[c] || 0,
+    divide(props, parent, blocked) {
+      // 枠は勢力ごとに持つ。装置の都合で勝敗が決まらないようにするため
+      const room = (clanLive[props.clan] || 0) < DNA.maxTips;
+      return (room && !blocked) ? (colony[nextId] = new Tip(nextId++, props, parent)) : 0;
+    },
+  };
+  return app;
+}
+
+/* ── p5 の出入口 ──────────────────────────────────────── */
+function setup() {
+  TAU2 = TWO_PI;
+  ignite();
+}
+function draw() { if (app) app.draw(); }
+
+function ignite() {
+  syncWorld();
+  const h = document.getElementById('hash').value.trim();
+  R = sfc32(word(h, 0), word(h, 1), word(h, 2), word(h, 3));
+  colony = {}; field = []; nextId = 0;
+  app = App().init();
+  loop();
+  document.getElementById('dna').innerHTML = '<h2>形質</h2><div>焼成中…</div>';
+}
+
+function showDNA() {
+  const rows = [
+    ['方位分割 angle', DNA.angle], ['帯 bands', DNA.bands], ['開始帯', DNA.startBand],
+    ['同時上限 maxTips', DNA.maxTips], ['パレット', DNA.pal], ['起点', JSON.stringify(DNA.pnt[0])],
+    ['最高周波数', DNA.maxHz], ['爆発閾値 FRT', DNA.FRT], ['撒き間隔 explode', DNA.explode],
+    ['分岐ゆらぎ', DNA.splitJit.toFixed(3)], ['寿命', DNA.lifespan], ['帯ずらし', DNA.bandStep],
+  ];
+  const world = [
+    ['地', ONE ? `一枚（粗さ${BAND}・波${field[BAND].n}本）` : '六枚を読み分け'],
+    ['消費', CONSUME ? `する（割合 ${FRAC.toFixed(2)}・半径 ${RADIUS}・猶予 ${STARVE}）` : 'しない'],
+    ['収入', CONSUME ? (EARNED ? `摂取（上限 ${CAP.toFixed(2)}）` : '読むだけ（v0.2と同じ）') : '—'],
+    ['顔料', METALPIG ? (CONSUME ? '金属（色相＝血統／変質＝土地／明度＝時間）'
+                                 : '金属（土地の履歴が無いので朽ちない）') : '原典のパレット'],
+    ['走性', TROPISM > 0 ? `分岐の向きを場が選ぶ（強さ ${TROPISM.toFixed(2)}）` : '無し（原典どおり）'],
+  ];
+  let ledger = [];
+  if (ONE && CONSUME && grid) {
+    const rem = remaining(), err = Math.abs(total0 - (consumed + rem)) / total0 * 100;
+    ledger = [['投入', total0.toFixed(0)],
+      ['　摂取', intook.toFixed(0)], ['　損耗', wasted.toFixed(0)],
+      ['地から失われた計', consumed.toFixed(0)],
+      ['残存', rem.toFixed(0)], ['失われた割合', (consumed / total0 * 100).toFixed(1) + '%'],
+      ['台帳誤差', err.toExponential(1) + '%　' + (err < 0.001 ? '合' : '否')],
+      ['生まれた総数', nextId.toLocaleString()],
+      ['飢えて死んだ数', starved.toLocaleString() + '（' + (starved / Math.max(1, nextId) * 100).toFixed(0) + '%）']];
+  }
+  const clans = NCOL > 1 ? clanTraits.map((t, i) =>
+    [`<span style="color:${METALPIG ? METALS[t.metal].fresh : CLANCOL[i % CLANCOL.length]}">　勢力${i}`
+      + (METALPIG ? `／${METALS[t.metal].name}` : '') + `</span>`
+      + `（走性${(t.trop ?? 0).toFixed(2)}・半径${t.radius ?? '-'}・自己回避${(t.collim ?? 0).toFixed(2)}`
+      + `・寿命×${(t.lifeMul ?? 1).toFixed(1)}・歩幅×${(t.stepMul ?? 1).toFixed(1)}・方位${t.angle}・閾値${t.frt}・間隔${t.explode}）`,
+     (clanBirths[i] || 0).toLocaleString() + ' 本']) : [];
+  const box = (t, a) => a.length
+    ? `<h2 style="margin-top:12px">${t}</h2>` + a.map(([k, v]) => `<div class="r"><span>${k}</span><b>${v}</b></div>`).join('') : '';
+  document.getElementById('dna').innerHTML =
+    box('世界', world) + box('勢力', clans) + box('台帳', ledger) +
+    '<h2 style="margin-top:12px">形質</h2>' + rows.map(([k, v]) => `<div class="r"><span>${k}</span><b>${v}</b></div>`).join('');
+}
+
+const $$ = id => document.getElementById(id);
+function syncWorld() {
+  ONE = $$('one').checked; BAND = +$$('band').value;
+  CONSUME = $$('consume').checked; FRAC = +$$('rate').value / 100; STARVE = +$$('starve').value;
+  RADIUS = +$$('radius').value; EARNED = $$('earned').checked; CAP = +$$('cap').value / 100;
+  TROPISM = +$$('trop').value / 100;
+  NCOL = +$$('ncol').value; SHOWCOL = $$('showcol').checked; METALPIG = $$('metal').checked;
+  MSPF = +$$('mspf').value;
+  if (CONSUME && !ONE) { ONE = true; $$('one').checked = true; }  // 消費は共通の地を前提にする
+  $$('bandV').textContent = BAND;
+  $$('rateV').textContent = FRAC.toFixed(2).slice(1);
+  $$('starveV').textContent = STARVE;
+  $$('radiusV').textContent = RADIUS;
+  $$('capV').textContent = CAP.toFixed(2).slice(1);
+  $$('tropV').textContent = TROPISM.toFixed(2).slice(1);
+  $$('ncolV').textContent = NCOL;
+  $$('mspfV').textContent = MSPF;
+}
+for (const id of ['one', 'band', 'consume', 'rate', 'starve', 'radius', 'earned', 'cap', 'trop', 'ncol', 'showcol', 'metal'])
+  // 焼成の速さは焼き直さずに効く
+$$('mspf').addEventListener('input', () => { MSPF = +$$('mspf').value; $$('mspfV').textContent = MSPF; });
+for (const id of [])
+  $$(id).addEventListener('input', () => { syncWorld(); ignite(); });
+document.getElementById('go').onclick = ignite;
+document.getElementById('hash').onkeydown = e => { if (e.key === 'Enter') ignite(); };
+document.getElementById('save').onclick = () => {
+  const a = document.createElement('a');
+  a.download = 'utsushi_' + document.getElementById('hash').value.slice(2, 10) + '.png';
+  a.href = document.querySelector('canvas').toDataURL('image/png');
+  a.click();
+};
+addEventListener('keydown', e => { if (e.key === 'd' || e.key === 'D') document.body.classList.toggle('reveal'); });
+</script>
+</body>
+</html>

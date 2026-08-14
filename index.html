@@ -412,6 +412,10 @@
     #viewer .copy .label { display: none; }
     #viewer .copy { padding: 0; width: 3rem; justify-content: center; }
   }
+  /* タッチ端末ではコピー先が無く、画面録画にも写り込むので出さない */
+  @media (pointer: coarse) {
+    #viewer .copy { display: none; }
+  }
 
   /* ───── フッター ───── */
   footer {

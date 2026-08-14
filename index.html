@@ -415,6 +415,19 @@
   /* タッチ端末ではコピー先が無く、画面録画にも写り込むので出さない */
   @media (pointer: coarse) {
     #viewer .copy { display: none; }
+
+    /* 閉じるは作品に重ねず、下端の帯に逃がす（録画に写り込ませない） */
+    #viewer { display: flex; flex-direction: column; }
+    #viewer iframe { flex: 1 1 auto; height: auto; min-height: 0; }
+    #viewer .close {
+      position: static; flex: 0 0 auto;
+      width: 100%; height: auto;
+      border: 0; border-top: 1px solid var(--line-mid); border-radius: 0;
+      background: var(--bg); backdrop-filter: none;
+      font-size: 1.15rem;
+      padding: 0.85rem 0 calc(0.85rem + env(safe-area-inset-bottom, 0px));
+    }
+    #viewer .close:hover, #viewer .close:active { transform: none; }
   }
 
   /* ───── フッター ───── */

@@ -1229,6 +1229,15 @@
       file: 'works/jouryuu_v14_2.html',
       still: ''
     },
+    {
+      no: 'F077', version: 'v1', status: 'current',
+      project: 'JINEN',
+      use: '工房 / Studio',
+      ja: '探索窯「法窯」',
+      en: 'Tansaku-gama — Law Kiln (v0.2.1)',
+      file: 'works/tansaku_gama_v0_2_1.html',
+      still: ''
+    },
   ];
 
   // ── 技法メタ（各作品のコードから命名 / works/<file> をキーに WORKS へマージ）──
@@ -1322,6 +1331,7 @@
     'works/tsugaru_monsha_v0_6.html': { family: '自己組織化', tech: '紋紗塗・質感対比の研ぎ出し', how: 'Gray-Scott反応拡散の島と迷路を歪め距離変換で層化、地は炭粒の法線陰影でマット、図だけ鏡面' },
     'works/tsugaru_nanako_v0_2.html': { family: '自己組織化', tech: '菜種蒔きの同心輪・研ぎ出し', how: 'ポアソン円充填の各粒で縁からの深さを高さ場にし、偏心円錐と層ごとの独立ノイズで同心輪を削り出す' },
     'works/jouryuu_v14_2.html': { family: '自己組織化', tech: '栄養場を食い減らす競合分岐成長', how: '同心正弦の栄養格子を円板で割合吸収して枯らし、分岐時に前方を味見して濃い側へ寄せる。含み＝太さ、土地の消耗＝色' },
+    'works/tansaku_gama_v0_2_1.html': { family: '自己組織化', tech: '無銘の相互作用項を抽選する法窯', how: '場A/B・θ・履歴Mへ14種の相互作用項を2〜5個抽選しT歩発展、死画面と同型を弾き既知12鉱脈と肌で照合' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

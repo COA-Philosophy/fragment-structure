@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>探索窯 v0.2.1 ── 法窯</title>
+<style>
+:root{
+  --sumi:#191511; --sumi2:#211b15; --kinu:#e9e0cf; --kinu-sub:#9c9077;
+  --oki:#dfa14e; --haisei:#8fa99e; --kegaki:#37302a; --shi:#7a4a3a; --mut:#c98add;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--sumi);color:var(--kinu);
+  font-family:"Hiragino Kaku Gothic ProN","Yu Gothic Medium","Noto Sans JP",sans-serif;
+  font-size:14px;line-height:1.6}
+::selection{background:var(--oki);color:var(--sumi)}
+header{display:flex;align-items:stretch;border-bottom:1px solid var(--kegaki);
+  position:sticky;top:0;background:color-mix(in srgb,var(--sumi) 92%,transparent);
+  backdrop-filter:blur(6px);z-index:20}
+.kamajirushi{display:flex;align-items:center;gap:14px;padding:14px 20px;
+  border-right:1px solid var(--kegaki)}
+.kamajirushi h1{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;
+  font-weight:600;font-size:22px;letter-spacing:.42em;text-indent:.42em;white-space:nowrap}
+.kamajirushi .han{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-size:10px;
+  color:var(--sumi);background:var(--oki);border-radius:2px;padding:2px 5px;
+  letter-spacing:.15em;writing-mode:vertical-rl}
+.ctrl{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 18px;flex:1}
+.ctrl label{color:var(--kinu-sub);font-size:12px;letter-spacing:.08em}
+input[type=number],textarea{background:var(--sumi2);color:var(--kinu);
+  border:1px solid var(--kegaki);border-radius:3px;padding:6px 9px;
+  font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:13px}
+input[type=number]{width:110px}
+input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--oki);outline-offset:1px}
+button{background:transparent;color:var(--kinu);border:1px solid var(--kegaki);
+  border-radius:3px;padding:7px 14px;font-size:13px;letter-spacing:.06em;cursor:pointer;
+  transition:border-color .15s,color .15s,background .15s}
+button:hover{border-color:var(--oki);color:var(--oki)}
+button.first{background:var(--oki);border-color:var(--oki);color:var(--sumi);font-weight:600}
+button.first:hover{background:#eab264}
+button:disabled{opacity:.35;cursor:default;pointer-events:none}
+.daicho{display:flex;flex-wrap:wrap;gap:6px 22px;align-items:baseline;
+  padding:9px 20px;border-bottom:1px solid var(--kegaki);
+  font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:12px;
+  color:var(--kinu-sub);letter-spacing:.04em}
+.daicho b{color:var(--kinu);font-weight:600}
+.daicho .shi{color:var(--shi)}
+.daicho .live{color:var(--oki)}
+main{padding:18px 20px 60px;max-width:1560px;margin:0 auto}
+.kabe{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:16px}
+.hyohon{background:var(--sumi2);border:1px solid var(--kegaki);border-radius:4px;
+  overflow:hidden;display:flex;flex-direction:column;opacity:0;transform:translateY(4px);
+  animation:mount .45s ease forwards}
+@keyframes mount{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.hyohon{animation:none;opacity:1;transform:none}}
+.hyohon canvas{width:100%;aspect-ratio:1/1;display:block;background:#111;cursor:zoom-in}
+.rec{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:10.5px;
+  line-height:1.55;color:var(--kinu-sub);padding:7px 9px 4px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  min-height:39px}
+.rec .mut{color:var(--mut)}
+.kizoku{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;
+  padding:0 9px 2px;color:var(--kinu-sub)}
+.kizoku.shin{color:var(--haisei);font-weight:600}
+.tags{display:flex;gap:5px;padding:6px 8px 9px;flex-wrap:wrap}
+.tags button{padding:3px 8px;font-size:11px;border-radius:999px;letter-spacing:.05em;
+  color:var(--kinu-sub)}
+.tags button.on{background:var(--haisei);border-color:var(--haisei);color:var(--sumi);font-weight:600}
+.tags button.hoshi.on{background:var(--oki);border-color:var(--oki)}
+.tags .genn{margin-left:auto;border:none;color:var(--kinu-sub);text-decoration:underline;
+  text-underline-offset:3px;padding:3px 2px}
+.tags .genn:hover{color:var(--oki)}
+.kugiri{grid-column:1/-1;border-top:1px dashed var(--kegaki);
+  padding:16px 2px 0;color:var(--kinu-sub);
+  font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:12px;
+  letter-spacing:.05em;line-height:1.7}
+.kugiri b{color:var(--oki);font-weight:600}
+.shibox{aspect-ratio:1/1;display:flex;flex-direction:column;gap:6px;
+  align-items:center;justify-content:center;color:var(--shi);
+  font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+  letter-spacing:.3em;background:#141110;font-size:15px}
+.shibox small{font-size:10px;letter-spacing:.15em;color:#5c4438}
+.karappo{grid-column:1/-1;text-align:center;color:var(--kinu-sub);padding:90px 20px;
+  font-family:"Hiragino Mincho ProN","Yu Mincho",serif;letter-spacing:.2em}
+.karappo .dai{font-size:17px;margin-bottom:10px}
+dialog{background:var(--sumi2);color:var(--kinu);border:1px solid var(--kegaki);
+  border-radius:6px;padding:0;max-width:min(96vw,1000px);width:auto}
+dialog::backdrop{background:rgba(10,8,6,.78)}
+.kamaguchi{display:flex;gap:18px;padding:18px;flex-wrap:wrap}
+.kamaguchi .zu{flex:1 1 480px;min-width:300px}
+.kamaguchi canvas{width:100%;aspect-ratio:1/1;background:#111;border:1px solid var(--kegaki);border-radius:3px}
+.kamaguchi .fu{flex:1 1 320px;min-width:280px;display:flex;flex-direction:column;gap:10px}
+.kamaguchi h2{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-weight:600;
+  font-size:15px;letter-spacing:.25em}
+.kamaguchi .recfull{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;
+  color:var(--kinu-sub);line-height:1.7}
+.kamaguchi textarea{width:100%;height:210px;resize:vertical;font-size:11px;line-height:1.5}
+.kamaguchi .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
+.notice{font-size:11.5px;color:var(--kinu-sub)}
+.notice.err{color:#c96a4e}
+footer{border-top:1px solid var(--kegaki);color:var(--kinu-sub);font-size:11px;
+  padding:10px 20px;letter-spacing:.06em;display:flex;gap:18px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header>
+  <div class="kamajirushi">
+    <span class="han">法の抽選</span>
+    <h1>探索窯</h1>
+  </div>
+  <div class="ctrl">
+    <label for="tane">窯印（種）</label>
+    <input id="tane" type="number" value="1" min="0" step="1">
+    <label style="display:flex;align-items:center;gap:5px;cursor:pointer">
+      <input id="kingozoku" type="checkbox" checked style="accent-color:var(--oki)">慣性語族</label>
+    <label style="display:flex;align-items:center;gap:5px;cursor:pointer">
+      <input id="kinnoudo" type="checkbox" style="accent-color:var(--oki)">余韻必須</label>
+    <button id="yaku" class="first">焼成 ─ 24枚</button>
+    <button id="tomeru" disabled>中止</button>
+    <span style="flex:1"></span>
+    <button id="saigen">配合を再現</button>
+    <button id="kakidashi">選別を書き出す</button>
+  </div>
+</header>
+<div class="daicho" id="daicho">
+  <span>第 <b id="d_kama">—</b> 窯</span>
+  <span>生存 <b class="live" id="d_alive">0</b> / 24</span>
+  <span class="shi">死画面 <b id="d_dead">0</b>（変異<b id="d_mu">0</b>・極端<b id="d_ex">0</b>・通常<b id="d_no">0</b>）</span>
+  <span>同型弾き <b id="d_dup">0</b></span>
+  <span>新族 <b id="d_shin" class="live">0</b></span>
+  <span id="d_state">未焼成</span>
+</div>
+<main>
+  <div class="kabe" id="kabe">
+    <div class="karappo" id="karappo">
+      <div class="dai">窯 は 冷 え て い る</div>
+      <div>白紙の場に、抽選された法だけが二十四の世界を焼き上げます。</div>
+    </div>
+  </div>
+</main>
+<footer>
+  <span>探索窯 v0.2.1「法窯」── 語族+慣性／過程再生（宣言格子ライブ刷り・WebM録画）</span>
+  <span>既知12鉱脈台帳を同梱（新族=どの鉱脈からも遠い個体）</span>
+  <span>場256固定・配合JSONで完全再現（v0.1配合も再現可）／✷=変異帯</span>
+</footer>
+
+<dialog id="dlg">
+  <div class="kamaguchi">
+    <div class="zu"><canvas id="bigc" width="768" height="768"></canvas></div>
+    <div class="fu">
+      <h2 id="dlg_t">原寸</h2>
+      <div class="recfull" id="dlg_rec"></div>
+      <textarea id="dlg_json" spellcheck="false" placeholder="配合JSONをここに貼り付け"></textarea>
+      <div class="notice" id="dlg_note"></div>
+      <div class="btns">
+        <button id="dlg_copy">JSONを写す</button>
+        <button id="dlg_fire" class="first">この配合で焼成</button>
+        <button id="dlg_hen">この法で変奏 ─ 12枚</button>
+        <button id="dlg_kai">解剖 ─ 単項除去</button>
+        <button id="dlg_suri">宣言格子で刷る 1024</button>
+        <button id="dlg_katei">過程を刷る</button>
+        <select id="dlg_res" style="background:var(--sumi2);color:var(--kinu);border:1px solid var(--kegaki);border-radius:3px;padding:6px">
+          <option value="512" selected>512</option><option value="1024">1024</option></select>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--kinu-sub);cursor:pointer">
+          <input id="dlg_rec_webm" type="checkbox" style="accent-color:var(--oki)">WebM録画</label>
+        <button id="dlg_pause" style="display:none">一時停止</button>
+        <button id="dlg_png" style="display:none">刷りPNGを保存</button>
+        <button id="dlg_close">閉じる</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+<!--ENGINE_START-->
+<script id="engine">
+/* ============================================================
+   探索窯 v0.1「法窯」── 機関部（DOM非依存）
+   生成源なし。場A/B・向き場θ・履歴M を、抽選された
+   相互作用項（名前のない世界律の素片）が T歩 発展させる。
+   配合JSON {v:"tansaku-hou-v0.1",...} で完全再現。
+   ============================================================ */
+"use strict";
+var SIM=(typeof globalThis!=="undefined"&&typeof globalThis.SIM_OVERRIDE==="number")?globalThis.SIM_OVERRIDE:256;
+var N2=SIM*SIM;
+/* トーラス添字 */
+var XM=new Int32Array(SIM),XP=new Int32Array(SIM);
+for(var _i=0;_i<SIM;_i++){XM[_i]=(_i-1+SIM)%SIM;XP[_i]=(_i+1)%SIM}
+
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function h2(ix,iy,s){var n=(ix*374761393+iy*668265263+s*974711|0);n=Math.imul(n^(n>>>13),1274126177);n^=n>>>16;return(n>>>0)/4294967296}
+function newS(){return new Float32Array(N2)}
+function copyS(S){return new Float32Array(S)}
+function clampi(v,a,b){return v<a?a:(v>b?b:v)}
+function sampleW(S,x,y){ /* トーラス双一次 */
+  x=x-Math.floor(x/SIM)*SIM;y=y-Math.floor(y/SIM)*SIM;
+  var ix=x|0,iy=y|0,fx=x-ix,fy=y-iy;
+  var ix2=XP[ix],iy2=XP[iy];
+  var a=S[iy*SIM+ix],b=S[iy*SIM+ix2],c=S[iy2*SIM+ix],d=S[iy2*SIM+ix2];
+  return a+(b-a)*fx+(c-a)*fy+(a-b-c+d)*fx*fy}
+function blurBox(S,r,passes){if(r<1)return;r|=0;passes=passes||1;
+  var tmp=newS(),w=2*r+1;
+  for(var p=0;p<passes;p++){
+    for(var y=0;y<SIM;y++){var row=y*SIM,acc=0,x;
+      for(x=-r;x<=r;x++)acc+=S[row+((x+SIM)%SIM)];
+      for(x=0;x<SIM;x++){tmp[row+x]=acc/w;
+        acc+=S[row+((x+r+1)%SIM)]-S[row+((x-r+SIM)%SIM)]}}
+    for(var x2=0;x2<SIM;x2++){var acc2=0,y2;
+      for(y2=-r;y2<=r;y2++)acc2+=tmp[((y2+SIM)%SIM)*SIM+x2];
+      for(y2=0;y2<SIM;y2++){S[y2*SIM+x2]=acc2/w;
+        acc2+=tmp[((y2+r+1)%SIM)*SIM+x2]-tmp[((y2-r+SIM)%SIM)*SIM+x2]}}}}
+function sanitize(S){for(var i=0;i<S.length;i++){var v=S[i];if(!isFinite(v))S[i]=0}}
+function normSoft(S){sanitize(S);
+  var samp=[],step=Math.max(1,(N2/4096)|0);
+  for(var i=0;i<N2;i+=step)samp.push(S[i]);
+  samp.sort(function(a,b){return a-b});
+  var lo=samp[(samp.length*0.01)|0],hi=samp[(samp.length*0.99)|0];
+  if(hi-lo<1e-9){for(var j=0;j<N2;j++)S[j]=0;return}
+  var k=1/(hi-lo);
+  for(var j2=0;j2<N2;j2++){var v=(S[j2]-lo)*k;S[j2]=v<0?0:(v>1?1:v)}}
+function stdSample(S){var n=0,m=0,m2=0;
+  for(var i=0;i<N2;i+=13){n++;var v=S[i];if(!isFinite(v))return NaN;
+    var d=v-m;m+=d/n;m2+=d*(v-m)}
+  return Math.sqrt(m2/Math.max(1,n-1))}
+
+/* ---------- 帯（normal70/extreme20/mutation10）---------- */
+function drawParam(spec,rng){var band="normal",r=rng();
+  if(r>=0.90&&spec.mu)band="mutation";else if(r>=0.70&&spec.ex)band="extreme";
+  var v;function pick(list){var e=list[(rng()*list.length)|0];
+    return Array.isArray(e)?e[0]+rng()*(e[1]-e[0]):e}
+  if(spec.choices){v=band==="normal"?spec.choices[(rng()*spec.choices.length)|0]
+    :pick(band==="mutation"?spec.mu:spec.ex)}
+  else{if(band==="normal")v=spec.min+rng()*(spec.max-spec.min);
+    else v=pick(band==="mutation"?spec.mu:spec.ex)}
+  if(spec.int)v=Math.round(v);
+  return{v:v,band:band}}
+function resolveP(specs,rng){var p={};for(var k in specs)p[k]=drawParam(specs[k],rng);return p}
+function P_(p,k){return p[k].v}
+
+/* ---------- 色 ---------- */
+var PALS=[
+ {jp:"墨",st:[[0,236,229,214],[0.45,164,154,136],[0.78,74,68,58],[1,26,22,18]]},
+ {jp:"錆",st:[[0,239,230,212],[0.35,207,169,106],[0.62,154,91,50],[0.85,74,46,31],[1,32,21,16]]},
+ {jp:"藍",st:[[0,238,232,218],[0.35,159,176,184],[0.62,67,97,122],[0.85,29,44,64],[1,15,18,28]]},
+ {jp:"骨",st:[[0,242,237,226],[0.4,201,194,178],[0.68,111,106,95],[0.88,51,48,42],[1,20,18,15]]},
+ {jp:"苔",st:[[0,235,228,210],[0.35,183,179,137],[0.62,109,122,88],[0.85,60,74,62],[1,25,34,29]]},
+ {jp:"鈍",st:[[0,233,234,230],[0.35,166,175,178],[0.62,96,108,116],[0.85,52,60,68],[1,22,25,30]]},
+ {jp:"朽葉",st:[[0,240,233,216],[0.32,214,181,128],[0.58,168,116,66],[0.82,102,66,44],[1,40,27,20]]}];
+function palAt(pi,t){var st=PALS[pi].st;
+  if(t<=st[0][0])return st[0];if(t>=st[st.length-1][0])return st[st.length-1];
+  for(var i=0;i<st.length-1;i++){var a=st[i],b=st[i+1];
+    if(t<=b[0]){var u=(t-a[0])/(b[0]-a[0]);
+      return[0,a[1]+(b[1]-a[1])*u,a[2]+(b[2]-a[2])*u,a[3]+(b[3]-a[3])*u]}}
+  return st[st.length-1]}
+
+/* ============================================================
+   相互作用項の棚 ── 名前のない動詞の素片
+   各項: dst(A/B), src(A/B), sign, gain, 領域変調(reg)
+   struct=1 は構造項（毎法≥1保証）, mark=1 は履歴Mに時刻を刻む
+   theta=1 はθを使う, sup=1 は支援項
+   ============================================================ */
+var TERMS={};
+
+TERMS["anisosmooth"]={jp:"異方均し",struct:1,theta:1,
+ params:{g:{min:0.12,max:0.5,mu:[1.4]},d:{min:1,max:3,ex:[[4,6]],mu:[9]}},
+ run:function(c,tm,gl,t){var dst=c[tm.dst],d=P_(tm.p,"d");
+  var out=c.tmp;out.set(dst);
+  for(var y=0;y<SIM;y++)for(var x=0;x<SIM;x++){var i=y*SIM+x;
+    var th=c.TH[i],cs=Math.cos(th)*d,sn=Math.sin(th)*d;
+    var v=(sampleW(dst,x+cs,y+sn)+sampleW(dst,x-cs,y-sn))*0.5;
+    out[i]+=gl[i]*(v-dst[i])}
+  dst.set(out)}};
+
+TERMS["asymtrans"]={jp:"非対称輸送",struct:1,mark:1,cross:1,
+ params:{g:{min:0.06,max:0.22,mu:[0.55]},up:{choices:[0,1]}},
+ run:function(c,tm,gl,t){var dst=c[tm.dst],src=c[tm.src],up=P_(tm.p,"up");
+  var D=c.tmp;D.fill(0);var mob=c.H,hasH=c.hasHard;
+  for(var y=0;y<SIM;y++){var ym=XM[y]*SIM,yp=XP[y]*SIM,y0=y*SIM;
+   for(var x=0;x<SIM;x++){var i=y0+x;
+    var n0=y0+XM[x],n1=y0+XP[x],n2=ym+x,n3=yp+x;
+    var best=n0,bv=src[n0];
+    if(up){if(src[n1]>bv){bv=src[n1];best=n1}
+      if(src[n2]>bv){bv=src[n2];best=n2}
+      if(src[n3]>bv){bv=src[n3];best=n3}}
+    else{if(src[n1]<bv){bv=src[n1];best=n1}
+      if(src[n2]<bv){bv=src[n2];best=n2}
+      if(src[n3]<bv){bv=src[n3];best=n3}}
+    var amt=gl[i]*dst[i];
+    if(hasH)amt/=(1+8*mob[i]);
+    if(amt!==0){D[i]-=amt;D[best]+=amt;
+      if(amt>0.004||amt<-0.004)c.M[best]=t}}}
+  for(var j=0;j<N2;j++)dst[j]+=D[j]}};
+
+TERMS["nadare"]={jp:"雪崩",struct:1,mark:1,
+ params:{g:{min:0.3,max:0.8},tau:{min:0.02,max:0.12,mu:[0.004]},
+         ani:{min:0,max:1}},
+ run:function(c,tm,gl,t){var dst=c[tm.dst],tau=P_(tm.p,"tau"),ani=P_(tm.p,"ani");
+  var mob=c.H,hasH=c.hasHard;
+  for(var y=0;y<SIM;y++){var ym=XM[y]*SIM,yp=XP[y]*SIM,y0=y*SIM;
+   for(var x=0;x<SIM;x++){var i=y0+x;
+    var n0=y0+XM[x],n1=y0+XP[x],n2=ym+x,n3=yp+x;
+    var mean=(dst[n0]+dst[n1]+dst[n2]+dst[n3])*0.25;
+    var ex=dst[i]-mean-tau;
+    if(ex>0){var q=ex*gl[i];
+      if(hasH)q/=(1+8*mob[i]);
+      var th=c.TH[i],wx=Math.cos(th)*ani,wy=Math.sin(th)*ani;
+      var w0=1-wx,w1=1+wx,w2=1-wy,w3=1+wy,ws=w0+w1+w2+w3;
+      dst[i]-=q;
+      dst[n0]+=q*w0/ws;dst[n1]+=q*w1/ws;
+      dst[n2]+=q*w2/ws;dst[n3]+=q*w3/ws;
+      c.M[i]=t}}}}};
+
+TERMS["tenka"]={jp:"転化",cross:1,
+ params:{g:{min:0.02,max:0.14,mu:[0.5]},
+         ea:{choices:[0,1,2]},eb:{choices:[1,2]}},
+ run:function(c,tm,gl,t){var dst=c[tm.dst],src=c[tm.src],
+   ea=P_(tm.p,"ea"),eb=P_(tm.p,"eb");
+  for(var i=0;i<N2;i++){var s=src[i],dv=dst[i];
+    var sa=ea===0?1:(ea===1?s:s*s);
+    var db=eb===1?dv:dv*dv;
+    dst[i]+=gl[i]*sa*db*(1-dv)}}};
+
+TERMS["entatsu"]={jp:"遠達",struct:1,cross:1,
+ params:{g:{min:0.05,max:0.3,mu:[0.9]},r:{min:5,max:22,int:1,ex:[[30,48]]}},
+ run:function(c,tm,gl,t){var dst=c[tm.dst],src=c[tm.src],r=P_(tm.p,"r");
+  var B=c.tmp;B.set(src);blurBox(B,r,1);
+  for(var i=0;i<N2;i++)dst[i]+=gl[i]*(dst[i]-B[i])*0.5}};
+
+TERMS["hadan"]={jp:"破断変位",struct:1,mark:1,theta:1,
+ params:{g:{min:0.2,max:0.7},tau:{min:1.2,max:2.6,mu:[0.5]},
+         d:{min:2,max:9,int:1,ex:[[14,26]],mu:[[40,64]]},
+         keep:{min:0.6,max:1.0}},
+ run:function(c,tm,gl,t){var dst=c[tm.dst],tauK=P_(tm.p,"tau"),
+   d=P_(tm.p,"d"),keep=P_(tm.p,"keep");
+  var sd=stdSample(dst);if(!isFinite(sd)||sd<1e-7)return;
+  var tau=tauK*sd;
+  var D=c.tmp;D.fill(0);
+  for(var y=0;y<SIM;y++){var y0=y*SIM,ym=XM[y]*SIM,yp=XP[y]*SIM;
+   for(var x=0;x<SIM;x++){var i=y0+x;
+    var gx=(dst[y0+XP[x]]-dst[y0+XM[x]])*0.5,
+        gy=(dst[yp+x]-dst[ym+x])*0.5;
+    if(gx*gx+gy*gy>tau*tau){
+      var q=dst[i]*gl[i];
+      var th=c.TH[i];
+      var tx=(x+Math.round(Math.cos(th)*d)+SIM)%SIM,
+          ty=(y+Math.round(Math.sin(th)*d)+SIM)%SIM;
+      D[i]-=q;D[ty*SIM+tx]+=q*keep;
+      c.M[i]=t;c.M[ty*SIM+tx]=t}}}
+  for(var j=0;j<N2;j++)dst[j]+=D[j]}};
+
+TERMS["mukikanwa"]={jp:"向緩",sup:1,thetaOut:1,cross:1,
+ params:{g:{min:0.08,max:0.35},phi:{choices:[0,1]},
+         noise:{min:0,max:0.25,mu:[1.1]}},
+ run:function(c,tm,gl,t){var src=c[tm.src],phi=P_(tm.p,"phi")*Math.PI/2,
+   no=P_(tm.p,"noise");
+  for(var y=0;y<SIM;y++){var y0=y*SIM,ym=XM[y]*SIM,yp=XP[y]*SIM;
+   for(var x=0;x<SIM;x++){var i=y0+x;
+    var gx=(src[y0+XP[x]]-src[y0+XM[x]])*0.5,
+        gy=(src[yp+x]-src[ym+x])*0.5;
+    if(gx*gx+gy*gy>1e-10){
+      var targ=Math.atan2(gy,gx)+phi;
+      var dd=targ-c.TH[i];
+      while(dd>Math.PI)dd-=6.2832;while(dd<-Math.PI)dd+=6.2832;
+      c.TH[i]+=gl[i]*dd}
+    if(no>0)c.TH[i]+=(h2(x,y,c.nseed+t)-0.5)*no}}}};
+
+TERMS["kouka"]={jp:"硬化",sup:1,
+ params:{g:{min:0.2,max:1.2}},
+ run:function(c,tm,gl,t){var dst=c[tm.dst];c.hasHard=true;
+  for(var y=0;y<SIM;y++){var y0=y*SIM,ym=XM[y]*SIM,yp=XP[y]*SIM;
+   for(var x=0;x<SIM;x++){var i=y0+x;
+    var mean=(dst[y0+XM[x]]+dst[y0+XP[x]]+dst[ym+x]+dst[yp+x])*0.25;
+    var a=dst[i]-mean;if(a<0)a=-a;
+    c.H[i]+=gl[i]*a}}}};
+
+TERMS["tenso"]={jp:"瞬間転送",struct:1,mark:1,cross:1,once:1,
+ params:{pev:{min:0.1,max:0.5},n:{min:60,max:400,int:1,mu:[[900,1600]]},
+         f:{min:0.3,max:0.9},
+         map:{choices:[0,1,2]}},
+ run:function(c,tm,gl,t){if(c.rng()>=P_(tm.p,"pev"))return;
+  var dst=c[tm.dst],src=c[tm.src],n=P_(tm.p,"n"),f=P_(tm.p,"f"),
+    map=P_(tm.p,"map");
+  var dx=c.tvx,dy=c.tvy;
+  for(var k=0;k<n;k++){
+    var x=-1,y=-1,tries=24;
+    while(tries-->0){var xx=(c.rng()*SIM)|0,yy=(c.rng()*SIM)|0;
+      if(c.rng()<Math.abs(src[yy*SIM+xx])){x=xx;y=yy;break}}
+    if(x<0){x=(c.rng()*SIM)|0;y=(c.rng()*SIM)|0}
+    var tx,ty;
+    if(map===0){tx=SIM-1-x;ty=SIM-1-y}
+    else if(map===1){tx=SIM-1-x;ty=y}
+    else{tx=(x+dx)%SIM;ty=(y+dy)%SIM}
+    var i=y*SIM+x,j=ty*SIM+tx,q=dst[i]*f;
+    dst[i]-=q;dst[j]+=q;c.M[j]=t}}};
+
+TERMS["taiiki"]={jp:"大域応答",cross:1,
+ params:{g:{min:0.02,max:0.12,mu:[0.4]},targ:{min:0.25,max:0.75}},
+ run:function(c,tm,gl,t){var dst=c[tm.dst],src=c[tm.src],targ=P_(tm.p,"targ");
+  var m=0,n=0;for(var i=0;i<N2;i+=17){m+=src[i];n++}m/=n;
+  var e=targ-m;
+  for(var j=0;j<N2;j++)dst[j]+=gl[j]*e*(0.3+dst[j])}};
+
+TERMS["junikokan"]={jp:"順位交換",struct:1,mark:1,theta:1,
+ params:{g:{min:0.15,max:0.55,mu:[1.0]}},
+ run:function(c,tm,gl,t){var dst=c[tm.dst];
+  var mob=c.H,hasH=c.hasHard;
+  for(var y=0;y<SIM;y++){var y0=y*SIM;
+   for(var x=0;x<SIM;x++){var i=y0+x;
+    var th=c.TH[i];
+    var ox=Math.round(Math.cos(th)),oy=Math.round(Math.sin(th));
+    if(ox===0&&oy===0)ox=1;
+    var j=((y+oy+SIM)%SIM)*SIM+((x+ox+SIM)%SIM);
+    var dif=dst[i]-dst[j];
+    if(dif>0){var q=dif*gl[i]*0.5;
+      if(hasH)q/=(1+8*mob[i]);
+      dst[i]-=q;dst[j]+=q;
+      if(q>0.004)c.M[j]=t}}}}};
+
+TERMS["zahyoori"]={jp:"座標折り",struct:1,once:1,
+ params:{g:{min:0.04,max:0.2,mu:[0.6]},
+         map:{choices:[0,1,2]}},
+ run:function(c,tm,gl,t,aux){var dst=c[tm.dst];
+  var map=aux,out=c.tmp;out.set(dst);
+  for(var i=0;i<N2;i++)out[i]+=gl[i]*(dst[map[i]]-dst[i]);
+  dst.set(out)}};
+
+TERMS["yoin"]={jp:"余韻",
+ params:{g:{min:0.15,max:0.75,ex:[[0.85,0.97]],mu:[[1.02,1.10]]}},
+ run:function(c,tm,gl,t){var dst=c[tm.dst];
+  var prev=(tm.dst==="A")?c.Ap:c.Bp;
+  if(!prev)return;
+  for(var i=0;i<N2;i++)dst[i]+=gl[i]*(dst[i]-prev[i])}};
+
+TERMS["oto"]={jp:"応答面",cross:1,
+ params:{g:{min:0.03,max:0.16,mu:[0.5]},
+         a:{min:2,max:9},b:{min:2,max:9},ph:{min:0,max:6.28}},
+ run:function(c,tm,gl,t){var dst=c[tm.dst],src=c[tm.src],
+   a=P_(tm.p,"a"),b=P_(tm.p,"b"),ph=P_(tm.p,"ph");
+  for(var y=0;y<SIM;y++){var y0=y*SIM,ym=XM[y]*SIM,yp=XP[y]*SIM;
+   for(var x=0;x<SIM;x++){var i=y0+x;
+    var mean=(src[y0+XM[x]]+src[y0+XP[x]]+src[ym+x]+src[yp+x])*0.25;
+    dst[i]+=gl[i]*Math.sin(a*dst[i]+b*mean+ph)}}}};
+</script>
+<script id="engine2">
+"use strict";
+/* ============================================================
+   法の抽選・時間発展・読み出し・指紋
+   ============================================================ */
+var TERMKEYS=["anisosmooth","asymtrans","nadare","tenka","entatsu","hadan",
+              "mukikanwa","kouka","tenso","taiiki","junikokan","zahyoori","oto","yoin"];
+var TERMW={anisosmooth:1.0,asymtrans:1.1,nadare:0.55,tenka:1.0,entatsu:0.9,
+  hadan:1.0,mukikanwa:0.0,kouka:0.5,tenso:0.6,taiiki:0.6,junikokan:0.9,
+  zahyoori:0.7,oto:0.85,yoin:1.1}; /* v0.2改定: 雪崩½・余韻追加 */
+var STRUCTS=TERMKEYS.filter(function(k){return TERMS[k].struct});
+
+function pickW(list,rng){var tot=0,i;for(i=0;i<list.length;i++)tot+=list[i][1];
+  var r=rng()*tot;
+  for(i=0;i<list.length;i++){r-=list[i][1];if(r<=0)return list[i][0]}
+  return list[list.length-1][0]}
+
+function sampleInit(rng){
+  var r0=rng(),m=r0<0.40?"mu":(r0<0.70?"ten":(r0<0.85?"sen":"han"));
+  var o={m:m};
+  if(m==="mu"){o.amp=0.01+rng()*0.06;o.base=0.2+rng()*0.6}
+  else if(m==="ten"){o.k=2+((rng()*8)|0);o.v=rng()<0.5?1:0;o.base=0.2+rng()*0.6}
+  else if(m==="sen"){o.hv=rng()<0.5?0:1;o.pos=0.25+rng()*0.5;o.base=0.2+rng()*0.6}
+  else{o.hv=rng()<0.5?0:1;o.pos=0.3+rng()*0.4;o.lo=0.15+rng()*0.2;o.hi=0.65+rng()*0.2}
+  return o}
+function buildInit(o,rng){var S=newS();
+  var i,x,y;
+  if(o.m==="mu"){for(i=0;i<N2;i++)S[i]=o.base+(rng()-0.5)*o.amp}
+  else if(o.m==="ten"){for(i=0;i<N2;i++)S[i]=o.base+(rng()-0.5)*0.01;
+    for(var k=0;k<o.k;k++){x=(rng()*SIM)|0;y=(rng()*SIM)|0;
+      S[y*SIM+x]=o.v;S[y*SIM+XP[x]]=o.v;S[XP[y]*SIM+x]=o.v}}
+  else if(o.m==="sen"){for(i=0;i<N2;i++)S[i]=o.base+(rng()-0.5)*0.01;
+    var p=(o.pos*SIM)|0;
+    for(i=0;i<SIM;i++){if(o.hv===0)S[p*SIM+i]=1-o.base;else S[i*SIM+p]=1-o.base}}
+  else{var p2=(o.pos*SIM)|0;
+    for(y=0;y<SIM;y++)for(x=0;x<SIM;x++){
+      var side=(o.hv===0?y:x)<p2;
+      S[y*SIM+x]=(side?o.lo:o.hi)+(rng()-0.5)*0.01}}
+  return S}
+
+function sampleThInit(rng){
+  return{c:rng()*6.2832,amp:rng()*0.8,mode:rng()<0.45?1:0,blr:8+((rng()*26)|0)}}
+function sampleLaw(seed){
+  var rng=mulberry32(seed);
+  var recipe={v:"tansaku-hou-v0.2",sim:SIM,seed:seed,
+    initA:sampleInit(rng),initB:sampleInit(rng),
+    thInit:sampleThInit(rng),
+    reg:{blr:14+((rng()*30)|0),pow:0.7+rng()*1.6},
+    T:drawParam({min:60,max:240,int:1,ex:[[300,420]],mu:[[550,700]]},rng),
+    visc:drawParam({min:0.03,max:0.13,ex:[[0.18,0.3]],mu:[0,[0.4,0.55]]},rng),
+    terms:[],ro:null};
+  var n=2+((rng()*4)|0); /* 2..5 */
+  var used={},thUser=false;
+  for(var k=0;k<n;k++){
+    var cand=[];
+    for(var i=0;i<TERMKEYS.length;i++){var key=TERMKEYS[i];
+      if(TERMS[key].once&&used[key])continue;
+      if(key==="mukikanwa")continue;
+      if(key==="yoin"&&(typeof globalThis!=="undefined"&&globalThis.KIN_INERTIA===false))continue;
+      cand.push([key,TERMW[key]])}
+    var op=pickW(cand,rng);used[op]=1;
+    recipe.terms.push(makeTerm(op,rng));
+    if(TERMS[op].theta)thUser=true}
+  var hasStruct=recipe.terms.some(function(t){return TERMS[t.op].struct});
+  if(!hasStruct){var so=STRUCTS[(rng()*STRUCTS.length)|0];
+    recipe.terms[recipe.terms.length-1]=makeTerm(so,rng);
+    if(TERMS[so].theta)thUser=true}
+  if(thUser&&rng()<0.6){
+    var pos=(rng()*(recipe.terms.length+1))|0;
+    recipe.terms.splice(pos,0,makeTerm("mukikanwa",rng))}
+  if(typeof globalThis!=="undefined"&&globalThis.KIN_DENSE===true&&globalThis.KIN_INERTIA!==false){
+    var hasY0=recipe.terms.some(function(t){return t.op==="yoin"});
+    if(!hasY0){
+      if(recipe.terms.length<5)recipe.terms.push(makeTerm("yoin",rng));
+      else{var ri=recipe.terms.length-1; /* 構造項は温存 */
+        while(ri>0&&TERMS[recipe.terms[ri].op].struct&&
+              recipe.terms.filter(function(t){return TERMS[t.op].struct}).length<=1)ri--;
+        recipe.terms[ri]=makeTerm("yoin",rng)}}}
+  var hasY=recipe.terms.some(function(t){return t.op==="yoin"});
+  var roc=hasY
+    ?[["jikoku",0.55],["awase",0.22],["kyokai",0.15]]
+    :[["jikoku",0.30],["awase",0.30],["kyokai",0.22]];
+  if(thUser)roc.push(["suji",hasY?0.08:0.18]);
+  recipe.ro=makeRO(pickW(roc,rng),rng);
+  return recipe}
+function makeTerm(op,rng){var def=TERMS[op];
+  var tm={op:op,dst:rng()<0.5?"A":"B",sign:rng()<0.60?1:-1, /* v0.2: 負符号40% */
+    p:resolveP(def.params,rng),
+    reg:{amt:drawParam({min:0,max:0.85,mu:[1]},rng),pol:rng()<0.5?0:1}};
+  if(def.cross)tm.src=(tm.dst==="A")?"B":"A";else tm.src=tm.dst;
+  if(op==="mukikanwa"){tm.dst="TH";tm.src=rng()<0.5?"A":"B";tm.sign=1}
+  if(op==="kouka"){tm.sign=1}
+  if(op==="tenso"){tm.p._dx={v:20+((rng()*100)|0),band:"normal"};
+    tm.p._dy={v:20+((rng()*100)|0),band:"normal"}}
+  return tm}
+
+/* ---------- 変奏（法は固定・初期条件と種を引き直す）---------- */
+function makeVariation(base,vseed){
+  var r=mulberry32((vseed^0x2c1b3c6d)|0);
+  return{v:base.v,sim:base.sim,seed:vseed,
+    initA:sampleInit(r),initB:sampleInit(r),thInit:sampleThInit(r),
+    reg:{blr:base.reg.blr,pow:base.reg.pow},
+    T:JSON.parse(JSON.stringify(base.T)),
+    visc:base.visc?JSON.parse(JSON.stringify(base.visc)):undefined,
+    terms:JSON.parse(JSON.stringify(base.terms)),
+    ro:JSON.parse(JSON.stringify(base.ro))}}
+
+/* ---------- 読み出し ---------- */
+var ROS={};
+ROS["jikoku"]={jp:"時刻染め",
+ params:{pal:{choices:[0,1,2,3,4,5,6]},dim:{min:0.25,max:0.6},
+         lum:{min:0.3,max:0.7}},
+ f:function(c,p){var pi=P_(p,"pal"),dim=P_(p,"dim"),lu=P_(p,"lum");
+  var img=new Uint8ClampedArray(N2*4),T=c.Ttotal;
+  for(var i=0;i<N2;i++){var o=i*4,a=c.An[i];
+    var col;
+    if(c.M[i]>=0){var age=0.12+0.82*(c.M[i]/T);
+      col=palAt(pi,age);
+      var l=0.55+lu*(a-0.5);
+      img[o]=col[1]*l;img[o+1]=col[2]*l;img[o+2]=col[3]*l}
+    else{col=palAt(pi,0.04+a*dim);
+      img[o]=col[1];img[o+1]=col[2];img[o+2]=col[3]}
+    img[o+3]=255}
+  return img}};
+ROS["awase"]={jp:"二場合せ",
+ params:{pal:{choices:[0,1,2,3,4,5,6]},sh:{min:0.4,max:1.0},
+         edge:{min:0.0,max:0.8}},
+ f:function(c,p){var pi=P_(p,"pal"),sh=P_(p,"sh"),ed=P_(p,"edge");
+  var img=new Uint8ClampedArray(N2*4),A=c.An,B=c.Bn;
+  var gth=0;
+  if(ed>0){var gs=[];
+    for(var s=0;s<N2;s+=29){var y=(s/SIM)|0,x=s%SIM;
+      var gx=A[y*SIM+XP[x]]-A[y*SIM+XM[x]],gy=A[XP[y]*SIM+x]-A[XM[y]*SIM+x];
+      gs.push(gx*gx+gy*gy)}
+    gs.sort(function(a,b){return a-b});
+    gth=gs[(gs.length*0.93)|0]}
+  for(var yy=0;yy<SIM;yy++){var y0=yy*SIM,ym=XM[yy]*SIM,yp=XP[yy]*SIM;
+   for(var xx=0;xx<SIM;xx++){var i=y0+xx,o=i*4;
+    var col=palAt(pi,A[i]);
+    var l=1+sh*(B[i]-0.5);l=l<0.2?0.2:(l>1.6?1.6:l);
+    var r=col[1]*l,g=col[2]*l,b=col[3]*l;
+    if(ed>0){var gx=A[y0+XP[xx]]-A[y0+XM[xx]],gy=A[yp+xx]-A[ym+xx];
+      if(gx*gx+gy*gy>gth){var ink=palAt(pi,0.97);
+        r=r*(1-ed)+ink[1]*ed;g=g*(1-ed)+ink[2]*ed;b=b*(1-ed)+ink[3]*ed}}
+    img[o]=r;img[o+1]=g;img[o+2]=b;img[o+3]=255}}
+  return img}};
+ROS["kyokai"]={jp:"等値境界",
+ params:{pal:{choices:[0,1,2,3,4,5,6]},k:{min:3,max:7,int:1,mu:[2,12]},
+         wob:{min:0,max:0.35}},
+ f:function(c,p){var pi=P_(p,"pal"),k=P_(p,"k"),wob=P_(p,"wob");
+  var img=new Uint8ClampedArray(N2*4),A=c.An,B=c.Bn;
+  var L=new Uint8Array(N2);
+  for(var i=0;i<N2;i++){var a=A[i]+(B[i]-0.5)*wob;
+    a=a<0?0:(a>0.999?0.999:a);L[i]=(a*k)|0}
+  for(var y=0;y<SIM;y++){var y0=y*SIM,yp=XP[y]*SIM;
+   for(var x=0;x<SIM;x++){var i2=y0+x,o=i2*4;
+    var col=palAt(pi,(L[i2]+0.5)/k);
+    var edge=(L[i2]!==L[y0+XP[x]])||(L[i2]!==L[yp+x]);
+    if(edge){var ink=palAt(pi,0.98);
+      img[o]=ink[1];img[o+1]=ink[2];img[o+2]=ink[3]}
+    else{img[o]=col[1];img[o+1]=col[2];img[o+2]=col[3]}
+    img[o+3]=255}}
+  return img}};
+ROS["suji"]={jp:"筋擦り",
+ params:{pal:{choices:[0,1,2,3,4,5,6]},ns:{min:1000,max:2400,int:1},
+         len:{min:8,max:26,int:1,mu:[[60,90]]},w:{min:0.25,max:0.7}},
+ f:function(c,p){var pi=P_(p,"pal"),ns=P_(p,"ns"),len=P_(p,"len"),w=P_(p,"w");
+  var ink=newS(),A=c.An;
+  for(var k=0;k<ns;k++){
+    var x=c.rng()*SIM,y=c.rng()*SIM;
+    var wt=w*(0.15+0.85*sampleW(A,x,y));
+    for(var s=0;s<len;s++){
+      var th=sampleW(c.THs,x,y)*6.2832;
+      x+=Math.cos(th);y+=Math.sin(th);
+      var xi=((x%SIM)+SIM)%SIM,yi=((y%SIM)+SIM)%SIM;
+      ink[(yi|0)*SIM+(xi|0)]+=wt}}
+  normSoft(ink);
+  var img=new Uint8ClampedArray(N2*4);
+  for(var i=0;i<N2;i++){var o=i*4;
+    var base=palAt(pi,0.05+A[i]*0.18);
+    var dark=palAt(pi,0.95);
+    var t=Math.min(1,ink[i]*1.3);
+    img[o]=base[1]*(1-t)+dark[1]*t;
+    img[o+1]=base[2]*(1-t)+dark[2]*t;
+    img[o+2]=base[3]*(1-t)+dark[3]*t;
+    img[o+3]=255}
+  return img}};
+function makeRO(op,rng){return{op:op,p:resolveP(ROS[op].params,rng)}}
+
+/* ---------- 時間発展 ---------- */
+function makeStepper(recipe){
+  var rng=mulberry32((recipe.seed^0x5f356495)|0);
+  var c={A:buildInit(recipe.initA,rng),B:buildInit(recipe.initB,rng),
+    TH:newS(),M:new Float32Array(N2).fill(-1),H:newS(),
+    tmp:newS(),hasHard:false,rng:rng,nseed:(rng()*1e6)|0,
+    tvx:0,tvy:0,Ttotal:0};
+  var ti=recipe.thInit;
+  if(ti.mode===1){var R2=newS();
+    for(var i0=0;i0<N2;i0++)R2[i0]=rng();
+    blurBox(R2,ti.blr,2);normSoft(R2);
+    for(var i1=0;i1<N2;i1++)c.TH[i1]=R2[i1]*6.2832}
+  else for(var i2=0;i2<N2;i2++)c.TH[i2]=ti.c+(rng()-0.5)*ti.amp;
+  var R=newS();
+  for(var i3=0;i3<N2;i3++)R[i3]=rng();
+  blurBox(R,recipe.reg.blr,2);normSoft(R);
+  for(var i4=0;i4<N2;i4++)R[i4]=Math.pow(R[i4],recipe.reg.pow);
+  var hasYoin=recipe.terms.some(function(tm){return tm.op==="yoin"});
+  if(hasYoin){c.Ap=copyS(c.A);c.Bp=copyS(c.B)}
+  var gls=[],auxs=[];
+  recipe.terms.forEach(function(tm){
+    var g=(tm.p.g?tm.p.g.v:1)*tm.sign;
+    var amt=tm.reg.amt.v,pol=tm.reg.pol;
+    var gl=newS();
+    for(var i=0;i<N2;i++){var rr=pol?1-R[i]:R[i];
+      gl[i]=g*(1-amt+amt*rr)}
+    if(tm.op==="tenso"){c.tvx=tm.p._dx.v;c.tvy=tm.p._dy.v}
+    var aux=null;
+    if(tm.op==="zahyoori"){aux=new Int32Array(N2);var mp=P_(tm.p,"map");
+      for(var y=0;y<SIM;y++)for(var x=0;x<SIM;x++){
+        var tx,ty;
+        if(mp===0){tx=SIM-1-x;ty=SIM-1-y}
+        else if(mp===1){tx=y;ty=x}
+        else{tx=SIM-1-x;ty=y}
+        aux[y*SIM+x]=ty*SIM+tx}}
+    gls.push(gl);auxs.push(aux)});
+  var visc=recipe.visc?recipe.visc.v:0;
+  var T=Math.min(recipe.T.v,Math.max(40,(1600/lawCost(recipe))|0));
+  var st={c:c,t:0,T:T,done:false,deadWhy:null};
+  st.advance=function(n){ /* n歩進める（NaN/一様は deadWhy に記録して停止）*/
+    var lim=Math.min(st.t+n,T);
+    while(st.t<lim){
+      var t=st.t;
+      for(var k=0;k<recipe.terms.length;k++){
+        var tm=recipe.terms[k];
+        TERMS[tm.op].run(c,tm,gls[k],t,auxs[k])}
+      var A=c.A,B=c.B;
+      for(var j=0;j<N2;j++){
+        var a=A[j];if(a<-0.5)A[j]=-0.5;else if(a>1.5)A[j]=1.5;
+        var b=B[j];if(b<-0.5)B[j]=-0.5;else if(b>1.5)B[j]=1.5}
+      if(visc>0){viscPass(A,visc,c.tmp);viscPass(B,visc,c.tmp)}
+      if(hasYoin){c.Ap.set(A);c.Bp.set(B)}
+      if(t===((T/3)|0)||t===((2*T/3)|0)){
+        var sa=stdSample(A),sb=stdSample(B);
+        if(!isFinite(sa)||!isFinite(sb)){st.deadWhy="NaN";st.done=true;return}
+        if(sa<5e-4&&sb<5e-4){st.deadWhy="uniform";st.done=true;return}}
+      st.t++}
+    if(st.t>=T)st.done=true};
+  st.fields=function(){ /* 途中覗き用の正規化コピー（実行状態は不変）*/
+    var An=copyS(c.A);normSoft(An);
+    var Bn=copyS(c.B);normSoft(Bn);
+    return{An:An,Bn:Bn}};
+  st.finalize=function(){
+    if(st.deadWhy)throw new Error(st.deadWhy);
+    c.Ttotal=T;
+    c.An=copyS(c.A);normSoft(c.An);
+    c.Bn=copyS(c.B);normSoft(c.Bn);
+    if(recipe.ro.op==="suji"){c.THs=newS();
+      for(var i5=0;i5<N2;i5++){var th=c.TH[i5]%6.2832;if(th<0)th+=6.2832;
+        c.THs[i5]=th/6.2832}}
+    var img=ROS[recipe.ro.op].f(c,recipe.ro.p);
+    return{img:img,marks:countMarks(c.M),c:c}};
+  return st}
+function runLaw(recipe){
+  var st=makeStepper(recipe);
+  while(!st.done)st.advance(64);
+  return st.finalize()}
+function lawCost(recipe){var c=0.5+((recipe.visc&&recipe.visc.v>0)?1:0);
+  recipe.terms.forEach(function(tm){
+    c+=tm.op==="anisosmooth"?3.0:(tm.op==="entatsu"?1.3:(tm.op==="mukikanwa"?1.2:1.0))});
+  return c}
+function viscPass(F,v,tmp){tmp.set(F);
+  for(var y=0;y<SIM;y++){var y0=y*SIM,ym=XM[y]*SIM,yp=XP[y]*SIM;
+   for(var x=0;x<SIM;x++){var i=y0+x;
+    var mean=(tmp[y0+XM[x]]+tmp[y0+XP[x]]+tmp[ym+x]+tmp[yp+x])*0.25;
+    F[i]+=v*(mean-tmp[i])}}}
+function countMarks(M){var n=0;for(var i=0;i<N2;i+=7)if(M[i]>=0)n++;return n*7}
+
+/* ---------- 死画面（平坦・粉塵）---------- */
+function deathCheck(img){
+  var L=new Float32Array(N2);
+  for(var i=0;i<N2;i++){var o=i*4;
+    var l=(img[o]*0.299+img[o+1]*0.587+img[o+2]*0.114)/255;
+    if(!isFinite(l))return{dead:true,why:"NaN"};
+    L[i]=l}
+  var m=0;for(var i1=0;i1<N2;i1++)m+=L[i1];m/=N2;
+  var rv=0;for(var i2=0;i2<N2;i2++){var d=L[i2]-m;rv+=d*d}rv/=N2;
+  if(rv<2e-5)return{dead:true,why:"平坦"};
+  if(rv<6e-4&&(m<0.03||m>0.97))return{dead:true,why:"平坦"};
+  var G=12,cell=SIM/G,cm=0,cv=0,co=new Float32Array(G*G);
+  for(var gy=0;gy<G;gy++)for(var gx=0;gx<G;gx++){
+    var s=0,c=0;
+    for(var y=(gy*cell)|0;y<((gy+1)*cell)|0;y+=2)
+      for(var x=(gx*cell)|0;x<((gx+1)*cell)|0;x+=2){s+=L[y*SIM+x];c++}
+    co[gy*G+gx]=s/c}
+  for(var a=0;a<G*G;a++)cm+=co[a];cm/=G*G;
+  for(var a2=0;a2<G*G;a2++){var d2=co[a2]-cm;cv+=d2*d2}
+  var coStd=Math.sqrt(cv/(G*G));
+  if(coStd<0.015)return{dead:true,why:"粉塵"};
+  var Ls=new Float32Array(L);blurBox(Ls,2,1);
+  var sm=0;for(var i3=0;i3<N2;i3++)sm+=Ls[i3];sm/=N2;
+  var sv=0;for(var i4=0;i4<N2;i4++){var d3=Ls[i4]-sm;sv+=d3*d3}sv/=N2;
+  if(sv/rv<0.30&&coStd<0.06)return{dead:true,why:"粉塵"};
+  return{dead:false}}
+
+/* ---------- 画像指紋（壁の非重複化）---------- */
+function fingerprint(img){
+  var G=12,cell=SIM/G,lum=new Float32Array(G*G);
+  var L=new Float32Array(N2);
+  for(var i=0;i<N2;i++){var o=i*4;
+    L[i]=(img[o]*0.299+img[o+1]*0.587+img[o+2]*0.114)/255}
+  for(var gy=0;gy<G;gy++)for(var gx=0;gx<G;gx++){
+    var s=0,c=0;
+    for(var y=(gy*cell)|0;y<((gy+1)*cell)|0;y+=2)
+      for(var x=(gx*cell)|0;x<((gx+1)*cell)|0;x+=2){s+=L[y*SIM+x];c++}
+    lum[gy*G+gx]=s/c}
+  var m=0;for(var a=0;a<G*G;a++)m+=lum[a];m/=G*G;
+  var sd=0;for(var a2=0;a2<G*G;a2++){lum[a2]-=m;sd+=lum[a2]*lum[a2]}
+  sd=Math.sqrt(sd/(G*G))+1e-6;
+  for(var a3=0;a3<G*G;a3++)lum[a3]/=sd;
+  var hist=new Float32Array(8),tot=1e-6;
+  for(var y2=1;y2<SIM-1;y2+=3)for(var x2=1;x2<SIM-1;x2+=3){
+    var gx2=L[y2*SIM+x2+1]-L[y2*SIM+x2-1],
+        gy2=L[(y2+1)*SIM+x2]-L[(y2-1)*SIM+x2];
+    var mag=Math.sqrt(gx2*gx2+gy2*gy2);
+    if(mag>0.02){var ang=Math.atan2(gy2,gx2);if(ang<0)ang+=Math.PI;
+      hist[Math.min(7,(ang/Math.PI*8)|0)]+=mag;tot+=mag}}
+  for(var h=0;h<8;h++)hist[h]/=tot;
+  return{lum:lum,hist:hist}}
+function fpDist(a,b){
+  var d1=0;for(var i=0;i<a.lum.length;i++){var d=a.lum[i]-b.lum[i];d1+=d*d}
+  d1=Math.sqrt(d1/a.lum.length);
+  var d2=0;for(var j=0;j<8;j++){var e=a.hist[j]-b.hist[j];d2+=e*e}
+  d2=Math.sqrt(d2);
+  return 0.75*d1+1.6*d2}
+var DUP_TH=0.5;
+
+/* ---------- 配合の一行表記 ---------- */
+function hasMu(p){for(var k in p)if(p[k].band==="mutation")return true;return false}
+function termLabel(tm){var def=TERMS[tm.op],s=def.jp;
+  if(tm.op==="mukikanwa")s+="("+tm.src+"→θ)";
+  else if(def.cross)s+="("+tm.src+"→"+tm.dst+(tm.sign<0?"⁻":"")+")";
+  else s+="("+tm.dst+(tm.sign<0?"⁻":"")+")";
+  if(hasMu(tm.p))s+="✷";
+  return s}
+function recipeLabel(recipe){
+  var ts=recipe.terms.map(termLabel).join("・");
+  var mu=recipe.T.band==="mutation"?"✷":"";
+  return ts+" ×"+recipe.T.v+"歩"+mu+" → "+ROS[recipe.ro.op].jp+(hasMu(recipe.ro.p)?"✷":"")}
+
+/* ---------- 既知12鉱脈の台帳（テクスチャ署名・平行移動不変）----------
+   署名 = [尺度エネルギー4, 階調ヒスト8, 方位ヒスト8, 平均, 勾配密度, 分散] の23次元
+   構図でなく肌で家族を判別（較正: 自法中央値0.38 / 他法中央値1.14 / 正答21/24） */
+var KNOWN=[{"n":"第1号 志野様クラスト","f":[[0.961,0.944,0.927,0.908,0.033,0.298,0.186,0.128,0.091,0.126,0.11,0.028,0.134,0.118,0.123,0.125,0.133,0.121,0.116,0.129,0.426,0.109,0.239],[0.957,0.927,0.896,0.867,0.03,0.212,0.168,0.13,0.153,0.154,0.102,0.052,0.129,0.12,0.121,0.131,0.133,0.117,0.117,0.131,0.474,0.125,0.237],[0.858,0.717,0.542,0.469,0.027,0.122,0.237,0.422,0.146,0.038,0.007,0,0.149,0.11,0.108,0.131,0.132,0.109,0.119,0.142,0.397,0.141,0.134]]},{"n":"第2号 砂地静電","f":[[0.648,0.548,0.43,0.267,0.266,0.012,0,0.009,0,0,0.535,0.177,0.149,0.005,0.316,0.003,0.273,0.004,0.108,0.141,0.599,0.384,0.319],[0.587,0.498,0.409,0.302,0.561,0.011,0,0.033,0,0,0.31,0.085,0.147,0.014,0.266,0.001,0.286,0.02,0.125,0.142,0.382,0.491,0.341],[0.675,0.607,0.539,0.462,0.645,0.019,0,0.253,0,0,0.028,0.055,0.153,0.008,0.258,0.001,0.295,0.011,0.121,0.154,0.256,0.308,0.245]]},{"n":"第3号 櫛目迷路","f":[[0.35,0.266,0.229,0.207,0.117,0.313,0.054,0.043,0.034,0.074,0.125,0.24,0.152,0.11,0.108,0.137,0.141,0.105,0.107,0.139,0.498,0.403,0.351],[0.339,0.249,0.207,0.182,0.076,0.342,0.058,0.043,0.034,0.044,0.116,0.288,0.134,0.099,0.111,0.133,0.154,0.111,0.11,0.149,0.518,0.414,0.359],[0.422,0.358,0.338,0.329,0.219,0.241,0.051,0.031,0.157,0.062,0.038,0.202,0.182,0.118,0.074,0.089,0.123,0.074,0.144,0.194,0.454,0.283,0.342]]},{"n":"第4号 織り大陸","f":[[0.855,0.797,0.769,0.72,0,0.491,0.017,0.043,0,0.182,0.267,0,0.231,0,0.165,0.005,0.198,0.011,0.161,0.228,0.443,0.217,0.314],[0.919,0.89,0.869,0.833,0,0.374,0.007,0.026,0,0.098,0.495,0,0.252,0.001,0.14,0.009,0.212,0.013,0.125,0.249,0.562,0.129,0.331],[0.885,0.843,0.805,0.753,0,0.44,0.017,0.07,0,0.128,0.343,0,0.223,0,0.162,0.013,0.19,0.009,0.2,0.203,0.483,0.182,0.321]]},{"n":"第5号 藍の破線格子","f":[[0.763,0.588,0.382,0.31,0.417,0.042,0.043,0.197,0.213,0.04,0.016,0.033,0.165,0.081,0.085,0.145,0.2,0.077,0.085,0.162,0.324,0.282,0.265],[0.773,0.607,0.413,0.339,0.413,0.042,0.043,0.195,0.197,0.04,0.024,0.045,0.183,0.085,0.089,0.134,0.166,0.08,0.09,0.172,0.334,0.291,0.276],[0.755,0.583,0.379,0.295,0.41,0.04,0.046,0.232,0.188,0.043,0.012,0.028,0.16,0.081,0.083,0.148,0.2,0.082,0.086,0.161,0.324,0.279,0.258]]},{"n":"第6号 乾地ひび苔影","f":[[0.57,0.408,0.294,0.248,0.17,0.1,0.045,0.054,0.084,0.115,0.114,0.317,0.128,0.126,0.119,0.118,0.134,0.125,0.119,0.13,0.603,0.545,0.341],[0.573,0.413,0.305,0.263,0.142,0.133,0.043,0.049,0.077,0.112,0.104,0.341,0.124,0.115,0.122,0.118,0.149,0.118,0.123,0.131,0.61,0.557,0.347],[0.697,0.59,0.522,0.494,0.139,0.127,0.057,0.132,0.258,0.033,0.032,0.221,0.145,0.114,0.118,0.099,0.156,0.106,0.119,0.141,0.519,0.417,0.317]]},{"n":"第7号 太い迷路縞","f":[[0.869,0.756,0.499,0.159,0.352,0.142,0.01,0.034,0.053,0.114,0.148,0.146,0.082,0.073,0.126,0.218,0.242,0.114,0.071,0.075,0.443,0.247,0.348],[0.86,0.742,0.483,0.168,0.236,0.25,0.008,0.023,0.039,0.067,0.106,0.27,0.196,0.111,0.096,0.096,0.107,0.085,0.115,0.194,0.493,0.283,0.376],[0.885,0.797,0.619,0.449,0.289,0.208,0.023,0.252,0.014,0.02,0.005,0.189,0.213,0.083,0.071,0.058,0.151,0.079,0.132,0.214,0.401,0.199,0.339]]},{"n":"第8号 蝕刻の霜","f":[[0.682,0.659,0.643,0.627,0.028,0.045,0.065,0.095,0.243,0.173,0.008,0.343,0.104,0.135,0.161,0.068,0.138,0.116,0.167,0.112,0.674,0.21,0.271],[0.701,0.682,0.67,0.654,0.028,0.041,0.029,0.025,0.274,0.235,0.001,0.368,0.105,0.108,0.182,0.049,0.162,0.119,0.17,0.106,0.709,0.2,0.257],[0.729,0.711,0.694,0.674,0.027,0.038,0.047,0.041,0.167,0.278,0.006,0.396,0.093,0.134,0.171,0.053,0.169,0.105,0.178,0.097,0.724,0.099,0.262]]},{"n":"第9号 焦げ文字迷路","f":[[0.654,0.586,0.522,0.458,0.175,0.39,0.008,0.015,0.013,0.026,0.151,0.221,0.183,0.064,0.069,0.17,0.188,0.069,0.072,0.185,0.447,0.362,0.36],[0.635,0.571,0.514,0.46,0.104,0.382,0.012,0.019,0.016,0.036,0.186,0.245,0.179,0.07,0.068,0.175,0.198,0.065,0.068,0.177,0.506,0.36,0.358],[0.545,0.461,0.394,0.341,0.222,0.386,0.014,0.019,0.016,0.188,0.013,0.142,0.207,0.053,0.061,0.122,0.225,0.053,0.067,0.212,0.392,0.337,0.33]]},{"n":"第10号 銀白の華","f":[[0.753,0.679,0.618,0.558,0,0.064,0.538,0.363,0.028,0.006,0.001,0,0.176,0.075,0.074,0.17,0.185,0.071,0.074,0.174,0.359,0.094,0.072],[0.766,0.694,0.635,0.579,0,0.075,0.652,0.246,0.022,0.005,0.001,0,0.177,0.076,0.073,0.169,0.183,0.071,0.073,0.178,0.347,0.088,0.069],[0.912,0.884,0.858,0.835,0.028,0.246,0.343,0.362,0.022,0,0,0,0.175,0.079,0.079,0.16,0.173,0.081,0.082,0.171,0.327,0.091,0.11]]},{"n":"第11号 白磁の穀粒","f":[[0.718,0.603,0.492,0.407,0.002,0.052,0.06,0.034,0.036,0.127,0.402,0.288,0.126,0.118,0.126,0.129,0.137,0.115,0.123,0.124,0.749,0.248,0.216],[0.708,0.578,0.444,0.345,0.002,0.054,0.066,0.042,0.038,0.148,0.388,0.262,0.127,0.121,0.123,0.126,0.127,0.125,0.125,0.127,0.737,0.265,0.219],[0.989,0.983,0.973,0.952,0.593,0.075,0.037,0.002,0.002,0.003,0.091,0.197,0.174,0.119,0.1,0.105,0.108,0.083,0.127,0.184,0.344,0.053,0.369]]},{"n":"第12号 苔絹の虫","f":[[0.812,0.772,0.707,0.605,0.018,0.053,0.154,0.484,0.248,0.032,0.003,0.008,0.123,0.125,0.126,0.112,0.121,0.136,0.135,0.123,0.444,0.128,0.125],[0.868,0.83,0.763,0.645,0.007,0.019,0.037,0.067,0.127,0.4,0.311,0.033,0.109,0.141,0.133,0.115,0.116,0.14,0.134,0.112,0.676,0.117,0.155],[0.645,0.621,0.604,0.583,0.012,0.059,0.127,0.217,0.265,0.147,0.079,0.094,0.339,0.124,0.125,0.086,0.079,0.035,0.047,0.165,0.55,0.297,0.207]]}];
+var NEW_TH=0.55;
+function texSig(img){
+  var L=new Float32Array(N2),i,o;
+  for(i=0;i<N2;i++){o=i*4;L[i]=(img[o]*0.299+img[o+1]*0.587+img[o+2]*0.114)/255}
+  var m=0;for(i=0;i<N2;i++)m+=L[i];m/=N2;
+  var v=0;for(i=0;i<N2;i++){var d=L[i]-m;v+=d*d}
+  var s0=Math.sqrt(v/N2);
+  var sig=[];
+  var rads=[1,2,4,8];
+  for(var r=0;r<4;r++){var C=new Float32Array(L);blurBox(C,rads[r],1);
+    var mm=0;for(i=0;i<N2;i++)mm+=C[i];mm/=N2;
+    var vv=0;for(i=0;i<N2;i++){var dd=C[i]-mm;vv+=dd*dd}
+    sig.push(Math.sqrt(vv/N2)/Math.max(s0,1e-6))}
+  var tone=[0,0,0,0,0,0,0,0],ts=0;
+  for(i=0;i<N2;i+=3){var b=(L[i]*8)|0;if(b>7)b=7;tone[b]++;ts++}
+  for(i=0;i<8;i++)sig.push(tone[i]/ts);
+  var hist=[0,0,0,0,0,0,0,0],tot=1e-6,gd=0,gc=0;
+  for(var y=1;y<SIM-1;y+=2)for(var x=1;x<SIM-1;x+=2){
+    var gx=L[y*SIM+x+1]-L[y*SIM+x-1],gy=L[(y+1)*SIM+x]-L[(y-1)*SIM+x];
+    var mag=Math.sqrt(gx*gx+gy*gy);gd+=mag;gc++;
+    if(mag>0.02){var a=Math.atan2(gy,gx);if(a<0)a+=Math.PI;
+      hist[Math.min(7,(a/Math.PI*8)|0)]+=mag;tot+=mag}}
+  for(i=0;i<8;i++)sig.push(hist[i]/tot);
+  sig.push(m);sig.push(gd/gc);sig.push(s0);
+  return sig}
+function texDist(a,b){
+  var d1=0,i;for(i=0;i<4;i++){var d=a[i]-b[i];d1+=d*d}
+  var d2=0;for(i=4;i<12;i++){var e=a[i]-b[i];d2+=e*e}
+  var d3=0;for(i=12;i<20;i++){var f=a[i]-b[i];d3+=f*f}
+  return 1.5*Math.sqrt(d1)+1.1*Math.sqrt(d2)+1.2*Math.sqrt(d3)
+    +0.7*Math.abs(a[20]-b[20])+3.0*Math.abs(a[21]-b[21])+1.0*Math.abs(a[22]-b[22])}
+function minKnown(sig){var best=1e9,name="";
+  for(var k=0;k<KNOWN.length;k++){var fs=KNOWN[k].f;
+    for(var j=0;j<fs.length;j++){var d=texDist(sig,fs[j]);
+      if(d<best){best=d;name=KNOWN[k].n}}}
+  return{d:best,n:name}}
+
+/* ---------- 宣言格子刷り 1024（試作: scout.jsのB案） ---------- */
+function upBi(src,ss,W){var out=new Float32Array(W*W);
+  for(var y=0;y<W;y++){var sy=y*(ss-1)/(W-1),iy=sy|0,fy=sy-iy,iy2=Math.min(ss-1,iy+1);
+    for(var x=0;x<W;x++){var sx=x*(ss-1)/(W-1),ix=sx|0,fx=sx-ix,ix2=Math.min(ss-1,ix+1);
+      var a=src[iy*ss+ix],b=src[iy*ss+ix2],cc=src[iy2*ss+ix],dd=src[iy2*ss+ix2];
+      out[y*W+x]=a+(b-a)*fx+(cc-a)*fy+(a-b-cc+dd)*fx*fy}}
+  return out}
+function upNe(src,ss,W){var out=new Float32Array(W*W),k=W/ss;
+  for(var y=0;y<W;y++){var sy=(y/k)|0;
+    for(var x=0;x<W;x++)out[y*W+x]=src[sy*ss+((x/k)|0)]}
+  return out}
+function bandUp(field,ss,W){
+  var low=new Float32Array(field);blurBox(low,2,1);
+  var high=new Float32Array(ss*ss);
+  for(var i=0;i<ss*ss;i++)high[i]=field[i]-low[i];
+  var bl=upBi(low,ss,W),nn=upNe(high,ss,W);
+  var out=new Float32Array(W*W);
+  for(var j=0;j<W*W;j++){var v=bl[j]+nn[j];out[j]=v<0?0:(v>1?1:v)}
+  return out}
+function printDecl(c,ro,W,sm){ /* 二場合せ/等値境界のみ対応。sm={gth}で縁閾値を平滑化 */
+  var A=bandUp(c.An,SIM,W),B=bandUp(c.Bn,SIM,W),p=ro.p;
+  var img=new Uint8ClampedArray(W*W*4);
+  if(ro.op==="awase"){
+    var pi=P_(p,"pal"),sh=P_(p,"sh"),ed=P_(p,"edge"),gth=0;
+    if(ed>0){var gs=[];
+      for(var s=0;s<W*W;s+=97){var y=(s/W)|0,x=s%W;
+        var xm=x>0?x-1:x,xp=x<W-1?x+1:x,ym=y>0?y-1:y,yp=y<W-1?y+1:y;
+        var gx=A[y*W+xp]-A[y*W+xm],gy=A[yp*W+x]-A[ym*W+x];
+        gs.push(gx*gx+gy*gy)}
+      gs.sort(function(a,b){return a-b});gth=gs[(gs.length*0.93)|0];
+      if(sm){sm.gth=(sm.gth==null)?gth:sm.gth*0.8+gth*0.2;gth=sm.gth}}
+    for(var yy=0;yy<W;yy++){var y0=yy*W,ymr=(yy>0?yy-1:yy)*W,ypr=(yy<W-1?yy+1:yy)*W;
+      for(var xx=0;xx<W;xx++){var i=y0+xx,o=i*4;
+        var col=palAt(pi,A[i]);
+        var l=1+sh*(B[i]-0.5);l=l<0.2?0.2:(l>1.6?1.6:l);
+        var r=col[1]*l,g=col[2]*l,b2=col[3]*l;
+        if(ed>0){var xm2=xx>0?xx-1:xx,xp2=xx<W-1?xx+1:xx;
+          var gx2=A[y0+xp2]-A[y0+xm2],gy2=A[ypr+xx]-A[ymr+xx];
+          if(gx2*gx2+gy2*gy2>gth){var ink=palAt(pi,0.97);
+            r=r*(1-ed)+ink[1]*ed;g=g*(1-ed)+ink[2]*ed;b2=b2*(1-ed)+ink[3]*ed}}
+        img[o]=r;img[o+1]=g;img[o+2]=b2;img[o+3]=255}}
+  }else if(ro.op==="kyokai"){
+    var pi2=P_(p,"pal"),k=P_(p,"k"),wob=P_(p,"wob");
+    var L=new Uint8Array(W*W);
+    for(var i2=0;i2<W*W;i2++){var a2=A[i2]+(B[i2]-0.5)*wob;
+      a2=a2<0?0:(a2>0.999?0.999:a2);L[i2]=(a2*k)|0}
+    for(var y2=0;y2<W;y2++){var y02=y2*W,yp2=(y2<W-1?y2+1:y2)*W;
+      for(var x2=0;x2<W;x2++){var i3=y02+x2,o2=i3*4;
+        var edge=(x2<W-1&&L[i3]!==L[y02+x2+1])||(L[i3]!==L[yp2+x2]);
+        var cc2=edge?palAt(pi2,0.98):palAt(pi2,(L[i3]+0.5)/k);
+        img[o2]=cc2[1];img[o2+1]=cc2[2];img[o2+2]=cc2[3];img[o2+3]=255}}
+  }else return null;
+  return img}
+</script>
+<!--ENGINE_END-->
+<script id="ui">
+"use strict";
+var $=function(id){return document.getElementById(id)};
+var kabe=$("kabe"),karappo=$("karappo");
+var TAGS=[["hoshi","★"],["kozo","構造"],["shitsu","質感"],["gensho","現象"],["ibutsu","異物感"]];
+var state={kama:0,firing:false,abort:false,tiles:[],fps:[],henban:0};
+
+function setDaicho(alive,dead,mu,ex,no,dup,msg){
+  $("d_kama").textContent=state.kama||"—";
+  $("d_alive").textContent=alive;
+  $("d_dead").textContent=dead;$("d_mu").textContent=mu;
+  $("d_ex").textContent=ex;$("d_no").textContent=no;
+  $("d_dup").textContent=dup;
+  $("d_state").textContent=msg}
+
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function labelHTML(recipe){
+  return esc(recipeLabel(recipe)).replace(/✷/g,'<span class="mut">✷</span>')}
+
+function drawToCanvas(cv,img){
+  cv.width=SIM;cv.height=SIM;
+  cv.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(img),SIM,SIM),0,0)}
+
+function addTile(recipe,img,kiz){
+  var el=document.createElement("div");el.className="hyohon";
+  var cv=document.createElement("canvas");drawToCanvas(cv,img);
+  var rec=document.createElement("div");rec.className="rec";
+  rec.innerHTML=labelHTML(recipe);rec.title=recipeLabel(recipe);
+  var tg=document.createElement("div");tg.className="tags";
+  var tile={recipe:recipe,img:img,tags:{},el:el};
+  TAGS.forEach(function(t){
+    var b=document.createElement("button");b.textContent=t[1];
+    if(t[0]==="hoshi")b.className="hoshi";
+    b.addEventListener("click",function(){
+      tile.tags[t[0]]=!tile.tags[t[0]];
+      b.classList.toggle("on",!!tile.tags[t[0]])});
+    tg.appendChild(b)});
+  var gen=document.createElement("button");gen.className="genn";gen.textContent="原寸";
+  gen.addEventListener("click",function(){openBig(tile)});
+  tg.appendChild(gen);
+  cv.addEventListener("click",function(){openBig(tile)});
+  el.appendChild(cv);el.appendChild(rec);
+  if(kiz){var kz=document.createElement("div");
+    kz.className="kizoku"+(kiz.d>=NEW_TH?" shin":"");
+    kz.textContent=(kiz.d>=NEW_TH?"新族":"既知: "+kiz.n)+"  d="+kiz.d.toFixed(2);
+    el.appendChild(kz)}
+  el.appendChild(tg);
+  kabe.appendChild(el);
+  state.tiles.push(tile)}
+
+function raf(){return new Promise(function(res){requestAnimationFrame(function(){setTimeout(res,0)})})}
+
+async function fire(){
+  if(state.firing)return;
+  state.firing=true;state.abort=false;
+  $("yaku").disabled=true;$("tomeru").disabled=false;
+  state.kama++;
+  var base=parseInt($("tane").value,10)||0;
+  var seedRng=mulberry32((base*2654435761+state.kama*97)|0);
+  kabe.querySelectorAll(".hyohon").forEach(function(e){e.remove()});
+  if(karappo)karappo.style.display="none";
+  state.tiles=[];state.fps=[];
+  var alive=0,dead=0,dmu=0,dex=0,dno=0,dup=0,shin=0,attempts=0;
+  setDaicho(0,0,0,0,0,0,"焼成中 0/24");$("d_shin").textContent=0;
+  while(alive<24&&attempts<110&&!state.abort){
+    attempts++;
+    var seed=(seedRng()*0x7fffffff)|0;
+    var recipe=sampleLaw(seed),res=null,chk;
+    try{res=runLaw(recipe);chk=deathCheck(res.img)}
+    catch(e){chk={dead:true,why:e.message||"err"}}
+    if(chk.dead){dead++;
+      var mu=false,ex=false;
+      recipe.terms.forEach(function(tm){if(hasMu(tm.p))mu=true;
+        if(tm.reg.amt.band==="mutation")mu=true;
+        if(tm.reg.amt.band==="extreme")ex=true;
+        for(var k in tm.p)if(tm.p[k].band==="extreme")ex=true});
+      if(hasMu(recipe.ro.p))mu=true;
+      if(recipe.T.band==="mutation")mu=true;
+      if(recipe.T.band==="extreme")ex=true;
+      if(mu)dmu++;else if(ex)dex++;else dno++}
+    else{
+      var fp=fingerprint(res.img),near=false;
+      for(var f=0;f<state.fps.length;f++){
+        if(fpDist(fp,state.fps[f])<DUP_TH){near=true;break}}
+      if(near){dup++}
+      else{alive++;state.fps.push(fp);
+        var kiz=KNOWN.length?minKnown(texSig(res.img)):null;
+        if(kiz&&kiz.d>=NEW_TH)shin++;
+        $("d_shin").textContent=shin;
+        addTile(recipe,res.img,kiz)}}
+    setDaicho(alive,dead,dmu,dex,dno,dup,
+      state.abort?"中止":("焼成中 "+alive+"/24（試行"+attempts+"）"));
+    await raf()}
+  setDaicho(alive,dead,dmu,dex,dno,dup,
+    state.abort?("中止（"+alive+"枚で停止）")
+    :("窯出し済み ── 無選別で "+alive+" 枚（試行"+attempts+"）"));
+  state.firing=false;
+  $("yaku").disabled=false;$("tomeru").disabled=true}
+
+$("kingozoku").addEventListener("change",function(){
+  globalThis.KIN_INERTIA=$("kingozoku").checked;
+  $("kinnoudo").disabled=!$("kingozoku").checked;
+  if(!$("kingozoku").checked){$("kinnoudo").checked=false;globalThis.KIN_DENSE=false}});
+$("kinnoudo").addEventListener("change",function(){
+  globalThis.KIN_DENSE=$("kinnoudo").checked});
+globalThis.KIN_INERTIA=true;globalThis.KIN_DENSE=false;
+$("yaku").addEventListener("click",fire);
+$("tomeru").addEventListener("click",function(){state.abort=true});
+
+var dlg=$("dlg"),bigc=$("bigc");
+function renderBig(img){
+  var t=document.createElement("canvas");t.width=SIM;t.height=SIM;
+  drawToCanvas(t,img);
+  var b=bigc.getContext("2d");
+  b.imageSmoothingEnabled=true;b.imageSmoothingQuality="high";
+  b.clearRect(0,0,bigc.width,bigc.height);
+  b.drawImage(t,0,0,bigc.width,bigc.height)}
+function openBig(tile){
+  $("dlg_png").style.display="none";
+  $("dlg_t").textContent="原寸（"+SIM+"×"+SIM+" 焼成）";
+  $("dlg_rec").innerHTML=labelHTML(tile.recipe);
+  $("dlg_json").value=JSON.stringify(tile.recipe);
+  $("dlg_note").textContent="";$("dlg_note").className="notice";
+  renderBig(tile.img);
+  dlg.showModal()}
+$("saigen").addEventListener("click",function(){
+  $("dlg_png").style.display="none";
+  $("dlg_t").textContent="配合を再現";
+  $("dlg_rec").innerHTML="";$("dlg_json").value="";
+  $("dlg_note").textContent="配合JSONを貼り付けて「この配合で焼成」。";
+  $("dlg_note").className="notice";
+  bigc.getContext("2d").clearRect(0,0,bigc.width,bigc.height);
+  dlg.showModal()});
+$("dlg_fire").addEventListener("click",function(){
+  var note=$("dlg_note");
+  try{
+    var recipe=JSON.parse($("dlg_json").value);
+    if(!recipe||(recipe.v!=="tansaku-hou-v0.1"&&recipe.v!=="tansaku-hou-v0.2"))throw new Error("この窯の配合ではありません（v違い）");
+    if(recipe.sim!==SIM)throw new Error("解像度が違います（"+recipe.sim+"≠"+SIM+"）");
+    recipe.terms.forEach(function(tm){delete tm._map});
+    var res=runLaw(recipe);
+    renderBig(res.img);
+    $("dlg_rec").innerHTML=labelHTML(recipe);
+    note.textContent="再焼成しました。同じ配合は常に同じ一枚になります。";
+    note.className="notice"}
+  catch(e){note.textContent="焼成できません ── "+e.message;
+    note.className="notice err"}});
+$("dlg_copy").addEventListener("click",function(){
+  var ta=$("dlg_json");ta.select();
+  try{navigator.clipboard.writeText(ta.value);
+    $("dlg_note").textContent="写しました。";$("dlg_note").className="notice"}
+  catch(e){document.execCommand("copy")}});
+function addDeadTile(recipe,why){
+  var el=document.createElement("div");el.className="hyohon";
+  var bx=document.createElement("div");bx.className="shibox";
+  bx.innerHTML="死<small>"+esc(why)+"</small>";
+  var rec=document.createElement("div");rec.className="rec";
+  rec.innerHTML=labelHTML(recipe);rec.title=recipeLabel(recipe);
+  el.appendChild(bx);el.appendChild(rec);
+  kabe.appendChild(el)}
+async function henFire(base){
+  state.firing=true;state.abort=false;
+  $("yaku").disabled=true;$("tomeru").disabled=false;
+  state.henban++;
+  if(karappo)karappo.style.display="none";
+  var kg=document.createElement("div");kg.className="kugiri";
+  kg.innerHTML="変奏 第"+state.henban+"組 ── <b>法は固定・初期条件と種のみ引き直し</b>（12枚・無選別・死も掲示）<br>"
+    +labelHTML(base);
+  kabe.appendChild(kg);
+  var alive=0,dead=0;
+  for(var k=0;k<12&&!state.abort;k++){
+    var vseed=((base.seed^((state.henban*131+k)*2654435761))|0);
+    var vrec=makeVariation(base,vseed),res=null,chk;
+    try{res=runLaw(vrec);chk=deathCheck(res.img)}
+    catch(e){chk={dead:true,why:e.message||"err"}}
+    if(chk.dead){dead++;addDeadTile(vrec,chk.why)}
+    else{alive++;
+      addTile(vrec,res.img,KNOWN.length?minKnown(texSig(res.img)):null)}
+    $("d_state").textContent="変奏中 "+(k+1)+"/12（生存"+alive+"・死"+dead+"）";
+    await raf()}
+  $("d_state").textContent=state.abort
+    ?"変奏中止（生存"+alive+"・死"+dead+"）"
+    :"変奏済み ── 生存 "+alive+" / 12・死 "+dead+"（床は最悪の一枚で測る）";
+  kg.scrollIntoView({behavior:"smooth",block:"start"});
+  state.firing=false;
+  $("yaku").disabled=false;$("tomeru").disabled=true}
+$("dlg_hen").addEventListener("click",function(){
+  var note=$("dlg_note");
+  if(state.firing){note.textContent="焼成中です ── 終わってから。";note.className="notice err";return}
+  try{
+    var base=JSON.parse($("dlg_json").value);
+    if(!base||(base.v!=="tansaku-hou-v0.1"&&base.v!=="tansaku-hou-v0.2"))throw new Error("この窯の配合ではありません（v違い）");
+    if(base.sim!==SIM)throw new Error("解像度が違います");
+    dlg.close();
+    henFire(base)}
+  catch(e){note.textContent="変奏できません ── "+e.message;note.className="notice err"}});
+async function kaiFire(base){
+  state.firing=true;state.abort=false;
+  $("yaku").disabled=true;$("tomeru").disabled=false;
+  if(karappo)karappo.style.display="none";
+  base=JSON.parse(JSON.stringify(base));
+  base.T=JSON.parse(JSON.stringify(base.T));
+  base.T.v=Math.min(base.T.v,Math.max(40,(1600/lawCost(base))|0)); /* 歩数釘付け */
+  var kg=document.createElement("div");kg.className="kugiri";
+  kg.innerHTML="解剖 ── <b>単項除去 × 3種</b>（歩数釘付け・d=完全版からの距離）<br>"+labelHTML(base);
+  kabe.appendChild(kg);
+  var seeds=[null,424242,787878],fullFps=[];
+  for(var ci=-1;ci<base.terms.length&&!state.abort;ci++){
+    for(var si=0;si<3&&!state.abort;si++){
+      var rec=seeds[si]===null?JSON.parse(JSON.stringify(base)):makeVariation(base,seeds[si]|0);
+      if(ci>=0)rec.terms.splice(ci,1);
+      var res=null,chk;
+      try{res=runLaw(rec);chk=deathCheck(res.img)}
+      catch(e){chk={dead:true,why:e.message||"err"}}
+      var tag=(ci<0?"完全版":"−"+TERMS[base.terms[ci].op].jp)+"（種"+(si+1)+"）";
+      if(chk.dead){addDeadTile(rec,tag+" "+chk.why)}
+      else{var fp=fingerprint(res.img),kiz=null;
+        if(ci<0){fullFps[si]=fp;kiz={d:0,n:tag}}
+        else kiz={d:fullFps[si]?fpDist(fp,fullFps[si]):0,n:tag};
+        addTile(rec,res.img,{d:-1,n:""});
+        var last=state.tiles[state.tiles.length-1];
+        var kz=last.el.querySelector(".kizoku");
+        if(kz){kz.className="kizoku";kz.textContent=tag+(ci<0?"":"  d="+kiz.d.toFixed(2))}}
+      $("d_state").textContent="解剖中 "+(ci+2)+"/"+(base.terms.length+1)+"条件";
+      await raf()}}
+  $("d_state").textContent=state.abort?"解剖中止":"解剖済み ── dが大きい項ほど絵を持っている";
+  state.firing=false;$("yaku").disabled=false;$("tomeru").disabled=true}
+$("dlg_kai").addEventListener("click",function(){
+  var note=$("dlg_note");
+  if(state.firing){note.textContent="焼成中です。";note.className="notice err";return}
+  try{var base=JSON.parse($("dlg_json").value);
+    if(!base||(base.v!=="tansaku-hou-v0.1"&&base.v!=="tansaku-hou-v0.2"))throw new Error("v違い");
+    dlg.close();kaiFire(base)}
+  catch(e){note.textContent="解剖できません ── "+e.message;note.className="notice err"}});
+
+/* 宣言格子刷り 1024 */
+var lastPrint=null;
+$("dlg_suri").addEventListener("click",function(){
+  var note=$("dlg_note");
+  try{
+    var rec=JSON.parse($("dlg_json").value);
+    if(!rec||(rec.v!=="tansaku-hou-v0.1"&&rec.v!=="tansaku-hou-v0.2"))throw new Error("v違い");
+    if(rec.ro.op!=="awase"&&rec.ro.op!=="kyokai")
+      throw new Error("この読み出しの刷りは未対応（二場合せ／等値境界のみ）");
+    note.textContent="刷り中……（場256焼成→1024刷り）";note.className="notice";
+    setTimeout(function(){
+      try{
+        var res=runLaw(rec);
+        var img=printDecl(res.c,rec.ro,1024);
+        var pc=document.createElement("canvas");pc.width=1024;pc.height=1024;
+        pc.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(img),1024,1024),0,0);
+        lastPrint=pc;
+        var b=bigc.getContext("2d");
+        b.imageSmoothingEnabled=true;b.imageSmoothingQuality="high";
+        b.clearRect(0,0,bigc.width,bigc.height);
+        b.drawImage(pc,0,0,bigc.width,bigc.height);
+        $("dlg_t").textContent="宣言格子刷り（1024・試作）";
+        $("dlg_png").style.display="";
+        note.textContent="刷りました。場は256の版のまま、読み出しのみ1024。";
+      }catch(e){note.textContent="刷れません ── "+e.message;note.className="notice err"}
+    },30)}
+  catch(e){note.textContent="刷れません ── "+e.message;note.className="notice err"}});
+/* ── 過程を刷る（宣言格子ライブ再生）── */
+var play={st:null,timer:null,paused:false,pc:null,rec:null,chunks:null,sm:null,stride:1,W:512};
+function playStop(saveVideo){
+  if(play.timer){clearTimeout(play.timer);play.timer=null}
+  if(play.rec&&play.rec.state!=="inactive"){
+    try{play.rec.stop()}catch(e){}}
+  play.st=null;$("dlg_pause").style.display="none"}
+function playFrame(){
+  if(!play.st)return;
+  if(!play.paused){
+    play.st.advance(play.stride);
+    var f=play.st.fields();
+    var img=printDecl({An:f.An,Bn:f.Bn},play.ro,play.W,play.sm);
+    play.pc.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(img),play.W,play.W),0,0);
+    var b=bigc.getContext("2d");
+    b.imageSmoothingEnabled=true;b.imageSmoothingQuality="high";
+    b.clearRect(0,0,bigc.width,bigc.height);
+    b.drawImage(play.pc,0,0,bigc.width,bigc.height);
+    $("dlg_note").textContent="過程 ── 歩 "+play.st.t+" / "+play.st.T+
+      (play.st.deadWhy?("（"+play.st.deadWhy+"で停止）"):"");
+    if(play.st.done){
+      lastPrint=play.pc;$("dlg_png").style.display="";
+      $("dlg_note").textContent="過程おわり ── 歩 "+play.st.t+" / "+play.st.T+"。最終刷りを表示中。";
+      playStop(true);return}}
+  play.timer=setTimeout(playFrame,play.paused?120:16)}
+$("dlg_katei").addEventListener("click",function(){
+  var note=$("dlg_note");
+  if(state.firing){note.textContent="焼成中です。";note.className="notice err";return}
+  try{
+    var rec=JSON.parse($("dlg_json").value);
+    if(!rec||(rec.v!=="tansaku-hou-v0.1"&&rec.v!=="tansaku-hou-v0.2"))throw new Error("v違い");
+    if(rec.ro.op!=="awase"&&rec.ro.op!=="kyokai")
+      throw new Error("この読み出しの過程刷りは未対応（二場合せ／等値境界のみ）");
+    playStop();
+    play.W=parseInt($("dlg_res").value,10)||512;
+    play.pc=document.createElement("canvas");play.pc.width=play.W;play.pc.height=play.W;
+    play.st=makeStepper(rec);play.ro=rec.ro;play.sm={};
+    play.stride=Math.max(1,Math.round(play.st.T/120));
+    play.paused=false;
+    $("dlg_t").textContent="過程を刷る（宣言格子 "+play.W+"・試作）";
+    $("dlg_pause").style.display="";$("dlg_pause").textContent="一時停止";
+    $("dlg_png").style.display="none";
+    note.className="notice";
+    if($("dlg_rec_webm").checked){
+      if(typeof MediaRecorder==="undefined")note.textContent="この環境はWebM録画に未対応です。再生のみ行います。";
+      else{
+        var stream=play.pc.captureStream(12);
+        var mt=MediaRecorder.isTypeSupported("video/webm;codecs=vp9")?"video/webm;codecs=vp9":"video/webm";
+        play.chunks=[];
+        play.rec=new MediaRecorder(stream,{mimeType:mt});
+        play.rec.ondataavailable=function(e){if(e.data.size)play.chunks.push(e.data)};
+        play.rec.onstop=function(){
+          var bl=new Blob(play.chunks,{type:"video/webm"});
+          var a=document.createElement("a");
+          a.href=URL.createObjectURL(bl);
+          a.download="hangama_katei_"+play.W+".webm";a.click();
+          setTimeout(function(){URL.revokeObjectURL(a.href)},4000)};
+        play.rec.start()}}
+    playFrame()}
+  catch(e){note.textContent="過程を刷れません ── "+e.message;note.className="notice err"}});
+$("dlg_pause").addEventListener("click",function(){
+  play.paused=!play.paused;
+  $("dlg_pause").textContent=play.paused?"再開":"一時停止"});
+dlg.addEventListener("close",function(){playStop()});
+$("dlg_png").addEventListener("click",function(){
+  if(!lastPrint)return;
+  lastPrint.toBlob(function(bl){
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(bl);
+    a.download="hangama_suri_1024.png";a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href)},4000)},"image/png")});
+$("dlg_close").addEventListener("click",function(){dlg.close()});
+dlg.addEventListener("click",function(e){if(e.target===dlg)dlg.close()});
+
+$("kakidashi").addEventListener("click",function(){
+  var picks=state.tiles.filter(function(t){
+    return Object.keys(t.tags).some(function(k){return t.tags[k]})});
+  if(!picks.length){$("d_state").textContent="選別がありません ── ★かタグを付けてから";return}
+  var out={kiln:"tansaku-hou-v0.1",exportedAt:new Date().toISOString(),
+    kama:state.kama,
+    picks:picks.map(function(t){
+      var r=JSON.parse(JSON.stringify(t.recipe));
+      if(r.terms)r.terms.forEach(function(tm){delete tm._map});
+      return{tags:Object.keys(t.tags).filter(function(k){return t.tags[k]}),
+             recipe:r}})};
+  var blob=new Blob([JSON.stringify(out,null,1)],{type:"application/json"});
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="tansaku_hou_senbetsu_kama"+state.kama+".json";
+  a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href)},4000);
+  $("d_state").textContent="選別 "+picks.length+" 点を書き出しました"});
+</script>
+</body>
+</html>

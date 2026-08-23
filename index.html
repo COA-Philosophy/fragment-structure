@@ -1256,12 +1256,21 @@
       still: ''
     },
     {
-      no: 'F078', version: 'v1', status: 'current',
+      no: 'F078', version: 'v1', status: 'archived',
       project: 'STUDIES',
       use: '工房 / Studio',
       ja: '折り譜窯',
       en: 'Folding-Score Kiln',
       file: 'works/tansaku_orifu_v0_1_1.html',
+      still: ''
+    },
+    {
+      no: 'F079', version: 'v1', status: 'current',
+      project: 'JINEN',
+      use: '工房 / Studio',
+      ja: '譜窯',
+      en: 'Fu-gama — Score Kiln (v0.3.2)',
+      file: 'works/tansaku_fugama_v0_3_2.html',
       still: ''
     },
   ];
@@ -1359,6 +1368,7 @@
     'works/jouryuu_v14_2.html': { family: '自己組織化', tech: '栄養場を食い減らす競合分岐成長', how: '同心正弦の栄養格子を円板で割合吸収して枯らし、分岐時に前方を味見して濃い側へ寄せる。含み＝太さ、土地の消耗＝色' },
     'works/tansaku_gama_v0_2_1.html': { family: '自己組織化', tech: '無銘の相互作用項を抽選する法窯', how: '場A/B・θ・履歴Mへ14種の相互作用項を2〜5個抽選しT歩発展、死画面と同型を弾き既知12鉱脈と肌で照合' },
     'works/tansaku_orifu_v0_1_1.html': { family: '印・マーク', tech: '置換文法駆動の二値折り返し版画', how: 'B/F/D/M/A の書換え文法を展開し、棒の矩形焼付・鏡映折返(OR/XOR)・帯ずらしを二値格子へトーラス適用して焼く。' },
+    'works/tansaku_fugama_v0_3_2.html': { family: '印・マーク', tech: '一譜二楽器の折り版画（鏡断／真折）', how: 'B/F/D/M/Aの置換文法を譜に展開し、鏡断=帯の鏡映と剪断、真折=層L・墨Kを折線反射で輸送しt^層で透かす' },
   };
   WORKS.forEach(w => { const t = TECH[w.file]; if (t) { w.family = t.family; w.tech = t.tech; w.how = t.how; } });
 

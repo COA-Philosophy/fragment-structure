@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>譜窯 v0.3.1 ── 開き</title>
+<style>
+:root{--sumi:#191511;--sumi2:#211b15;--kinu:#e9e0cf;--kinu-sub:#9c9077;
+--oki:#dfa14e;--haisei:#8fa99e;--kegaki:#37302a;--shi:#7a4a3a;--mut:#c98add}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--sumi);color:var(--kinu);
+ font-family:"Hiragino Kaku Gothic ProN","Yu Gothic Medium","Noto Sans JP",sans-serif;
+ font-size:14px;line-height:1.6}
+::selection{background:var(--oki);color:var(--sumi)}
+header{display:flex;align-items:stretch;border-bottom:1px solid var(--kegaki);
+ position:sticky;top:0;background:color-mix(in srgb,var(--sumi) 92%,transparent);
+ backdrop-filter:blur(6px);z-index:20}
+.kamajirushi{display:flex;align-items:center;gap:14px;padding:14px 20px;border-right:1px solid var(--kegaki)}
+.kamajirushi h1{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-weight:600;
+ font-size:22px;letter-spacing:.42em;text-indent:.42em;white-space:nowrap}
+.kamajirushi .han{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-size:10px;
+ color:var(--sumi);background:var(--oki);border-radius:2px;padding:2px 5px;
+ letter-spacing:.15em;writing-mode:vertical-rl}
+.ctrl{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 18px;flex:1}
+.ctrl label{color:var(--kinu-sub);font-size:12px}
+input[type=number],textarea{background:var(--sumi2);color:var(--kinu);
+ border:1px solid var(--kegaki);border-radius:3px;padding:6px 9px;
+ font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+input[type=number]{width:110px}
+input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--oki);outline-offset:1px}
+button{background:transparent;color:var(--kinu);border:1px solid var(--kegaki);
+ border-radius:3px;padding:7px 14px;font-size:13px;cursor:pointer;
+ transition:border-color .15s,color .15s,background .15s}
+button:hover{border-color:var(--oki);color:var(--oki)}
+button.first{background:var(--oki);border-color:var(--oki);color:var(--sumi);font-weight:600}
+button.first:hover{background:#eab264}
+button:disabled{opacity:.35;pointer-events:none}
+.daicho{display:flex;flex-wrap:wrap;gap:6px 22px;align-items:baseline;
+ padding:9px 20px;border-bottom:1px solid var(--kegaki);
+ font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--kinu-sub)}
+.daicho b{color:var(--kinu)} .daicho .shi{color:var(--shi)} .daicho .live{color:var(--oki)}
+main{padding:18px 20px 60px;max-width:1560px;margin:0 auto}
+.kabe{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.hyohon{background:var(--sumi2);border:1px solid var(--kegaki);border-radius:4px;
+ overflow:hidden;display:flex;flex-direction:column;opacity:0;transform:translateY(4px);
+ animation:mount .45s ease forwards}
+@keyframes mount{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.hyohon{animation:none;opacity:1;transform:none}}
+.hyohon canvas.omote{width:100%;aspect-ratio:1/1;display:block;background:#f2efe6;cursor:zoom-in}
+.rec{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;line-height:1.5;
+ color:var(--kinu-sub);padding:6px 9px 2px;min-height:34px;
+ display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rec .mut{color:var(--mut)}
+.gojiku{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;padding:0 9px;color:var(--kinu-sub)}
+.keikoku{display:flex;gap:4px;flex-wrap:wrap;padding:3px 8px 0}
+.keikoku span{font-size:10px;border:1px solid var(--shi);color:var(--shi);border-radius:999px;padding:1px 7px}
+.tags{display:flex;gap:5px;padding:6px 8px 9px;flex-wrap:wrap}
+.tags button{padding:3px 8px;font-size:11px;border-radius:999px;color:var(--kinu-sub)}
+.tags button.on{background:var(--haisei);border-color:var(--haisei);color:var(--sumi);font-weight:600}
+.tags button.hoshi.on{background:var(--oki);border-color:var(--oki)}
+.tags .genn{margin-left:auto;border:none;color:var(--kinu-sub);text-decoration:underline;
+ text-underline-offset:3px;padding:3px 2px}
+.kugiri{grid-column:1/-1;border-top:1px dashed var(--kegaki);padding:16px 2px 0;
+ color:var(--kinu-sub);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.7}
+.kugiri b{color:var(--oki)}
+.shibox{aspect-ratio:1/1;display:flex;flex-direction:column;gap:6px;align-items:center;
+ justify-content:center;color:var(--shi);font-family:"Hiragino Mincho ProN",serif;
+ letter-spacing:.3em;background:#141110;font-size:15px}
+.shibox small{font-size:10px;letter-spacing:.1em;color:#5c4438}
+.karappo{grid-column:1/-1;text-align:center;color:var(--kinu-sub);padding:90px 20px;
+ font-family:"Hiragino Mincho ProN","Yu Mincho",serif;letter-spacing:.2em}
+.karappo .dai{font-size:17px;margin-bottom:10px}
+dialog{background:var(--sumi2);color:var(--kinu);border:1px solid var(--kegaki);
+ border-radius:6px;padding:0;max-width:min(96vw,1000px)}
+dialog::backdrop{background:rgba(10,8,6,.78)}
+.kamaguchi{display:flex;gap:18px;padding:18px;flex-wrap:wrap}
+.kamaguchi .zu{flex:1 1 480px;min-width:300px}
+.kamaguchi canvas{width:100%;aspect-ratio:1/1;background:#f2efe6;border:1px solid var(--kegaki);border-radius:3px}
+.kamaguchi .fu{flex:1 1 320px;min-width:280px;display:flex;flex-direction:column;gap:10px}
+.kamaguchi h2{font-family:"Hiragino Mincho ProN",serif;font-weight:600;font-size:15px;letter-spacing:.25em}
+.kamaguchi .recfull{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;
+ color:var(--kinu-sub);line-height:1.7;word-break:break-all}
+.kamaguchi textarea{width:100%;height:170px;resize:vertical;font-size:11px;line-height:1.5}
+.kamaguchi .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
+.notice{font-size:11.5px;color:var(--kinu-sub)} .notice.err{color:#c96a4e}
+footer{border-top:1px solid var(--kegaki);color:var(--kinu-sub);font-size:11px;
+ padding:10px 20px;display:flex;gap:18px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header>
+  <div class="kamajirushi"><span class="han">非場</span><h1>譜　窯</h1></div>
+  <div class="ctrl">
+    <label for="tane">窯印（種）</label>
+    <input id="tane" type="number" value="1" min="0" step="1">
+    <button id="yaku" class="first">焼成 ─ 24枚</button>
+    <button id="tomeru" disabled>中止</button>
+    <span style="flex:1"></span>
+    <button id="saigen">譜を再現</button>
+    <button id="kakidashi">選別を書き出す</button>
+  </div>
+</header>
+<div class="daicho">
+  <span>第 <b id="d_kama">—</b> 窯</span>
+  <span>生存 <b class="live" id="d_alive">0</b> / 24</span>
+  <span class="shi">死 <b id="d_dead">0</b></span>
+  <span>同型弾き <b id="d_dup">0</b></span>
+  <span class="shi">警告 <b id="d_warn">0</b></span>
+  <span id="d_state">未焼成</span>
+</div>
+<main><div class="kabe" id="kabe">
+  <div class="karappo" id="karappo">
+    <div class="dai">紙 は ま だ 白 い</div>
+    <div>ひとつの譜、ふたつの楽器——鏡断は硝子のように砕き、真折は紙のように畳む。</div>
+  </div>
+</div></main>
+<footer>
+  <span>譜窯 v0.3.1 ── 開き三幕／判定512基準＝全解像度で同じ演奏: 鏡断＝帯の鏡映と剪断／真折＝紙の保存則（層が透ける）</span>
+  <span>灰は因果（和紙透過 t^層）のみ・パレットなし／死=白紙・黒潰れ・潰れ／保存率を検算表示</span>
+  <span>変奏: 同族=譜固定で数値±12%／越境=譜を引き直し／持ち替え=同じ譜を別楽器で</span>
+</footer>
+<dialog id="dlg"><div class="kamaguchi">
+  <div class="zu"><canvas id="bigc" width="768" height="768"></canvas></div>
+  <div class="fu">
+    <h2 id="dlg_t">原寸</h2>
+    <div class="recfull" id="dlg_rec"></div>
+    <textarea id="dlg_json" spellcheck="false" placeholder="譜JSONをここに貼り付け"></textarea>
+    <div class="notice" id="dlg_note"></div>
+    <div class="btns">
+      <button id="dlg_copy">JSONを写す</button>
+      <button id="dlg_fire" class="first">この譜で焼成</button>
+      <button id="dlg_moti">持ち替え</button>
+      <button id="dlg_dozo">同族変奏 12</button>
+      <button id="dlg_ekkyo">越境変奏 12</button>
+      <button id="dlg_kai">解剖 ─ 規則除去</button>
+      <button id="dlg_katei">過程を刷る</button>
+      <select id="dlg_res" style="background:var(--sumi2);color:var(--kinu);border:1px solid var(--kegaki);border-radius:3px;padding:6px">
+        <option value="512" selected>512</option><option value="1024">1024</option><option value="2048">2048</option></select>
+      <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--kinu-sub);cursor:pointer">
+        <input id="dlg_webm" type="checkbox" style="accent-color:var(--oki)">WebM録画</label>
+      <button id="dlg_pause" style="display:none">一時停止</button>
+      <button id="dlg_png" style="display:none">高解像PNG保存</button>
+      <button id="dlg_close">閉じる</button>
+    </div>
+  </div>
+</div></dialog>
+<!--ENGINE_START-->
+<script id="engine">
+/* 譜窯 v0.2 ── 機関部（非場）。譜=置換文法は共通、楽器=鏡断/真折を持ち替え */
+"use strict";
+var W=(typeof globalThis!=="undefined"&&typeof globalThis.W_OVERRIDE==="number")?globalThis.W_OVERRIDE:512;
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+var SYM=["B","F","D","M","A"];
+var DTH=[30,36,45,60,72,90];
+function drawParam(spec,r){var band="normal",x=r();
+ if(x>=0.90&&spec.mu)band="mutation";else if(x>=0.72&&spec.ex)band="extreme";
+ var v;function pick(L){var e=L[(r()*L.length)|0];return Array.isArray(e)?e[0]+r()*(e[1]-e[0]):e}
+ if(band==="normal")v=spec.min+r()*(spec.max-spec.min);
+ else v=pick(band==="mutation"?spec.mu:spec.ex);
+ if(spec.int)v=Math.round(v);return{v:v,band:band}}
+function sampleRules(r){
+ var rules={};
+ for(var si=0;si<SYM.length;si++){var s=SYM[si];
+  var L=2+((r()*3)|0),w=[];
+  for(var j=0;j<L;j++)w.push(SYM[(r()*SYM.length)|0]);
+  if(r()<0.65){var cut=1+((r()*(w.length-1))|0);
+   rules[s]=w.slice(0,cut).join("")+"["+w.slice(cut).join("")+"]"}
+  else rules[s]=w.join("")}
+ return rules}
+function expandFu(fu){
+ var seq=["B"];
+ var startB=(fu.gakki==="shinori");
+ if(startB)seq=["O"==="O"?"F":"B"]; /* 真折は折りから始める */
+ for(var d=0;d<fu.depth.v;d++){
+  var nx=[];
+  for(var i=0;i<seq.length;i++){var c=seq[i];
+   if(c==="["||c==="]"){nx.push(c)}
+   else{var w=fu.rules[c];
+    for(var j=0;j<w.length;j++)nx.push(w[j])}
+   if(nx.length>6000)break}
+  seq=nx;
+  var ops=0;for(var k2=0;k2<seq.length;k2++)if(seq[k2]!=="["&&seq[k2]!=="]")ops++;
+  if(ops>=fu.nops.v)break}
+ return seq}
+function sampleFu(seed){
+ var r=mulberry32(seed|0);
+ for(var tryN=0;tryN<8;tryN++){
+  var gakki=r()<0.5?"kyodan":"shinori";
+  var fu={v:"tansaku-fu-v0.3",seed:seed,gakki:gakki,
+   hiraki:(gakki==="shinori"&&r()<0.65)?1:0,
+   dthMode:r()<0.6?0:1, mark:(r()*3)|0,
+   rules:sampleRules(r),
+   depth:drawParam({min:4,max:6,int:1,mu:[[7,8]]},r),
+   nops:drawParam({min:70,max:300,int:1,ex:[[340,480]],mu:[[600,900]]},r),
+   dth:DTH[(r()*DTH.length)|0],
+   dth2:DTH[(r()*DTH.length)|0],
+   sigma:drawParam({min:0.50,max:0.72,ex:[[0.40,0.48]],mu:[[0.78,0.90],[0.30,0.38]]},r),
+   th0:r()*Math.PI,
+   bl:drawParam({min:1.2,max:2.2},r), bw:drawParam({min:0.10,max:0.22,mu:[[0.30,0.45]]},r),
+   mv:drawParam({min:0.6,max:1.0},r),
+   fmode:(r()*3)|0,
+   pw:drawParam({min:0.35,max:0.70},r), dm:drawParam({min:0.25,max:0.50,mu:[[0.7,0.95]]},r),
+   t:drawParam({min:0.80,max:0.92},r),
+   nOmax:drawParam({min:4,max:9,int:1},r),
+   hashiori:drawParam({min:45,max:85,int:1},r),
+   sw:0.40+r()*0.16,sh:0.40+r()*0.16,hand:r()<0.5?1:-1};
+  var sc=expandFu(fu);
+  var nB=0,nF=0;
+  for(var i=0;i<sc.length;i++){if(sc[i]==="B")nB++;if(sc[i]==="F"||sc[i]==="D")nF++}
+  if(gakki==="kyodan"&&nB>=4&&sc.length>=20)return fu;
+  if(gakki==="shinori"&&nF>=3&&sc.length>=15)return fu;}
+ return fu}
+function hasMu(fu){return["depth","nops","sigma","bl","bw","mv","pw","dm","t","nOmax","hashiori"]
+ .filter(function(k){return fu[k]&&fu[k].band})
+ .some(function(k){return fu[k].band==="mutation"})}
+
+function inMark(u,v,len,wd,mark){
+ if(Math.abs(u)>=len/2)return false;
+ if(mark===1){var hw=wd*0.5*((len/2-u)/len+0.15);return Math.abs(v)<hw}
+ if(mark===2){var t=wd*0.14;
+  return Math.abs(v)<t||Math.abs(v-wd*0.85)<t||Math.abs(v+wd*0.85)<t}
+ return Math.abs(v)<wd/2}
+/* ---------- 楽器①: 鏡断（v0.1.1の実装を据置・襞→鏡と呼称のみ改め） ---------- */
+function makeKyodanStepper(fu,WW){
+ var Wl=WW||W;
+ var seq=expandFu(fu);
+ var buf=new Uint8Array(Wl*Wl);
+ var stack=[],st={x:Wl/2,y:Wl/2,th:fu.th0,s:Wl*0.42};
+ var dthr=fu.dth*Math.PI/180;
+ var i=0,ops=0,cap=Math.min(seq.length,4000),opCap=fu.opcap||380;
+ var cnt={B:0,F:0,D:0,M:0,A:0};
+ var sMin=4*Wl/512,wMin=2*Wl/512;
+ var dth2r=fu.dth2*Math.PI/180,aTog=0;
+ function wrap(v){return((v%Wl)+Wl)%Wl}
+ var o={done:false,ops:0,total:0,cnt:cnt,Wl:Wl};
+ var totalOps=0;for(var q=0;q<cap;q++)if(seq[q]!=="["&&seq[q]!=="]")totalOps++;
+ o.total=Math.min(totalOps,opCap);
+ o.step=function(n){
+  var did=0;
+  while(i<cap&&did<n&&ops<opCap){
+   var c=seq[i++];
+   if(c==="["){stack.push({x:st.x,y:st.y,th:st.th,s:st.s});
+    if(stack.length>14)stack.shift();
+    st.s=Math.max(sMin,st.s*fu.sigma.v);continue}
+   if(c==="]"){if(stack.length)st=stack.pop();continue}
+   ops++;did++;cnt[c]++;
+   var co=Math.cos(st.th),si2=Math.sin(st.th);
+   if(c==="A"){st.th+=(fu.dthMode&&(aTog^=1))?dth2r:dthr;continue}
+   if(c==="M"){st.x=wrap(st.x+co*st.s*fu.mv.v);st.y=wrap(st.y+si2*st.s*fu.mv.v);continue}
+   if(c==="B"){
+    var len=st.s*fu.bl.v,wd=Math.max(wMin,st.s*fu.bw.v);
+    for(var y=0;y<Wl;y++)for(var x=0;x<Wl;x++){
+     var dx=x-st.x,dy=y-st.y;
+     dx-=Wl*Math.round(dx/Wl);dy-=Wl*Math.round(dy/Wl);
+     var u=dx*co+dy*si2,v=-dx*si2+dy*co;
+     if(inMark(u,v,len,wd,fu.mark))buf[y*Wl+x]=1}
+    continue}
+   var src=buf,out=new Uint8Array(src);
+   if(c==="F"){
+    var wd2=st.s*fu.pw.v;
+    for(var y2=0;y2<Wl;y2++)for(var x2=0;x2<Wl;x2++){
+     var dx2=x2-st.x,dy2=y2-st.y;
+     dx2-=Wl*Math.round(dx2/Wl);dy2-=Wl*Math.round(dy2/Wl);
+     var vv=-dx2*si2+dy2*co;
+     if(Math.abs(vv)<wd2/2){
+      var mx=Math.round(x2-2*vv*(-si2)),my=Math.round(y2-2*vv*co);
+      var m=src[wrap(my)*Wl+wrap(mx)],ii=y2*Wl+x2;
+      out[ii]=fu.fmode===0?(src[ii]|m):(fu.fmode===1?(src[ii]^m):m)}}
+   }else{
+    var wd3=st.s*0.6,mag=st.s*fu.dm.v;
+    var sx=Math.round(co*mag),sy=Math.round(si2*mag);
+    for(var y3=0;y3<Wl;y3++)for(var x3=0;x3<Wl;x3++){
+     var dx3=x3-st.x,dy3=y3-st.y;
+     dx3-=Wl*Math.round(dx3/Wl);dy3-=Wl*Math.round(dy3/Wl);
+     var v3=-dx3*si2+dy3*co;
+     if(Math.abs(v3)<wd3/2)out[y3*Wl+x3]=src[wrap(y3-sy)*Wl+wrap(x3-sx)]}}
+   buf=out}
+  o.ops=ops;
+  if(i>=cap||ops>=opCap)o.done=true};
+ o.render=function(){
+  var img=new Uint8ClampedArray(Wl*Wl*4);
+  for(var j=0;j<Wl*Wl;j++){var oo=j*4,v=buf[j];
+   img[oo]=v?25:245;img[oo+1]=v?23:242;img[oo+2]=v?21:236;img[oo+3]=255}
+  return img};
+ o.stats=function(){var ink=0;for(var j=0;j<Wl*Wl;j++)ink+=buf[j];
+  return{cov:ink/(Wl*Wl),cnt:cnt,ops:ops}};
+ return o}
+
+/* ---------- 楽器②: 真折（紙の保存則）。判定は常に512基準空間＝解像度不変の演奏 ---------- */
+function makeShinoriStepper(fu,WW){
+ var Wl=WW||W,REF=512,sc=Wl/REF,dual=(Wl!==REF);
+ var seq=expandFu(fu);
+ var L=new Float32Array(Wl*Wl),K=new Float32Array(Wl*Wl),Cr=new Float32Array(Wl*Wl);
+ var sw=(fu.sw*Wl)|0,sh=(fu.sh*Wl)|0,x0=(Wl-sw)>>1,y0=(Wl-sh)>>1;
+ for(var yy=y0;yy<y0+sh;yy++)for(var xx=x0;xx<x0+sw;xx++)L[yy*Wl+xx]=1;
+ var sheet0=sw*sh;
+ var rL;
+ if(dual){rL=new Float32Array(REF*REF);
+  var rsw=(fu.sw*REF)|0,rsh=(fu.sh*REF)|0,rx0=(REF-rsw)>>1,ry0=(REF-rsh)>>1;
+  for(var y9=ry0;y9<ry0+rsh;y9++)for(var x9=rx0;x9<rx0+rsw;x9++)rL[y9*REF+x9]=1}
+ else rL=L;
+ var cx=REF/2,cy=REF/2;
+ function centroid(){var sx=0,sy=0,n=0;
+  for(var y=0;y<REF;y+=2)for(var x=0;x<REF;x+=2){if(rL[y*REF+x]>0.4){sx+=x;sy+=y;n++}}
+  if(n){cx=sx/n;cy=sy/n}}
+ var stack=[],st={x:REF/2,y:REF/2,th:fu.th0,s:REF*0.34};
+ var dthr=fu.dth*Math.PI/180;
+ var i=0,ops=0,cap=Math.min(seq.length,4000),opCap=fu.opcap||380;
+ var cnt={B:0,F:0,D:0,M:0,A:0};
+ var nO=0,fold=0;
+ var ev={folds:[],inks:[]},evS=null;
+ function scaled(){ /* 表示格子用に事象を拡大した写し */
+  if(!dual)return ev;
+  if(!evS){evS={folds:ev.folds.map(function(f){
+    return{qx:f.qx*sc,qy:f.qy*sc,nx:f.nx,ny:f.ny,side:f.side}}),
+   inks:ev.inks.map(function(e){
+    return{k:e.k,qx:e.qx*sc,qy:e.qy*sc,co:e.co,si:e.si,len:e.len*sc,wd:e.wd*sc}})}}
+  return evS}
+ var dth2r=fu.dth2*Math.PI/180,aTog=0;
+ var o={done:false,ops:0,total:0,cnt:cnt,Wl:Wl};
+ var totalOps=0;for(var q=0;q<cap;q++)if(seq[q]!=="["&&seq[q]!=="]")totalOps++;
+ o.total=Math.min(totalOps,opCap);
+ function foldT(Ls,Ks,Cs,f){ /* 表示格子の折り輸送 */
+  var qx=f.qx,qy=f.qy,nx=f.nx,ny=f.ny,side=f.side;
+  var L2=new Float32Array(Wl*Wl),K2=new Float32Array(Wl*Wl),C2=new Float32Array(Wl*Wl);
+  for(var y=0;y<Wl;y++)for(var x=0;x<Wl;x++){
+   var idx=y*Wl+x,d=((x-qx)*nx+(y-qy)*ny)*side;
+   if(d<=0){L2[idx]+=Ls[idx];K2[idx]+=Ks[idx];C2[idx]+=Cs[idx]}
+   else if(Ls[idx]>0||Ks[idx]>0||Cs[idx]>0){
+    var tx=x-2*d*side*nx,ty=y-2*d*side*ny;
+    var fx=Math.floor(tx),fy=Math.floor(ty);
+    var ax=tx-fx,ay=ty-fy;
+    for(var oy=0;oy<2;oy++)for(var ox=0;ox<2;ox++){
+     var px=fx+ox,py=fy+oy;
+     if(px<0||px>=Wl||py<0||py>=Wl)continue;
+     var wgt=(ox?ax:1-ax)*(oy?ay:1-ay);
+     if(wgt<=0)continue;
+     var jj=py*Wl+px;
+     L2[jj]+=Ls[idx]*wgt;K2[jj]+=Ks[idx]*wgt;C2[jj]+=Cs[idx]*wgt}}}
+  return [L2,K2,C2]}
+ function foldTL(Ls,f,Wd){ /* 判定台帳（層のみ）の折り輸送 */
+  var L2=new Float32Array(Wd*Wd);
+  for(var y=0;y<Wd;y++)for(var x=0;x<Wd;x++){
+   var idx=y*Wd+x,d=((x-f.qx)*f.nx+(y-f.qy)*f.ny)*f.side;
+   if(d<=0){L2[idx]+=Ls[idx]}
+   else if(Ls[idx]>0){
+    var tx=x-2*d*f.side*f.nx,ty=y-2*d*f.side*f.ny;
+    var fx=Math.floor(tx),fy=Math.floor(ty);
+    var ax=tx-fx,ay=ty-fy;
+    for(var oy=0;oy<2;oy++)for(var ox=0;ox<2;ox++){
+     var px=fx+ox,py=fy+oy;
+     if(px<0||px>=Wd||py<0||py>=Wd)continue;
+     var wgt=(ox?ax:1-ax)*(oy?ay:1-ay);
+     if(wgt<=0)continue;
+     L2[py*Wd+px]+=Ls[idx]*wgt}}}
+  return L2}
+ function doFold(handSign){
+  if(nO>=fu.nOmax.v)return;
+  nO++;fold++;
+  var co=Math.cos(st.th),si2=Math.sin(st.th);
+  var inSheet=rL[(Math.round(st.y)|0)*REF+(Math.round(st.x)|0)]>0.4;
+  var qx=inSheet?st.x:cx,qy=inSheet?st.y:cy;
+  var nx=-si2,ny=co;
+  var side=((fold%2)?1:-1)*fu.hand*handSign;
+  if(fold>1&&((fold*2654435761)^fu.seed)%100<fu.hashiori.v){
+   var off=st.s*(0.6+0.5*(((fold*97+fu.seed)>>>3)%100)/100);
+   qx+=nx*side*off;qy+=ny*side*off}
+  var f={qx:qx,qy:qy,nx:nx,ny:ny,side:side};
+  ev.folds.push(f);evS=null;
+  var fD=dual?{qx:qx*sc,qy:qy*sc,nx:nx,ny:ny,side:side}:f;
+  var R=foldT(L,K,Cr,fD);
+  var L2=R[0],K2=R[1],C2=R[2];
+  var band=1.1*sc;
+  for(var y4=0;y4<Wl;y4++)for(var x4=0;x4<Wl;x4++){
+   var dd=(x4-fD.qx)*nx+(y4-fD.qy)*ny;
+   if(Math.abs(dd)<band&&L2[y4*Wl+x4]>0.4)C2[y4*Wl+x4]+=1}
+  L=L2;K=K2;Cr=C2;
+  if(dual)rL=foldTL(rL,f,REF);else rL=L;
+  centroid()}
+ o.step=function(n){
+  var did=0;
+  while(i<cap&&did<n&&ops<opCap){
+   var c=seq[i++];
+   if(c==="["){stack.push({x:st.x,y:st.y,th:st.th,s:st.s});
+    if(stack.length>12)stack.shift();
+    st.s=Math.max(6,st.s*fu.sigma.v);continue}
+   if(c==="]"){if(stack.length)st=stack.pop();continue}
+   ops++;did++;cnt[c]++;
+   var co=Math.cos(st.th),si2=Math.sin(st.th);
+   if(c==="A"){st.th+=(fu.dthMode&&(aTog^=1))?dth2r:dthr;continue}
+   if(c==="M"){st.x+=co*st.s*fu.mv.v;st.y+=si2*st.s*fu.mv.v;
+    var ai=(Math.round(st.y)|0)*REF+(Math.round(st.x)|0);
+    if(st.x<0||st.x>=REF||st.y<0||st.y>=REF||!(rL[ai]>0.4)){
+     st.x=st.x*0.4+cx*0.6;st.y=st.y*0.4+cy*0.6}
+    continue}
+   if(c==="B"){
+    var inSheet=rL[(Math.round(st.y)|0)*REF+(Math.round(st.x)|0)]>0.4;
+    var qx=inSheet?st.x:cx,qy=inSheet?st.y:cy;
+    var len=st.s*fu.bl.v,wd=Math.max(2,st.s*fu.bw.v);
+    ev.inks.push({k:ev.folds.length,qx:qx,qy:qy,co:co,si:si2,len:len,wd:wd});evS=null;
+    var lenD=len*sc,wdD=wd*sc,qxD=qx*sc,qyD=qy*sc;
+    for(var y=0;y<Wl;y++)for(var x=0;x<Wl;x++){
+     var dx=x-qxD,dy=y-qyD,u=dx*co+dy*si2,v=-dx*si2+dy*co;
+     if(inMark(u,v,lenD,wdD,fu.mark)&&L[y*Wl+x]>0.4)K[y*Wl+x]+=1}
+    continue}
+   doFold(c==="F"?1:-1)}
+  o.ops=ops;
+  if(i>=cap||ops>=opCap)o.done=true};
+ function packetImg(){
+  var img=new Uint8ClampedArray(Wl*Wl*4);
+  for(var j=0;j<Wl*Wl;j++){
+   var tone;
+   if(L[j]<0.05)tone=250;
+   else{tone=245*Math.pow(fu.t.v,L[j]);
+    if(K[j]>0.05)tone*=Math.pow(0.60,Math.min(4,K[j]));
+    tone*=(1-Math.min(0.45,Cr[j]*0.16))}
+   var oo=j*4;img[oo]=tone;img[oo+1]=tone*0.988;img[oo+2]=tone*0.955;img[oo+3]=255}
+  return img}
+ function hirakiImg(){
+  var E=scaled();
+  var img=new Uint8ClampedArray(Wl*Wl*4);
+  var scale=0.94*Wl/Math.max(sw,sh);
+  var dw=sw*scale,dh=sh*scale,ox=(Wl-dw)/2,oy=(Wl-dh)/2;
+  var band=1.1*sc;
+  for(var Y=0;Y<Wl;Y++)for(var X=0;X<Wl;X++){
+   var oo=(Y*Wl+X)*4,tone;
+   var p0x=x0+(X-ox)/scale,p0y=y0+(Y-oy)/scale;
+   if(p0x<x0||p0x>=x0+sw||p0y<y0||p0y>=y0+sh){tone=250}
+   else{
+    var px=p0x,py=p0y,Kc=0,Crc=0,mvs=0,fi=0,ii=0;
+    for(fi=0;fi<E.folds.length;fi++){
+     while(ii<E.inks.length&&E.inks[ii].k<=fi){
+      if(E.inks[ii].k===fi){var e=E.inks[ii];
+       var du=(px-e.qx)*e.co+(py-e.qy)*e.si,dv=-(px-e.qx)*e.si+(py-e.qy)*e.co;
+       if(inMark(du,dv,e.len,e.wd,fu.mark))Kc++}
+      ii++}
+     var f=E.folds[fi];
+     var dd=(px-f.qx)*f.nx+(py-f.qy)*f.ny;
+     if(Math.abs(dd)<band)Crc++;
+     if(dd*f.side>0){px-=2*dd*f.nx;py-=2*dd*f.ny;mvs++}}
+    while(ii<E.inks.length){var e2=E.inks[ii];
+     var du2=(px-e2.qx)*e2.co+(py-e2.qy)*e2.si,dv2=-(px-e2.qx)*e2.si+(py-e2.qy)*e2.co;
+     if(inMark(du2,dv2,e2.len,e2.wd,fu.mark))Kc++;ii++}
+    tone=245*Math.pow(fu.t.v,1);
+    if(Kc)tone*=Math.pow(0.55,Math.min(3,Kc));
+    tone*=(1-Math.min(0.5,Crc*0.22));
+    tone*=(1-0.05*(mvs%2))}
+   img[oo]=tone;img[oo+1]=tone*0.988;img[oo+2]=tone*0.955;img[oo+3]=255}
+  return img}
+ var mat=null;
+ function buildMat(){
+  var E=scaled();
+  mat={L:new Float32Array(Wl*Wl),K:new Float32Array(Wl*Wl),C:new Float32Array(Wl*Wl)};
+  var band=1.1*sc;
+  for(var Y=y0;Y<y0+sh;Y++)for(var X=x0;X<x0+sw;X++){
+   var px=X,py=Y,Kc=0,Crc=0,fi=0,ii=0;
+   for(fi=0;fi<E.folds.length;fi++){
+    while(ii<E.inks.length&&E.inks[ii].k<=fi){
+     if(E.inks[ii].k===fi){var e=E.inks[ii];
+      var du=(px-e.qx)*e.co+(py-e.qy)*e.si,dv=-(px-e.qx)*e.si+(py-e.qy)*e.co;
+      if(inMark(du,dv,e.len,e.wd,fu.mark))Kc++}
+     ii++}
+    var f=E.folds[fi];
+    var dd=(px-f.qx)*f.nx+(py-f.qy)*f.ny;
+    if(Math.abs(dd)<band)Crc++;
+    if(dd*f.side>0){px-=2*dd*f.nx;py-=2*dd*f.ny}}
+   while(ii<E.inks.length){var e2=E.inks[ii];
+    var du2=(px-e2.qx)*e2.co+(py-e2.qy)*e2.si,dv2=-(px-e2.qx)*e2.si+(py-e2.qy)*e2.co;
+    if(inMark(du2,dv2,e2.len,e2.wd,fu.mark))Kc++;ii++}
+   var j=Y*Wl+X;mat.L[j]=1;mat.K[j]=Kc;mat.C[j]=Crc}}
+ o.openCount=function(){return ev.folds.length};
+ o.sheetBox=function(){return{x:x0,y:y0,w:sw,h:sh}};
+ o.openState=function(m){
+  if(!mat)buildMat();
+  var E=scaled();
+  var Ls=new Float32Array(mat.L),Ks=new Float32Array(mat.K),Cs=new Float32Array(mat.C);
+  for(var fi=0;fi<m;fi++){var R=foldT(Ls,Ks,Cs,E.folds[fi]);Ls=R[0];Ks=R[1];Cs=R[2]}
+  var img=new Uint8ClampedArray(Wl*Wl*4);
+  for(var j=0;j<Wl*Wl;j++){
+   var tone;
+   if(Ls[j]<0.05)tone=250;
+   else{tone=245*Math.pow(fu.t.v,Ls[j]);
+    if(Ks[j]>0.05)tone*=Math.pow(0.60,Math.min(4,Ks[j]));
+    tone*=(1-Math.min(0.45,Cs[j]*0.16))}
+   var oo=j*4;img[oo]=tone;img[oo+1]=tone*0.988;img[oo+2]=tone*0.955;img[oo+3]=255}
+  return img};
+ o.openedFramed=function(){return hirakiImg()};
+ o.render=function(){
+  if(fu.hiraki&&o.done)return hirakiImg();
+  return packetImg()};
+ o.renderPacket=function(){return packetImg()};
+ o.stats=function(){
+  var sum=0,lmax=0,area=0;
+  for(var j=0;j<Wl*Wl;j++){sum+=L[j];if(L[j]>lmax)lmax=L[j];if(L[j]>0.4)area++}
+  return{keep:sum/sheet0,lmax:lmax,area:area/(Wl*Wl),nO:nO,cnt:cnt,ops:ops,
+   inks:ev.inks.length,hiraki:fu.hiraki?1:0}};
+ return o}
+/* ---------- 共通口 ---------- */
+function normFu(fu){ /* v0.1/v0.2/v0.3の受理と欠損補完（旧譜の再現性維持） */
+ if(fu.v==="tansaku-ori-v0.1"){fu.gakki="kyodan";
+  if(!fu.t)fu.t={v:0.86,band:"normal"};
+  if(!fu.nOmax)fu.nOmax={v:6,band:"normal"};
+  if(!fu.hashiori)fu.hashiori={v:60,band:"normal"};
+  if(fu.sw===undefined){fu.sw=0.48;fu.sh=0.48;fu.hand=1}}
+ if(fu.hiraki===undefined)fu.hiraki=0;
+ if(fu.dthMode===undefined)fu.dthMode=0;
+ if(fu.mark===undefined)fu.mark=0;
+ if(fu.dth2===undefined)fu.dth2=fu.dth;
+ if(fu.opcap===undefined)fu.opcap=(fu.v==="tansaku-fu-v0.3")?600:380;
+ return fu}
+function makeFuStepper(fu,WW){fu=normFu(fu);
+ return fu.gakki==="shinori"?makeShinoriStepper(fu,WW):makeKyodanStepper(fu,WW)}
+function runFu(fu){var st=makeFuStepper(fu);
+ while(!st.done)st.step(50);
+ return{img:st.render(),st:st,stats:st.stats()}}
+/* ---------- 篩・五軸・指紋（画像基準で楽器共通の構図指紋） ---------- */
+function lumGrid(img,Wl){
+ var G=12,cell=Wl/G,lum=new Float32Array(G*G);
+ for(var gy=0;gy<G;gy++)for(var gx=0;gx<G;gx++){var s=0,c=0;
+  for(var y=(gy*cell)|0;y<((gy+1)*cell)|0;y+=3)
+   for(var x=(gx*cell)|0;x<((gx+1)*cell)|0;x+=3){
+    var o=(y*Wl+x)*4;s+=img[o];c++}
+  lum[gy*G+gx]=s/c}
+ return lum}
+function fpD(a,b){
+ var ma=0,mb=0,i;
+ for(i=0;i<144;i++){ma+=a[i];mb+=b[i]}
+ ma/=144;mb/=144;
+ var sa=1e-6,sb=1e-6;
+ for(i=0;i<144;i++){sa+=(a[i]-ma)*(a[i]-ma);sb+=(b[i]-mb)*(b[i]-mb)}
+ sa=Math.sqrt(sa/144);sb=Math.sqrt(sb/144);
+ var d=0;
+ for(i=0;i<144;i++){var e=(a[i]-ma)/sa-(b[i]-mb)/sb;d+=e*e}
+ return Math.sqrt(d/144)}
+var DUP_TH=0.55;
+function fuJudge(fu,res){ /* 死・警告・五軸行 */
+ var s=res.stats,warns=[],dead=null,line="";
+ if(fu.gakki==="shinori"){
+  if(s.nO<2)dead="未折";
+  else if(!s.hiraki&&s.area<0.02)dead="潰れ";
+  if(!dead){
+   if(s.hiraki){
+    if(s.inks===0)warns.push("墨なし");
+    line="開き 折"+s.nO+" 墨差し"+s.inks}
+   else{
+    if(s.keep<0.92)warns.push("紙外れ");
+    if(s.area<0.05)warns.push("小");
+    line="折"+s.nO+" 層max"+s.lmax.toFixed(1)+" 保存"+(s.keep*100).toFixed(0)+"%"}}
+ }else{
+  if(s.cov<0.012)dead="白紙";
+  else if(s.cov>0.92)dead="黒潰れ";
+  if(!dead){
+   if(s.cov<0.04)warns.push("淡");
+   if(s.cov>0.75)warns.push("濃");
+   if(s.cnt.B<3)warns.push("棒少");
+   line="墨"+(s.cov*100).toFixed(0)+"% 命令"+s.ops+"（棒"+s.cnt.B+"鏡"+s.cnt.F+"断"+s.cnt.D+"）"}}
+ return{dead:dead,warns:warns,line:line,lum:dead?null:lumGrid(res.img,res.st.Wl)}}
+function jit(p,r,f){return{v:p.v*(1+(r()*2-1)*f),band:p.band}}
+function makeDozoku(base,vseed){
+ var r=mulberry32((vseed^0x0d02a)|0);
+ var b=JSON.parse(JSON.stringify(base));b.seed=vseed;
+ ["sigma","bl","bw","mv","pw","dm","t"].forEach(function(k){if(b[k])b[k]=jit(b[k],r,0.12)});
+ b.sigma.v=Math.min(0.92,Math.max(0.3,b.sigma.v));
+ if(b.t)b.t.v=Math.min(0.94,Math.max(0.75,b.t.v));
+ b.th0=(base.th0+(r()-0.5)*0.6)%Math.PI;
+ b.depth.v=Math.max(3,Math.min(8,base.depth.v+((r()*3)|0)-1));
+ if(b.gakki==="shinori"){
+  b.nOmax.v=Math.max(3,Math.min(10,base.nOmax.v+((r()*3)|0)-1));
+  b.hashiori=jit(b.hashiori,r,0.12);
+  b.sw=Math.min(0.6,Math.max(0.34,base.sw*(1+(r()*2-1)*0.12)));
+  b.sh=Math.min(0.6,Math.max(0.34,base.sh*(1+(r()*2-1)*0.12)))}
+ return b}
+function makeEkkyo(base,vseed){
+ var r=mulberry32((vseed^0x3ee0)|0);
+ var b=JSON.parse(JSON.stringify(base));b.seed=vseed;
+ b.rules=sampleRules(r);
+ return b}
+function fuLabel(fu){fu=normFu(fu);
+ var kaku="回"+fu.dth+(fu.dthMode?("/"+fu.dth2):"")+"°";
+ var shirushi=["棒","角","束"][fu.mark||0];
+ var head=fu.gakki==="shinori"
+  ?"譜〔真折"+(fu.hiraki?"・開き":"")+"〕 "+kaku+" 縮"+fu.sigma.v.toFixed(2)+" 予算"+fu.nOmax.v+" 印"+shirushi
+  :"譜〔鏡断〕 "+kaku+" 縮"+fu.sigma.v.toFixed(2)+" "+["OR","XOR","写"][fu.fmode]+" 印"+shirushi;
+ var s=head+" 譜:"+SYM.map(function(k){return k+"→"+fu.rules[k]}).join(" ");
+ if(hasMu(fu))s+="✷";
+ return s}
+</script>
+<!--ENGINE_END-->
+<script id="ui">
+"use strict";
+var $=function(id){return document.getElementById(id)};
+var kabe=$("kabe"),karappo=$("karappo");
+var TAGS=[["hoshi","★"],["kozo","構造"],["shitsu","質感"],["gensho","現象"],["ibutsu","異物感"]];
+var state={kama:0,firing:false,abort:false,tiles:[],fps:[],henban:0};
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function labelHTML(fu){return esc(fuLabel(fu)).replace(/\u2737/g,'<span class="mut">\u2737</span>')}
+function setD(a,d,dup,warn,msg){$("d_alive").textContent=a;$("d_dead").textContent=d;
+ $("d_dup").textContent=dup;$("d_warn").textContent=warn;$("d_state").textContent=msg}
+function drawImgTo(cv,img,Wl){cv.width=Wl;cv.height=Wl;
+ cv.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(img),Wl,Wl),0,0)}
+function addTile(fu,res,jd,extra){
+ var el=document.createElement("div");el.className="hyohon";
+ var cv=document.createElement("canvas");cv.className="omote";
+ drawImgTo(cv,res.img,res.st.Wl);
+ var rec=document.createElement("div");rec.className="rec";
+ rec.innerHTML=labelHTML(fu);rec.title=fuLabel(fu);
+ var gj=document.createElement("div");gj.className="gojiku";
+ gj.textContent=extra||jd.line;
+ var kk=document.createElement("div");kk.className="keikoku";
+ (jd.warns||[]).forEach(function(w){var s=document.createElement("span");s.textContent=w;kk.appendChild(s)});
+ var tg=document.createElement("div");tg.className="tags";
+ var tile={fu:fu,img:res.img,Wl:res.st.Wl,tags:{},el:el};
+ TAGS.forEach(function(t){
+  var b=document.createElement("button");b.textContent=t[1];
+  if(t[0]==="hoshi")b.className="hoshi";
+  b.addEventListener("click",function(){tile.tags[t[0]]=!tile.tags[t[0]];
+   b.classList.toggle("on",!!tile.tags[t[0]])});
+  tg.appendChild(b)});
+ var gen=document.createElement("button");gen.className="genn";gen.textContent="原寸";
+ gen.addEventListener("click",function(){openBig(tile)});
+ tg.appendChild(gen);
+ cv.addEventListener("click",function(){openBig(tile)});
+ el.appendChild(cv);el.appendChild(rec);el.appendChild(gj);
+ if(jd&&jd.warns&&jd.warns.length)el.appendChild(kk);
+ el.appendChild(tg);
+ kabe.appendChild(el);state.tiles.push(tile)}
+function addDead(fu,why){
+ var el=document.createElement("div");el.className="hyohon";
+ var bx=document.createElement("div");bx.className="shibox";
+ bx.innerHTML="死<small>"+esc(why)+"</small>";
+ var rec=document.createElement("div");rec.className="rec";rec.innerHTML=labelHTML(fu);
+ el.appendChild(bx);el.appendChild(rec);kabe.appendChild(el)}
+function raf(){return new Promise(function(res){requestAnimationFrame(function(){setTimeout(res,0)})})}
+async function fire(){
+ if(state.firing)return;
+ state.firing=true;state.abort=false;
+ $("yaku").disabled=true;$("tomeru").disabled=false;
+ state.kama++;$("d_kama").textContent=state.kama;
+ var base=parseInt($("tane").value,10)||0;
+ var sr=mulberry32((base*2654435761+state.kama*97)|0);
+ kabe.querySelectorAll(".hyohon,.kugiri").forEach(function(e){e.remove()});
+ if(karappo)karappo.style.display="none";
+ state.tiles=[];state.fps=[];
+ var alive=0,dead=0,dup=0,warnN=0,att=0;
+ setD(0,0,0,0,"焼成中 0/24");
+ while(alive<24&&att<100&&!state.abort){att++;
+  var fu=sampleFu((sr()*0x7fffffff)|0),res,jd;
+  try{res=runFu(fu);jd=fuJudge(fu,res)}
+  catch(e){dead++;setD(alive,dead,dup,warnN,"焼成中 "+alive+"/24");await raf();continue}
+  if(jd.dead){dead++}
+  else{var near=false;
+   for(var f=0;f<state.fps.length;f++)if(fpD(jd.lum,state.fps[f])<DUP_TH){near=true;break}
+   if(near){dup++}
+   else{alive++;state.fps.push(jd.lum);
+    if(jd.warns.length)warnN++;
+    addTile(fu,res,jd)}}
+  setD(alive,dead,dup,warnN,state.abort?"中止":("焼成中 "+alive+"/24（試行"+att+"）"));
+  await raf()}
+ setD(alive,dead,dup,warnN,state.abort?"中止":("窯出し済み ── 無選別で "+alive+" 枚"));
+ state.firing=false;$("yaku").disabled=false;$("tomeru").disabled=true}
+$("yaku").addEventListener("click",fire);
+$("tomeru").addEventListener("click",function(){state.abort=true});
+var dlg=$("dlg"),bigc=$("bigc");
+function renderBig(img,Wl){var t=document.createElement("canvas");
+ drawImgTo(t,img,Wl||W);
+ var b=bigc.getContext("2d");
+ b.imageSmoothingEnabled=false;
+ b.clearRect(0,0,bigc.width,bigc.height);
+ b.drawImage(t,0,0,bigc.width,bigc.height)}
+function openBig(tile){
+ $("dlg_png").style.display="none";$("dlg_pause").style.display="none";
+ $("dlg_t").textContent="原寸（"+W+"焼成）";
+ $("dlg_rec").innerHTML=labelHTML(tile.fu);
+ $("dlg_json").value=JSON.stringify(tile.fu);
+ $("dlg_note").textContent="";$("dlg_note").className="notice";
+ renderBig(tile.img,tile.Wl);dlg.showModal()}
+$("saigen").addEventListener("click",function(){
+ $("dlg_png").style.display="none";$("dlg_pause").style.display="none";
+ $("dlg_t").textContent="譜を再現";$("dlg_rec").innerHTML="";$("dlg_json").value="";
+ $("dlg_note").textContent="譜JSONを貼り付けて「この譜で焼成」。";
+ $("dlg_note").className="notice";
+ bigc.getContext("2d").clearRect(0,0,bigc.width,bigc.height);
+ dlg.showModal()});
+var FU_VS={"tansaku-ori-v0.1":1,"tansaku-fu-v0.2":1,"tansaku-fu-v0.3":1};
+function parseFu(){var fu=JSON.parse($("dlg_json").value);
+ if(!fu||!FU_VS[fu.v])throw new Error("この窯の譜ではありません（v違い）");
+ return normFu(fu)}
+$("dlg_fire").addEventListener("click",function(){
+ var note=$("dlg_note");
+ try{var fu=parseFu();var res=runFu(fu);
+  renderBig(res.img,res.st.Wl);$("dlg_rec").innerHTML=labelHTML(fu);
+  note.textContent="再焼成しました。同じ譜は常に同じ一枚になります。";note.className="notice"}
+ catch(e){note.textContent="焼成できません ── "+e.message;note.className="notice err"}});
+$("dlg_copy").addEventListener("click",function(){
+ var ta=$("dlg_json");ta.select();
+ try{navigator.clipboard.writeText(ta.value);$("dlg_note").textContent="写しました。"}
+ catch(e){document.execCommand("copy")}});
+async function henFire(mk,name){
+ var note=$("dlg_note");
+ if(state.firing){note.textContent="焼成中です。";note.className="notice err";return}
+ var base;try{base=parseFu()}catch(e){note.textContent=e.message;note.className="notice err";return}
+ dlg.close();
+ state.firing=true;state.abort=false;
+ $("yaku").disabled=true;$("tomeru").disabled=false;
+ state.henban++;
+ if(karappo)karappo.style.display="none";
+ var kg=document.createElement("div");kg.className="kugiri";
+ kg.innerHTML=name+" 第"+state.henban+"組 ── 12枚・無選別・死も掲示<br>"+labelHTML(base);
+ kabe.appendChild(kg);
+ var alive=0,dead=0;
+ for(var k=0;k<12&&!state.abort;k++){
+  var vseed=((base.seed^((state.henban*131+k)*2654435761))|0);
+  var v=mk(base,vseed),res,jd;
+  try{res=runFu(v);jd=fuJudge(v,res)}
+  catch(e){dead++;addDead(v,"err");await raf();continue}
+  if(jd.dead){dead++;addDead(v,jd.dead)}
+  else{alive++;addTile(v,res,jd)}
+  $("d_state").textContent=name+"中 "+(k+1)+"/12（生存"+alive+"）";
+  await raf()}
+ $("d_state").textContent=name+"済み ── 生存 "+alive+" / 12・死 "+dead;
+ kg.scrollIntoView({behavior:"smooth",block:"start"});
+ state.firing=false;$("yaku").disabled=false;$("tomeru").disabled=true}
+$("dlg_moti").addEventListener("click",function(){
+ var note=$("dlg_note");
+ try{var fu=parseFu();
+  fu.gakki=(fu.gakki==="shinori")?"kyodan":"shinori";
+  if(fu.gakki==="shinori"&&!fu.hiraki)fu.hiraki=1; /* 持ち替え先の既定は開き */
+  fu.v=fu.v||"tansaku-fu-v0.3";
+  $("dlg_json").value=JSON.stringify(fu);
+  var res=runFu(fu);
+  renderBig(res.img,res.st.Wl);$("dlg_rec").innerHTML=labelHTML(fu);
+  note.textContent="持ち替えました ── 同じ譜を"+(fu.gakki==="shinori"?"真折":"鏡断")+"で演奏。";
+  note.className="notice"}
+ catch(e){note.textContent="持ち替えできません ── "+e.message;note.className="notice err"}});
+$("dlg_dozo").addEventListener("click",function(){henFire(makeDozoku,"同族変奏")});
+$("dlg_ekkyo").addEventListener("click",function(){henFire(makeEkkyo,"越境変奏")});
+async function fuAblate(){
+ var note=$("dlg_note");
+ if(state.firing){note.textContent="焼成中です。";note.className="notice err";return}
+ var base;try{base=parseFu()}catch(e){note.textContent=e.message;note.className="notice err";return}
+ dlg.close();
+ state.firing=true;state.abort=false;
+ $("yaku").disabled=true;$("tomeru").disabled=false;
+ var kg=document.createElement("div");kg.className="kugiri";
+ kg.innerHTML="解剖 ── <b>規則の恒等化 × 3種</b>（その規則の展開を止める。d=完全版からの構図距離）<br>"+labelHTML(base);
+ kabe.appendChild(kg);
+ var conds=[["完全版",null]];
+ SYM.forEach(function(s){if(base.rules[s]&&base.rules[s]!==s)conds.push(["規則"+s+"→"+s,s])});
+ var fullLum=[];
+ for(var ci=0;ci<conds.length&&!state.abort;ci++){
+  for(var si=0;si<3&&!state.abort;si++){
+   var v=si===0?JSON.parse(JSON.stringify(base)):makeDozoku(base,(base.seed^(si*2654435761))|0);
+   if(conds[ci][1])v.rules[conds[ci][1]]=conds[ci][1];
+   var res,jd;
+   try{res=runFu(v);jd=fuJudge(v,res)}
+   catch(e){addDead(v,conds[ci][0]+" err");await raf();continue}
+   if(jd.dead){addDead(v,conds[ci][0]+" "+jd.dead)}
+   else{var ex;
+    if(ci===0){fullLum[si]=jd.lum;ex=conds[ci][0]+"（種"+(si+1)+"）"}
+    else ex=conds[ci][0]+"（種"+(si+1)+"） d="
+     +(fullLum[si]?fpD(jd.lum,fullLum[si]).toFixed(2):"—");
+    addTile(v,res,jd,ex)}
+   $("d_state").textContent="解剖中 "+(ci+1)+"/"+conds.length+"条件";
+   await raf()}}
+ $("d_state").textContent=state.abort?"解剖中止":"解剖済み ── dが大きい規則ほど絵を持っている";
+ state.firing=false;$("yaku").disabled=false;$("tomeru").disabled=true}
+$("dlg_kai").addEventListener("click",fuAblate);
+var play={st:null,timer:null,pc:null,Wl:512,rec:null,chunks:null,paused:false,perFrame:2};
+function playStop(){
+ if(play.timer){clearTimeout(play.timer);play.timer=null}
+ if(play.rec&&play.rec.state!=="inactive"){try{play.rec.stop()}catch(e){}}
+ play.rec=null;play.st=null;
+ $("dlg_pause").style.display="none"}
+function blitBig(){
+ var b=bigc.getContext("2d");
+ b.imageSmoothingEnabled=(play.Wl>bigc.width);
+ b.imageSmoothingQuality="high";
+ b.clearRect(0,0,bigc.width,bigc.height);
+ b.drawImage(play.pc,0,0,bigc.width,bigc.height)}
+function blitFrame(img){
+ play.pc.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(img),play.Wl,play.Wl),0,0);
+ blitBig()}
+function finishPlay(msg){
+ $("dlg_note").textContent=msg+(play.rec?" 録画を保存します。":"");
+ $("dlg_png").style.display="";
+ var rec=play.rec;play.rec=null;
+ playStop();
+ if(rec&&rec.state!=="inactive"){
+  setTimeout(function(){try{rec.stop()}catch(e){}},450)}}
+function playFrame(){
+ if(!play.st)return;
+ var delay=16;
+ if(!play.paused){
+  if(play.phase==="perform"){
+   play.st.step(play.perFrame);
+   blitFrame(play.hiraki&&play.st.renderPacket?play.st.renderPacket():play.st.render());
+   $("dlg_note").textContent="演奏 ── 命令 "+play.st.ops+" / "+play.st.total+"（"+play.Wl+"格子）";
+   if(play.st.done){
+    if(play.hiraki&&play.st.openCount&&play.st.openCount()>0){
+     play.phase="wait";play.waitTicks=30;
+     play.m=play.st.openCount();
+     play.openDur=Math.max(240,Math.min(700,4000/play.m))}
+    else{finishPlay("譜、了 ── 命令 "+play.st.ops+"。");return}}
+  }else if(play.phase==="wait"){
+   if(--play.waitTicks<=0)play.phase="open";
+  }else if(play.phase==="open"){
+   var osImg=play.st.openState(play.m);
+   blitFrame(osImg);
+   $("dlg_note").textContent="開き ── 残り "+play.m+" 折";
+   delay=play.openDur;
+   if(play.m<=0){
+    play.phase="zoom";play.zf=0;
+    var t0=document.createElement("canvas");t0.width=play.Wl;t0.height=play.Wl;
+    t0.getContext("2d").putImageData(
+     new ImageData(new Uint8ClampedArray(osImg),play.Wl,play.Wl),0,0);
+    play.t0=t0;play.bb=play.st.sheetBox()}
+   else play.m--;
+  }else if(play.phase==="zoom"){
+   play.zf++;delay=33;
+   var T=24,u=Math.min(1,play.zf/T);u=u*u*(3-2*u);
+   var bb=play.bb,Wl=play.Wl;
+   var tcx=bb.x+bb.w/2,tcy=bb.y+bb.h/2,tsz=Math.max(bb.w,bb.h)/0.94;
+   var cx=Wl/2+(tcx-Wl/2)*u,cy=Wl/2+(tcy-Wl/2)*u,sz=Wl+(tsz-Wl)*u;
+   var g=play.pc.getContext("2d");
+   g.fillStyle="rgb(250,247,239)";g.fillRect(0,0,Wl,Wl);
+   var sx=cx-sz/2,sy=cy-sz/2;
+   var ix0=Math.max(0,sx),iy0=Math.max(0,sy),
+       ix1=Math.min(Wl,sx+sz),iy1=Math.min(Wl,sy+sz);
+   if(ix1>ix0&&iy1>iy0){
+    g.drawImage(play.t0,ix0,iy0,ix1-ix0,iy1-iy0,
+     (ix0-sx)/sz*Wl,(iy0-sy)/sz*Wl,(ix1-ix0)/sz*Wl,(iy1-iy0)/sz*Wl)}
+   blitBig();
+   $("dlg_note").textContent="寄り";
+   if(play.zf>=T){
+    finishPlay("譜、了 ── 開き切りました。");return}
+  }}
+ else delay=120;
+ play.timer=setTimeout(playFrame,delay)}
+$("dlg_katei").addEventListener("click",function(){
+ var note=$("dlg_note");
+ try{var fu=parseFu();playStop();
+  play.Wl=parseInt($("dlg_res").value,10)||512;
+  play.perFrame=play.Wl>=2048?1:(play.Wl>=1024?2:3);
+  play.pc=document.createElement("canvas");
+  play.pc.width=play.Wl;play.pc.height=play.Wl;
+  play.st=makeFuStepper(fu,play.Wl);
+  fu=normFu(fu);
+  play.hiraki=(fu.gakki==="shinori"&&fu.hiraki)?true:false;
+  play.phase="perform";
+  play.paused=false;
+  $("dlg_t").textContent="過程を刷る（譜の演奏・"+play.Wl+"）";
+  $("dlg_pause").style.display="";$("dlg_pause").textContent="一時停止";
+  $("dlg_png").style.display="none";
+  note.className="notice";
+  if($("dlg_webm").checked){
+   if(typeof MediaRecorder==="undefined")
+    note.textContent="この環境はWebM録画に未対応です。再生のみ行います。";
+   else{
+    var stream=play.pc.captureStream(24);
+    var mt=MediaRecorder.isTypeSupported("video/webm;codecs=vp9")?"video/webm;codecs=vp9":"video/webm";
+    play.chunks=[];
+    play.rec=new MediaRecorder(stream,{mimeType:mt,videoBitsPerSecond:20000000});
+    play.rec.ondataavailable=function(e){if(e.data.size)play.chunks.push(e.data)};
+    play.rec.onstop=function(){
+     var bl=new Blob(play.chunks,{type:"video/webm"});
+     var a=document.createElement("a");
+     a.href=URL.createObjectURL(bl);
+     a.download="orifu_katei_"+play.Wl+".webm";a.click();
+     setTimeout(function(){URL.revokeObjectURL(a.href)},4000)};
+    play.rec.start()}}
+  playFrame()}
+ catch(e){note.textContent=e.message;note.className="notice err"}});
+$("dlg_pause").addEventListener("click",function(){
+ play.paused=!play.paused;
+ $("dlg_pause").textContent=play.paused?"再開":"一時停止";
+ if(play.rec){try{play.paused?play.rec.pause():play.rec.resume()}catch(e){}}});
+$("dlg_png").addEventListener("click",function(){
+ if(!play.pc)return;
+ play.pc.toBlob(function(bl){
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(bl);
+  a.download="orifu_"+play.Wl+".png";a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href)},4000)},"image/png")});
+dlg.addEventListener("close",function(){playStop()});
+$("dlg_close").addEventListener("click",function(){dlg.close()});
+dlg.addEventListener("click",function(e){if(e.target===dlg)dlg.close()});
+$("kakidashi").addEventListener("click",function(){
+ var picks=state.tiles.filter(function(t){
+  return Object.keys(t.tags).some(function(k){return t.tags[k]})});
+ if(!picks.length){$("d_state").textContent="選別がありません ── ★かタグを付けてから";return}
+ var out={kiln:"tansaku-fu-v0.3",exportedAt:new Date().toISOString(),
+  picks:picks.map(function(t){return{tags:Object.keys(t.tags).filter(function(k){return t.tags[k]}),
+   fu:t.fu}})};
+ var blob=new Blob([JSON.stringify(out,null,1)],{type:"application/json"});
+ var a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download="fugama_senbetsu.json";a.click();
+ setTimeout(function(){URL.revokeObjectURL(a.href)},4000);
+ $("d_state").textContent="選別 "+picks.length+" 点を書き出しました"});
+</script>
+</body>
+</html>
